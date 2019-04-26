@@ -154,7 +154,7 @@ func (i *Ipamer) getParentPrefix(prefix *Prefix) *Prefix {
 func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	ip, ipnet, err := net.ParseCIDR(cidr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse cidr:%s %v", cidr, err)
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
