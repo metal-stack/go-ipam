@@ -17,12 +17,20 @@ func (i *Ipamer) AcquireIP(prefix Prefix) (*IP, error) {
 	prefix.Lock()
 	defer prefix.Unlock()
 	var acquired *IP
-	for ip := prefix.Network.Mask(prefix.IPNet.Mask); prefix.IPNet.Contains(ip); inc(ip) {
+	ipnet, err := prefix.IPNet()
+	if err != nil {
+		return nil, err
+	}
+	network, err := prefix.Network()
+	if err != nil {
+		return nil, err
+	}
+	for ip := network.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
 		_, ok := prefix.IPs[ip.String()]
 		if !ok {
 			acquired = &IP{
 				IP:    ip,
-				IPNet: prefix.IPNet,
+				IPNet: ipnet,
 			}
 			prefix.IPs[ip.String()] = *acquired
 			_, err := i.storage.UpdatePrefix(&prefix)
@@ -92,12 +100,21 @@ func inc(ip net.IP) {
 	}
 }
 
-func (p *Prefix) broadcast() IP {
-	mask := p.IPNet.Mask
-	n := IP{IP: p.Network}
+func (p *Prefix) broadcast() (*IP, error) {
+	ipnet, err := p.IPNet()
+	if err != nil {
+		return nil, err
+	}
+	network, err := p.Network()
+	if err != nil {
+		return nil, err
+	}
+	mask := ipnet.Mask
+	n := IP{IP: network}
 	m := IP{IP: net.IP(mask)}
 
-	return n.or(m.not())
+	broadcast := n.or(m.not())
+	return &broadcast, nil
 }
 
 func (i *IP) lshift(bits uint8) IP {
@@ -118,10 +135,8 @@ func ipToInt(ip net.IP) (*big.Int, int) {
 		return val, 32
 	} else if len(ip) == net.IPv6len {
 		return val, 128
-	} else {
-		// FIXME no panic
-		panic(fmt.Errorf("Unsupported address length %d", len(ip)))
 	}
+	return nil, 0
 }
 
 func intToIP(ipInt *big.Int, bits int) net.IP {
@@ -135,10 +150,14 @@ func intToIP(ipInt *big.Int, bits int) net.IP {
 	return net.IP(ret)
 }
 
-func insertNumIntoIP(ip net.IP, num int, prefixLen int) net.IP {
+func insertNumIntoIP(ip net.IP, num int, prefixLen int) (*net.IP, error) {
 	ipInt, totalBits := ipToInt(ip)
+	if ipInt == nil {
+		return nil, fmt.Errorf("unable to convert ip %s to int", ip)
+	}
 	bigNum := big.NewInt(int64(num))
 	bigNum.Lsh(bigNum, uint(totalBits-prefixLen))
 	ipInt.Or(ipInt, bigNum)
-	return intToIP(ipInt, totalBits)
+	result := intToIP(ipInt, totalBits)
+	return &result, nil
 }

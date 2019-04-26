@@ -10,8 +10,6 @@ import (
 type Prefix struct {
 	sync.Mutex
 	Cidr                   string            // The Cidr of this prefix
-	IPNet                  *net.IPNet        // the parsed IPNet of this prefix
-	Network                net.IP            // IP of the network
 	AvailableChildPrefixes map[string]Prefix // available child prefixes of this prefix
 	AcquiredChildPrefixes  map[string]Prefix // acquired child prefixes of this prefix
 	ChildPrefixLength      int               // the length of the child prefixes
@@ -37,7 +35,11 @@ func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error) {
 	prefix.Lock()
 	defer prefix.Unlock()
-	ones, size := prefix.IPNet.Mask.Size()
+	ipnet, err := prefix.IPNet()
+	if err != nil {
+		return nil, err
+	}
+	ones, size := ipnet.Mask.Size()
 	if ones >= length {
 		return nil, fmt.Errorf("given length:%d is smaller or equal of prefix length:%d", length, ones)
 	}
@@ -45,11 +47,15 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 	// If this is the first call, create a pool of available child prefixes with given length upfront
 	if prefix.ChildPrefixLength == 0 {
 		// power of 2 :-(
-		ip := prefix.IPNet.IP
+		ip := ipnet.IP
 		subnetCount := 1 << (uint(length - ones))
 		for s := 0; s < subnetCount; s++ {
+			ipPart, err := insertNumIntoIP(ip, s, length)
+			if err != nil {
+				return nil, err
+			}
 			newIP := &net.IPNet{
-				IP:   insertNumIntoIP(ip, s, length),
+				IP:   *ipPart,
 				Mask: net.CIDRMask(length, size),
 			}
 			newCidr := newIP.String()
@@ -79,7 +85,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 	prefix.AcquiredChildPrefixes[child.Cidr] = *child
 
 	i.storage.UpdatePrefix(prefix)
-	child, err := i.NewPrefix(child.Cidr)
+	child, err = i.NewPrefix(child.Cidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
@@ -112,12 +118,16 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 	if err != nil {
 		return nil
 	}
-	_, ipnet, err := net.ParseCIDR(cidr)
+	_, targetIpnet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil
 	}
 	for _, p := range prefixes {
-		if p.IPNet.IP.String() == ipnet.IP.String() && p.IPNet.Mask.String() == ipnet.Mask.String() {
+		ipnet, err := p.IPNet()
+		if err != nil {
+			return nil
+		}
+		if ipnet.IP.String() == targetIpnet.IP.String() && ipnet.Mask.String() == targetIpnet.Mask.String() {
 			return p
 		}
 	}
@@ -130,7 +140,11 @@ func (i *Ipamer) getPrefixOfIP(ip *IP) *Prefix {
 		return nil
 	}
 	for _, p := range prefixes {
-		if p.IPNet.Contains(ip.IP) && p.IPNet.Mask.String() == ip.IPNet.Mask.String() {
+		ipnet, err := p.IPNet()
+		if err != nil {
+			return nil
+		}
+		if ipnet.Contains(ip.IP) && ipnet.Mask.String() == ip.IPNet.Mask.String() {
 			return p
 		}
 	}
@@ -142,8 +156,16 @@ func (i *Ipamer) getParentPrefix(prefix *Prefix) *Prefix {
 	if err != nil {
 		return nil
 	}
+	targetIpnet, err := prefix.IPNet()
+	if err != nil {
+		return nil
+	}
 	for _, p := range prefixes {
-		if p.IPNet.Contains(prefix.IPNet.IP) {
+		ipnet, err := p.IPNet()
+		if err != nil {
+			return nil
+		}
+		if ipnet.Contains(targetIpnet.IP) {
 			return p
 		}
 	}
@@ -152,23 +174,44 @@ func (i *Ipamer) getParentPrefix(prefix *Prefix) *Prefix {
 
 // NewPrefix create a new Prefix from a string notation.
 func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
-	ip, ipnet, err := net.ParseCIDR(cidr)
+	_, _, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse cidr:%s %v", cidr, err)
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
-		IPNet:                  ipnet,
-		Network:                ip.Mask(ipnet.Mask),
 		IPs:                    make(map[string]IP),
 		AvailableChildPrefixes: make(map[string]Prefix),
 		AcquiredChildPrefixes:  make(map[string]Prefix),
 	}
 
-	broadcast := p.broadcast()
+	broadcast, err := p.broadcast()
+	if err != nil {
+		return nil, err
+	}
 	// First IP in the prefix and Broadcast is blocked.
-	p.IPs[p.Network.String()] = IP{IP: p.Network}
-	p.IPs[broadcast.IP.String()] = broadcast
+	network, err := p.Network()
+	if err != nil {
+		return nil, err
+	}
+	p.IPs[network.String()] = IP{IP: network}
+	p.IPs[broadcast.IP.String()] = *broadcast
 
 	return p, nil
+}
+
+func (p *Prefix) String() string {
+	return fmt.Sprintf("CIDR:%s IPNet:%v Network:%v", p.Cidr, p.IPNet, p.Network)
+}
+
+func (p *Prefix) IPNet() (*net.IPNet, error) {
+	_, ipnet, err := net.ParseCIDR(p.Cidr)
+	return ipnet, err
+}
+func (p *Prefix) Network() (net.IP, error) {
+	ip, ipnet, err := net.ParseCIDR(p.Cidr)
+	if err != nil {
+		return nil, err
+	}
+	return ip.Mask(ipnet.Mask), nil
 }

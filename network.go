@@ -25,11 +25,16 @@ func (i *Ipamer) prefixesOverlapping(prefixes ...Prefix) (*Network, *Prefix, err
 	}
 	for _, network := range networks {
 		for _, p := range network.Prefixes {
+			pinet, err := p.IPNet()
+			if err != nil {
+				return nil, nil, err
+			}
 			for _, prefix := range prefixes {
-				if p.IPNet.Contains(prefix.IPNet.IP) {
-					return network, &prefix, nil
+				prefixinet, err := prefix.IPNet()
+				if err != nil {
+					return nil, nil, err
 				}
-				if prefix.IPNet.Contains(p.IPNet.IP) {
+				if pinet.Contains(prefixinet.IP) || prefixinet.Contains(pinet.IP) {
 					return network, &prefix, nil
 				}
 			}
