@@ -9,11 +9,11 @@ import (
 // Prefix is a expression of a ip with length and forms a classless network.
 type Prefix struct {
 	sync.Mutex
-	Cidr                   string            // The Cidr of this prefix
-	AvailableChildPrefixes map[string]Prefix // available child prefixes of this prefix
-	AcquiredChildPrefixes  map[string]Prefix // acquired child prefixes of this prefix
-	ChildPrefixLength      int               // the length of the child prefixes
-	IPs                    map[string]IP     // The ips contained in this prefix
+	Cidr                   string          // The Cidr of this prefix
+	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
+	AcquiredChildPrefixes  map[string]bool // acquired child prefixes of this prefix
+	ChildPrefixLength      int             // the length of the child prefixes
+	IPs                    map[string]IP   // The ips contained in this prefix
 }
 
 // NewPrefix create a new Prefix from a string notation.
@@ -63,7 +63,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 			if err != nil {
 				return nil, err
 			}
-			prefix.AvailableChildPrefixes[child.Cidr] = *child
+			prefix.AvailableChildPrefixes[child.Cidr] = true
 
 		}
 		prefix.ChildPrefixLength = length
@@ -73,8 +73,11 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 	}
 
 	var child *Prefix
-	for _, v := range prefix.AvailableChildPrefixes {
-		child = &v
+	for c := range prefix.AvailableChildPrefixes {
+		child, err = i.newPrefix(c)
+		if err != nil {
+			continue
+		}
 		break
 	}
 	if child == nil {
@@ -82,7 +85,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 	}
 
 	delete(prefix.AvailableChildPrefixes, child.Cidr)
-	prefix.AcquiredChildPrefixes[child.Cidr] = *child
+	prefix.AcquiredChildPrefixes[child.Cidr] = true
 
 	i.storage.UpdatePrefix(prefix)
 	child, err = i.NewPrefix(child.Cidr)
@@ -103,10 +106,10 @@ func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
 	defer parent.Unlock()
 
 	delete(parent.AcquiredChildPrefixes, child.Cidr)
-	parent.AvailableChildPrefixes[child.Cidr] = *child
+	parent.AvailableChildPrefixes[child.Cidr] = true
 	_, err := i.storage.UpdatePrefix(parent)
 	if err != nil {
-		parent.AcquiredChildPrefixes[child.Cidr] = *child
+		parent.AcquiredChildPrefixes[child.Cidr] = true
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
 	return nil
@@ -181,8 +184,8 @@ func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	p := &Prefix{
 		Cidr:                   cidr,
 		IPs:                    make(map[string]IP),
-		AvailableChildPrefixes: make(map[string]Prefix),
-		AcquiredChildPrefixes:  make(map[string]Prefix),
+		AvailableChildPrefixes: make(map[string]bool),
+		AcquiredChildPrefixes:  make(map[string]bool),
 	}
 
 	broadcast, err := p.broadcast()
