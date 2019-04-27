@@ -2,6 +2,7 @@ package ipam
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"sync"
 )
@@ -45,9 +46,11 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 
 	// If this is the first call, create a pool of available child prefixes with given length upfront
 	if prefix.ChildPrefixLength == 0 {
-		// power of 2 :-(
 		ip := ipnet.IP
-		subnetCount := 1 << (uint(length - ones))
+		// FIXME use big.Int
+		// power of 2 :-(
+		// subnetCount := 1 << (uint(length - ones))
+		subnetCount := int(math.Pow(float64(2), float64(length-ones)))
 		for s := 0; s < subnetCount; s++ {
 			ipPart, err := insertNumIntoIP(ip, s, length)
 			if err != nil {
@@ -295,7 +298,7 @@ func (p *Prefix) Network() (net.IP, error) {
 }
 
 // AvailableIPs return the number of IPs available in this Prefix
-func (p *Prefix) AvailableIPs() int {
+func (p *Prefix) AvailableIPs() int64 {
 	_, ipnet, err := net.ParseCIDR(p.Cidr)
 	if err != nil {
 		return 0
@@ -308,7 +311,8 @@ func (p *Prefix) AvailableIPs() int {
 	}
 
 	ones, _ := ipnet.Mask.Size()
-	count := 1 << (uint(bits - ones))
+	// FIXME use big.Int
+	count := int64(math.Pow(float64(2), float64(bits-ones)))
 	return count
 }
 

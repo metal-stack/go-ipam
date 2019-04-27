@@ -131,7 +131,7 @@ func TestPrefix_AvailableIPs(t *testing.T) {
 	tests := []struct {
 		name string
 		Cidr string
-		want int
+		want int64
 	}{
 		{
 			name: "large",
@@ -153,6 +153,11 @@ func TestPrefix_AvailableIPs(t *testing.T) {
 			Cidr: "192.168.0.0/30",
 			want: 4,
 		},
+		// {
+		// 	name: "smalle IPv6",
+		// 	Cidr: "2001:16b8:2d6a:6900:48d2:14a3:80ae:e797/64",
+		// 	want: 4,
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
