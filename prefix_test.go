@@ -126,3 +126,42 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 		})
 	}
 }
+
+func TestPrefix_AvailableIPs(t *testing.T) {
+	tests := []struct {
+		name string
+		Cidr string
+		want int
+	}{
+		{
+			name: "large",
+			Cidr: "192.168.0.0/20",
+			want: 4096,
+		},
+		{
+			name: "small",
+			Cidr: "192.168.0.0/24",
+			want: 256,
+		},
+		{
+			name: "smaller",
+			Cidr: "192.168.0.0/25",
+			want: 128,
+		},
+		{
+			name: "smaller",
+			Cidr: "192.168.0.0/30",
+			want: 4,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &Prefix{
+				Cidr: tt.Cidr,
+			}
+			if got := p.AvailableIPs(); got != tt.want {
+				t.Errorf("Prefix.AvailableIPs() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

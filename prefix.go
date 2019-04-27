@@ -279,14 +279,40 @@ func (p *Prefix) String() string {
 	return fmt.Sprintf("%s", p.Cidr)
 }
 
+// IPNet return the net.IPNet part of the Prefix
 func (p *Prefix) IPNet() (*net.IPNet, error) {
 	_, ipnet, err := net.ParseCIDR(p.Cidr)
 	return ipnet, err
 }
+
+// Network return the net.IP part of the Prefix
 func (p *Prefix) Network() (net.IP, error) {
 	ip, ipnet, err := net.ParseCIDR(p.Cidr)
 	if err != nil {
 		return nil, err
 	}
 	return ip.Mask(ipnet.Mask), nil
+}
+
+// AvailableIPs return the number of IPs available in this Prefix
+func (p *Prefix) AvailableIPs() int {
+	_, ipnet, err := net.ParseCIDR(p.Cidr)
+	if err != nil {
+		return 0
+	}
+	var bits int
+	if len(ipnet.IP) == net.IPv4len {
+		bits = 32
+	} else if len(ipnet.IP) == net.IPv6len {
+		bits = 128
+	}
+
+	ones, _ := ipnet.Mask.Size()
+	count := 1 << (uint(bits - ones))
+	return count
+}
+
+// AcquiredIPs return the number of IPs acquired in this Prefix
+func (p *Prefix) AcquiredIPs() int {
+	return len(p.IPs)
 }
