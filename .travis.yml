@@ -1,0 +1,19 @@
+language: go
+
+# enable database services
+services:
+  - postgresql
+
+# create test database
+before_install:
+  - psql -c 'create database ipamtest;' -U postgres
+  - go get github.com/mattn/goveralls
+  - export SQLX_POSTGRES_DSN="postgres://postgres:@localhost/sqlxtest?sslmode=disable"
+
+# go versions to test
+go:
+  - "1.12.x"
+
+# run tests w/o coverage
+script:
+  - go test -v
