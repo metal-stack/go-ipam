@@ -70,7 +70,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			for _, ipString := range tt.fields.existingIPs {
 				fmt.Printf("existing:%s\n", ipString)
 				i := net.ParseIP(ipString)
-				p.ips[ipString] = IP{IP: i}
+				p.IPs[ipString] = IP{IP: i}
 			}
 			got, _ := i.AcquireIP(*p)
 			if tt.want == nil || got == nil {

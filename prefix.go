@@ -11,9 +11,9 @@ import (
 type Prefix struct {
 	sync.Mutex
 	Cidr                   string          // The Cidr of this prefix
-	availableChildPrefixes map[string]bool // available child prefixes of this prefix
-	childPrefixLength      int             // the length of the child prefixes
-	ips                    map[string]IP   // The ips contained in this prefix
+	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
+	ChildPrefixLength      int             // the length of the child prefixes
+	IPs                    map[string]IP   // The ips contained in this prefix
 }
 
 // NewPrefix create a new Prefix from a string notation.
@@ -45,7 +45,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 	}
 
 	// If this is the first call, create a pool of available child prefixes with given length upfront
-	if prefix.childPrefixLength == 0 {
+	if prefix.ChildPrefixLength == 0 {
 		ip := ipnet.IP
 		// FIXME use big.Int
 		// power of 2 :-(
@@ -65,17 +65,17 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 			if err != nil {
 				return nil, err
 			}
-			prefix.availableChildPrefixes[child.Cidr] = true
+			prefix.AvailableChildPrefixes[child.Cidr] = true
 
 		}
-		prefix.childPrefixLength = length
+		prefix.ChildPrefixLength = length
 	}
-	if prefix.childPrefixLength != length {
-		return nil, fmt.Errorf("given length:%d is not equal to existing child prefix length:%d", length, prefix.childPrefixLength)
+	if prefix.ChildPrefixLength != length {
+		return nil, fmt.Errorf("given length:%d is not equal to existing child prefix length:%d", length, prefix.ChildPrefixLength)
 	}
 
 	var child *Prefix
-	for c, available := range prefix.availableChildPrefixes {
+	for c, available := range prefix.AvailableChildPrefixes {
 		if !available {
 			continue
 		}
@@ -89,7 +89,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 		return nil, fmt.Errorf("no more child prefixes contained in prefix pool")
 	}
 
-	prefix.availableChildPrefixes[child.Cidr] = false
+	prefix.AvailableChildPrefixes[child.Cidr] = false
 
 	i.storage.UpdatePrefix(prefix)
 	child, err = i.NewPrefix(child.Cidr)
@@ -109,7 +109,7 @@ func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
 	parent.Lock()
 	defer parent.Unlock()
 
-	parent.availableChildPrefixes[child.Cidr] = true
+	parent.AvailableChildPrefixes[child.Cidr] = true
 	_, err := i.storage.UpdatePrefix(parent)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
@@ -153,13 +153,13 @@ func (i *Ipamer) AcquireIP(prefix Prefix) (*IP, error) {
 		return nil, err
 	}
 	for ip := network.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
-		_, ok := prefix.ips[ip.String()]
+		_, ok := prefix.IPs[ip.String()]
 		if !ok {
 			acquired = &IP{
 				IP:    ip,
 				IPNet: ipnet,
 			}
-			prefix.ips[ip.String()] = *acquired
+			prefix.IPs[ip.String()] = *acquired
 			_, err := i.storage.UpdatePrefix(&prefix)
 			if err != nil {
 				return nil, fmt.Errorf("unable to persist aquired ip:%v", err)
@@ -184,11 +184,11 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 	prefix.Lock()
 	defer prefix.Unlock()
 
-	_, ok := prefix.ips[ip]
+	_, ok := prefix.IPs[ip]
 	if !ok {
 		return fmt.Errorf("unable to release ip:%s because it is not allocated in prefix:%s", ip, prefix.Cidr)
 	}
-	delete(prefix.ips, ip)
+	delete(prefix.IPs, ip)
 	_, err := i.storage.UpdatePrefix(prefix)
 	if err != nil {
 		return fmt.Errorf("unable to release ip %v:%v", ip, err)
@@ -242,8 +242,8 @@ func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
-		ips:                    make(map[string]IP),
-		availableChildPrefixes: make(map[string]bool),
+		IPs:                    make(map[string]IP),
+		AvailableChildPrefixes: make(map[string]bool),
 	}
 
 	broadcast, err := p.broadcast()
@@ -255,8 +255,8 @@ func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.ips[network.String()] = IP{IP: network}
-	p.ips[broadcast.IP.String()] = *broadcast
+	p.IPs[network.String()] = IP{IP: network}
+	p.IPs[broadcast.IP.String()] = *broadcast
 
 	return p, nil
 }
@@ -318,5 +318,5 @@ func (p *Prefix) AvailableIPs() int64 {
 
 // AcquiredIPs return the number of IPs acquired in this Prefix
 func (p *Prefix) AcquiredIPs() int {
-	return len(p.ips)
+	return len(p.IPs)
 }
