@@ -1,19 +1,8 @@
 package ipam
 
-import (
-	"sync"
-)
-
 // Ipamer can be used to do IPAM stuff.
 type Ipamer struct {
 	storage Storage
-}
-
-// Network is a collection of prefixes, not sharing a common prefix length.
-type Network struct {
-	sync.Mutex
-	ID       string
-	Prefixes []Prefix
 }
 
 // New returns a Ipamer with in memory storage for networks, prefixes and ips.

@@ -1,6 +1,16 @@
 package ipam
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
+
+// Network is a collection of prefixes, not sharing a common prefix length.
+type Network struct {
+	sync.Mutex
+	ID       string
+	Prefixes []Prefix
+}
 
 // NewNetwork creates and persists a Network with the given Prefixes.
 func (i *Ipamer) NewNetwork(prefixes ...Prefix) (*Network, error) {
