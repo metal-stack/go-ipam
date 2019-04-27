@@ -26,5 +26,3 @@ func New() *Ipamer {
 func NewWithStorage(storage Storage) *Ipamer {
 	return &Ipamer{storage: storage}
 }
-
-// FIXME locking
