@@ -11,6 +11,7 @@ import (
 type Prefix struct {
 	sync.Mutex
 	Cidr                   string          // The Cidr of this prefix
+	ParentCidr             string          // if this prefix is a child a pointer back
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
 	ChildPrefixLength      int             // the length of the child prefixes
 	IPs                    map[string]IP   // The ips contained in this prefix
@@ -93,6 +94,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 
 	i.storage.UpdatePrefix(prefix)
 	child, err = i.NewPrefix(child.Cidr)
+	child.ParentCidr = prefix.Cidr
 	if err != nil {
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
@@ -101,7 +103,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 
 // ReleaseChildPrefix will mark this child Prefix as available again.
 func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
-	parent := i.getParentPrefix(child)
+	parent := i.PrefixFrom(child.ParentCidr)
 
 	if parent == nil {
 		return fmt.Errorf("given prefix is no child prefix")
@@ -213,27 +215,6 @@ func (i *Ipamer) getPrefixOfIP(ip *IP) *Prefix {
 	return nil
 }
 
-func (i *Ipamer) getParentPrefix(prefix *Prefix) *Prefix {
-	prefixes, err := i.storage.ReadAllPrefixes()
-	if err != nil {
-		return nil
-	}
-	targetIpnet, err := prefix.IPNet()
-	if err != nil {
-		return nil
-	}
-	for _, p := range prefixes {
-		ipnet, err := p.IPNet()
-		if err != nil {
-			return nil
-		}
-		if ipnet.Contains(targetIpnet.IP) {
-			return p
-		}
-	}
-	return nil
-}
-
 // NewPrefix create a new Prefix from a string notation.
 func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	_, _, err := net.ParseCIDR(cidr)
@@ -319,4 +300,20 @@ func (p *Prefix) AvailableIPs() int64 {
 // AcquiredIPs return the number of IPs acquired in this Prefix
 func (p *Prefix) AcquiredIPs() int {
 	return len(p.IPs)
+}
+
+// AvailablePrefixes return the amount of possible prefixes of this prefix if this is a parent prefix
+func (p *Prefix) AvailablePrefixes() int {
+	return len(p.AvailableChildPrefixes)
+}
+
+// AcquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
+func (p *Prefix) AcquiredPrefixes() int {
+	var count int
+	for _, available := range p.AvailableChildPrefixes {
+		if !available {
+			count++
+		}
+	}
+	return count
 }

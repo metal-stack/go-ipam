@@ -68,7 +68,6 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				t.Errorf("Could not create prefix: %v", err)
 			}
 			for _, ipString := range tt.fields.existingIPs {
-				fmt.Printf("existing:%s\n", ipString)
 				i := net.ParseIP(ipString)
 				p.IPs[ipString] = IP{IP: i}
 			}
@@ -86,7 +85,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 	}
 }
 
-func TestIpamer_AcquireIPMulti(t *testing.T) {
+func TestIpamer_AcquireIPCounts(t *testing.T) {
 	ipam := New()
 
 	prefix, err := ipam.NewPrefix("192.168.0.0/24")
@@ -115,6 +114,44 @@ func TestIpamer_AcquireIPMulti(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, prefix.AvailableIPs(), int64(256))
 	require.Equal(t, prefix.AcquiredIPs(), 2)
+
+}
+
+func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
+	ipam := New()
+
+	prefix, err := ipam.NewPrefix("192.168.0.0/20")
+	require.Nil(t, err)
+	require.Equal(t, prefix.AvailablePrefixes(), 0)
+	require.Equal(t, prefix.AcquiredPrefixes(), 0)
+	c1, err := ipam.AcquireChildPrefix(prefix, 22)
+	require.Nil(t, err)
+	require.NotNil(t, c1)
+	require.Equal(t, prefix.AvailablePrefixes(), 4)
+	require.Equal(t, prefix.AcquiredPrefixes(), 1)
+	c2, err := ipam.AcquireChildPrefix(prefix, 22)
+	require.Nil(t, err)
+	require.NotNil(t, c2)
+	require.Equal(t, prefix.AvailablePrefixes(), 4)
+	require.Equal(t, prefix.AcquiredPrefixes(), 2)
+	require.True(t, strings.HasSuffix(c1.Cidr, "/22"))
+	require.True(t, strings.HasSuffix(c2.Cidr, "/22"))
+	require.True(t, strings.HasPrefix(c1.Cidr, "192.168."))
+	require.True(t, strings.HasPrefix(c2.Cidr, "192.168."))
+
+	err = ipam.ReleaseChildPrefix(c1)
+	require.Nil(t, err)
+	require.Equal(t, 4, prefix.AvailablePrefixes())
+	require.Equal(t, 1, prefix.AcquiredPrefixes())
+
+	err = ipam.ReleaseChildPrefix(c2)
+	fmt.Printf("cp:%v\n", prefix.AvailableChildPrefixes)
+	require.Nil(t, err)
+	require.Equal(t, 4, prefix.AvailablePrefixes())
+	require.Equal(t, 0, prefix.AcquiredPrefixes())
+
+	err = ipam.ReleaseChildPrefix(c1)
+	require.Nil(t, err)
 
 }
 
