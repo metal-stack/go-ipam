@@ -7,9 +7,9 @@ import (
 
 // Network is a collection of prefixes, not sharing a common prefix length.
 type Network struct {
-	sync.Mutex
-	ID       string
-	Prefixes []Prefix
+	sync.Mutex `json:"-"`
+	ID         string
+	Prefixes   []Prefix
 }
 
 // NewNetwork creates and persists a Network with the given Prefixes.

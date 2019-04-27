@@ -9,7 +9,7 @@ import (
 
 // Prefix is a expression of a ip with length and forms a classless network.
 type Prefix struct {
-	sync.Mutex
+	sync.Mutex             `json:"-"`
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child a pointer back
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
