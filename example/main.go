@@ -27,13 +27,19 @@ func main() {
 
 	log.Printf("network:%v created:%v", n, storedNetworks)
 
-	p, err := i.NewPrefix("10.0.0.0/14")
+	_, err = i.NewPrefix("10.0.0.0/16")
 	if err != nil {
 		log.Fatal(err)
 	}
+	p := i.PrefixFrom("10.0.0.0/16")
+	c, err := i.AcquireChildPrefix(p, 22)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("child:%s\n", c.Cidr)
 
-	for index := 0; index < 6; index++ {
-		c, err := i.AcquireChildPrefix(p, 25)
+	for index := 0; index < 60; index++ {
+		c, err := i.AcquireChildPrefix(p, 22)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -52,6 +58,9 @@ func main() {
 		log.Printf("child prefix created:%v", c.Cidr)
 
 	}
+
+	p0 := i.PrefixFrom("10.0.2.0/25")
+	log.Printf("found prefix:%v", p0)
 
 	p1, _ := i.NewPrefix("1.2.1.0/24")
 	p2, _ := i.NewPrefix("1.2.2.0/24")
