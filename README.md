@@ -1,6 +1,6 @@
 # go-ipam
 
-[![Build Status](https://travis-ci.org/metal-pod/gi-ipam.svg?branch=master)](https://travis-ci.org/metal-pod/gi-ipam)
+[![Build Status](https://travis-ci.org/metal-pod/go-ipam.svg?branch=master)](https://travis-ci.org/metal-pod/go-ipam)
 
 go-ipam is a module to handle IPAddress management. It can operate on Networks, Prefixes and IPs.
 
