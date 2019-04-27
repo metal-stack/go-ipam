@@ -52,19 +52,18 @@ func (i *Ipamer) ReleaseIP(ip IP) error {
 // ReleaseIPFromPrefix will release the given IP for later usage.
 func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 	if prefix == nil {
-		return fmt.Errorf("given ip is not member of a prefix")
+		return fmt.Errorf("prefix is nil")
 	}
 	prefix.Lock()
 	defer prefix.Unlock()
 
-	oldIP, ok := prefix.IPs[ip]
+	_, ok := prefix.IPs[ip]
 	if !ok {
 		return fmt.Errorf("unable to release ip:%s because it is not allocated in prefix:%s", ip, prefix.Cidr)
 	}
 	delete(prefix.IPs, ip)
 	_, err := i.storage.UpdatePrefix(prefix)
 	if err != nil {
-		prefix.IPs[ip] = oldIP
 		return fmt.Errorf("unable to release ip %v:%v", ip, err)
 	}
 	return nil
