@@ -95,16 +95,16 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   *Prefix
+		want   string
 	}{
 		{
-			name: "Acquire next IP regularly",
+			name: "Acquire next Prefix regularly",
 			fields: fields{
 				storage: memory{},
-				prefix:  "192.168.1.0/20",
-				length:  22,
+				prefix:  "192.168.0.0/31",
+				length:  32,
 			},
-			want: &Prefix{},
+			want: "192.168.0.0/32",
 		},
 	}
 	for _, tt := range tests {
@@ -120,7 +120,7 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(got.Cidr, tt.want) {
 				t.Errorf("Ipamer.AcquireChildPrefix() = %v, want %v", got, tt.want)
 			}
 		})
