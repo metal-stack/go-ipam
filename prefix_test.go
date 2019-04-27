@@ -1,7 +1,3 @@
-// https://networkengineering.stackexchange.com/questions/7106/how-do-you-calculate-the-prefix-network-subnet-and-host-numbers
-//
-// http://www.oznetnerd.com/subnetting-made-easy-part-1/
-
 package ipam
 
 import (
@@ -9,6 +5,10 @@ import (
 	"net"
 	"reflect"
 	"testing"
+
+	"strings"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestIpamer_AcquireIP(t *testing.T) {
@@ -70,7 +70,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			for _, ipString := range tt.fields.existingIPs {
 				fmt.Printf("existing:%s\n", ipString)
 				i := net.ParseIP(ipString)
-				p.IPs[ipString] = IP{IP: i}
+				p.ips[ipString] = IP{IP: i}
 			}
 			got, _ := i.AcquireIP(*p)
 			if tt.want == nil || got == nil {
@@ -84,6 +84,38 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIpamer_AcquireIPMulti(t *testing.T) {
+	ipam := New()
+
+	prefix, err := ipam.NewPrefix("192.168.0.0/24")
+	require.Nil(t, err)
+	require.Equal(t, prefix.AvailableIPs(), int64(256))
+	// network an broadcast are blocked
+	require.Equal(t, prefix.AcquiredIPs(), 2)
+	ip1, err := ipam.AcquireIP(*prefix)
+	require.Nil(t, err)
+	require.NotNil(t, ip1)
+	require.Equal(t, prefix.AvailableIPs(), int64(256))
+	require.Equal(t, prefix.AcquiredIPs(), 3)
+	ip2, err := ipam.AcquireIP(*prefix)
+	require.NotEqual(t, ip1, ip2)
+	require.Equal(t, prefix.AvailableIPs(), int64(256))
+	require.Equal(t, prefix.AcquiredIPs(), 4)
+	require.True(t, strings.HasPrefix(ip1.IP.String(), "192.168.0"))
+	require.True(t, strings.HasPrefix(ip2.IP.String(), "192.168.0"))
+
+	err = ipam.ReleaseIP(*ip1)
+	require.Nil(t, err)
+	require.Equal(t, prefix.AvailableIPs(), int64(256))
+	require.Equal(t, prefix.AcquiredIPs(), 3)
+
+	err = ipam.ReleaseIP(*ip2)
+	require.Nil(t, err)
+	require.Equal(t, prefix.AvailableIPs(), int64(256))
+	require.Equal(t, prefix.AcquiredIPs(), 2)
+
 }
 
 func TestIpamer_AcquireChildPrefix(t *testing.T) {
@@ -154,7 +186,7 @@ func TestPrefix_AvailableIPs(t *testing.T) {
 			want: 4,
 		},
 		// {
-		// 	name: "smalle IPv6",
+		// 	name: "small IPv6",
 		// 	Cidr: "2001:16b8:2d6a:6900:48d2:14a3:80ae:e797/64",
 		// 	want: 4,
 		// },
