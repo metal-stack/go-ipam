@@ -12,6 +12,10 @@ type Network struct {
 	Prefixes   []string
 }
 
+func (n *Network) String() string {
+	return fmt.Sprintf("%s:%v", n.ID, n.Prefixes)
+}
+
 // NewNetwork creates and persists a Network with the given Prefixes.
 func (i *Ipamer) NewNetwork(prefixes ...*Prefix) (*Network, error) {
 	n, p, err := i.prefixesOverlapping(prefixes...)

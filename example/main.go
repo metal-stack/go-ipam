@@ -15,7 +15,7 @@ func main() {
 
 	i := ipam.NewWithStorage(pgStorage)
 
-	n, err := i.NewNetwork()
+	_, err = i.NewNetwork()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,8 +24,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Printf("network:%v created:%v", n, storedNetworks)
+	for _, n := range storedNetworks {
+		log.Printf("network:%v created\n", n)
+	}
 
 	_, err = i.NewPrefix("10.0.0.0/16")
 	if err != nil {
