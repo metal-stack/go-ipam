@@ -44,7 +44,7 @@ func main() {
 			log.Fatal(err)
 		}
 		// for {
-		ip, err := i.AcquireIP(*c)
+		ip, err := i.AcquireIP(c)
 		if err != nil {
 			log.Fatal(err)
 		}

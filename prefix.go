@@ -150,7 +150,7 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 }
 
 // AcquireIP will return the next unused IP from this Prefix.
-func (i *Ipamer) AcquireIP(prefix Prefix) (*IP, error) {
+func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 	prefix.Lock()
 	defer prefix.Unlock()
 	var acquired *IP
@@ -170,7 +170,7 @@ func (i *Ipamer) AcquireIP(prefix Prefix) (*IP, error) {
 				ParentPrefix: prefix.Cidr,
 			}
 			prefix.IPs[ip.String()] = *acquired
-			_, err := i.storage.UpdatePrefix(&prefix)
+			_, err := i.storage.UpdatePrefix(prefix)
 			if err != nil {
 				return nil, fmt.Errorf("unable to persist aquired ip:%v", err)
 			}
@@ -181,7 +181,7 @@ func (i *Ipamer) AcquireIP(prefix Prefix) (*IP, error) {
 }
 
 // ReleaseIP will release the given IP for later usage.
-func (i *Ipamer) ReleaseIP(ip IP) error {
+func (i *Ipamer) ReleaseIP(ip *IP) error {
 	prefix := i.PrefixFrom(ip.ParentPrefix)
 	return i.ReleaseIPFromPrefix(prefix, ip.IP.String())
 }
