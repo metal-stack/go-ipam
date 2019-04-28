@@ -271,6 +271,13 @@ func (p *Prefix) String() string {
 	return fmt.Sprintf("%s", p.Cidr)
 }
 
+func (u *Usage) String() string {
+	if u.AvailablePrefixes == int64(0) {
+		return fmt.Sprintf("ip:%d/%d", u.AvailableIPs, u.AcquiredIPs)
+	}
+	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.AvailableIPs, u.AcquiredIPs, u.AvailablePrefixes, u.AcquiredPrefixes)
+}
+
 // IPNet return the net.IPNet part of the Prefix
 func (p *Prefix) IPNet() (*net.IPNet, error) {
 	_, ipnet, err := net.ParseCIDR(p.Cidr)
