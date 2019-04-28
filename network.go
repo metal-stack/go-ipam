@@ -9,7 +9,7 @@ import (
 type Network struct {
 	sync.Mutex `json:"-"`
 	ID         string
-	Prefixes   []*Prefix
+	Prefixes   []string
 }
 
 // NewNetwork creates and persists a Network with the given Prefixes.
@@ -21,8 +21,12 @@ func (i *Ipamer) NewNetwork(prefixes ...*Prefix) (*Network, error) {
 	if n != nil || p != nil {
 		return nil, fmt.Errorf("prefix %s in network %s overlap", p.Cidr, n.ID)
 	}
+	var prefixCidrs []string
+	for _, prefix := range prefixes {
+		prefixCidrs = append(prefixCidrs, prefix.Cidr)
+	}
 	network := &Network{
-		Prefixes: prefixes,
+		Prefixes: prefixCidrs,
 	}
 	nw, err := i.storage.CreateNetwork(network)
 	return nw, err
@@ -35,7 +39,8 @@ func (i *Ipamer) prefixesOverlapping(prefixes ...*Prefix) (*Network, *Prefix, er
 	}
 	for _, network := range networks {
 		for _, p := range network.Prefixes {
-			pinet, err := p.IPNet()
+			networkPrefix := i.PrefixFrom(p)
+			pinet, err := networkPrefix.IPNet()
 			if err != nil {
 				return nil, nil, err
 			}
@@ -70,7 +75,7 @@ func (i *Ipamer) AddPrefix(network *Network, prefix *Prefix) (*Network, error) {
 	if p != nil {
 		return nil, fmt.Errorf("prefix: %v is not stored", prefix)
 	}
-	nw.Prefixes = append(nw.Prefixes, p)
+	nw.Prefixes = append(nw.Prefixes, p.Cidr)
 	newNetwork, err := i.storage.UpdateNetwork(nw)
 	if err != nil {
 		return nil, err
