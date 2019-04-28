@@ -8,8 +8,8 @@ import (
 
 // IP is a single ipaddress.
 type IP struct {
-	IP    net.IP
-	IPNet *net.IPNet
+	IP           net.IP
+	ParentPrefix string
 }
 
 func (i *IP) or(ip IP) IP {

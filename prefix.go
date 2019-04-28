@@ -166,8 +166,8 @@ func (i *Ipamer) AcquireIP(prefix Prefix) (*IP, error) {
 		_, ok := prefix.IPs[ip.String()]
 		if !ok {
 			acquired = &IP{
-				IP:    ip,
-				IPNet: ipnet,
+				IP:           ip,
+				ParentPrefix: prefix.Cidr,
 			}
 			prefix.IPs[ip.String()] = *acquired
 			_, err := i.storage.UpdatePrefix(&prefix)
@@ -182,7 +182,7 @@ func (i *Ipamer) AcquireIP(prefix Prefix) (*IP, error) {
 
 // ReleaseIP will release the given IP for later usage.
 func (i *Ipamer) ReleaseIP(ip IP) error {
-	prefix := i.getPrefixOfIP(&ip)
+	prefix := i.PrefixFrom(ip.ParentPrefix)
 	return i.ReleaseIPFromPrefix(prefix, ip.IP.String())
 }
 
@@ -202,23 +202,6 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 	_, err := i.storage.UpdatePrefix(prefix)
 	if err != nil {
 		return fmt.Errorf("unable to release ip %v:%v", ip, err)
-	}
-	return nil
-}
-
-func (i *Ipamer) getPrefixOfIP(ip *IP) *Prefix {
-	prefixes, err := i.storage.ReadAllPrefixes()
-	if err != nil {
-		return nil
-	}
-	for _, p := range prefixes {
-		ipnet, err := p.IPNet()
-		if err != nil {
-			return nil
-		}
-		if ipnet.Contains(ip.IP) && ipnet.Mask.String() == ip.IPNet.Mask.String() {
-			return p
-		}
 	}
 	return nil
 }
