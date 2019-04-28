@@ -17,6 +17,14 @@ type Prefix struct {
 	IPs                    map[string]IP   // The ips contained in this prefix
 }
 
+// Usage of IPs and child Prefixes of a Prefix
+type Usage struct {
+	AvailableIPs      int64
+	AcquiredIPs       int64
+	AvailablePrefixes int64
+	AcquiredPrefixes  int64
+}
+
 // NewPrefix create a new Prefix from a string notation.
 func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	p, err := i.newPrefix(cidr)
@@ -279,7 +287,7 @@ func (p *Prefix) Network() (net.IP, error) {
 }
 
 // AvailableIPs return the number of IPs available in this Prefix
-func (p *Prefix) AvailableIPs() int64 {
+func (p *Prefix) availableIPs() int64 {
 	_, ipnet, err := net.ParseCIDR(p.Cidr)
 	if err != nil {
 		return 0
@@ -298,22 +306,33 @@ func (p *Prefix) AvailableIPs() int64 {
 }
 
 // AcquiredIPs return the number of IPs acquired in this Prefix
-func (p *Prefix) AcquiredIPs() int {
-	return len(p.IPs)
+func (p *Prefix) acquiredIPs() int64 {
+	return int64(len(p.IPs))
 }
 
 // AvailablePrefixes return the amount of possible prefixes of this prefix if this is a parent prefix
-func (p *Prefix) AvailablePrefixes() int {
-	return len(p.AvailableChildPrefixes)
+func (p *Prefix) availablePrefixes() int64 {
+	return int64(len(p.AvailableChildPrefixes))
 }
 
 // AcquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
-func (p *Prefix) AcquiredPrefixes() int {
-	var count int
+func (p *Prefix) acquiredPrefixes() int64 {
+	var count int64
 	for _, available := range p.AvailableChildPrefixes {
 		if !available {
 			count++
 		}
 	}
 	return count
+}
+
+// Usage report Prefix usage.
+func (p *Prefix) Usage() Usage {
+	return Usage{
+		AvailableIPs:      p.availableIPs(),
+		AcquiredIPs:       p.acquiredIPs(),
+		AvailablePrefixes: p.availablePrefixes(),
+		AcquiredPrefixes:  p.acquiredPrefixes(),
+	}
+
 }
