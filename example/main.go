@@ -59,7 +59,7 @@ func main() {
 
 	}
 
-	p0 := i.PrefixFrom("10.0.2.0/25")
+	p0 := i.PrefixFrom("10.0.2.0/22")
 	log.Printf("found prefix:%v", p0)
 
 	p1, _ := i.NewPrefix("1.2.1.0/24")
@@ -68,7 +68,7 @@ func main() {
 	// p4, _ := i.NewPrefix("1.2.4.0/24")
 	// p5, _ := i.NewPrefix("1.2.5.0/24")
 	p6, _ := i.NewPrefix("1.2.0.0/22")
-	_, err = i.NewNetwork(*p1, *p2, *p3)
+	_, err = i.NewNetwork(p1, p2, p3)
 	if err != nil {
 		log.Fatal(err)
 	}
