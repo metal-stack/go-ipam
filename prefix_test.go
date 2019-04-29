@@ -118,17 +118,29 @@ func TestIpamer_AcquireIPCounts(t *testing.T) {
 func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	ipam := New()
 
+	allPrefixes, err := ipam.storage.ReadAllPrefixes()
+	require.Nil(t, err)
+	require.Equal(t, 0, len(allPrefixes))
+
 	prefix, err := ipam.NewPrefix("192.168.0.0/20")
 	require.Nil(t, err)
 	require.Equal(t, prefix.availablePrefixes(), uint64(0))
 	require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
 	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
+	allPrefixes, err = ipam.storage.ReadAllPrefixes()
+	require.Nil(t, err)
+	require.Equal(t, 1, len(allPrefixes))
+
 	c1, err := ipam.AcquireChildPrefix(prefix, 22)
 	require.Nil(t, err)
 	require.NotNil(t, c1)
 	require.Equal(t, prefix.availablePrefixes(), uint64(4))
 	require.Equal(t, prefix.acquiredPrefixes(), uint64(1))
 	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(1))
+	allPrefixes, err = ipam.storage.ReadAllPrefixes()
+	require.Nil(t, err)
+	require.Equal(t, 2, len(allPrefixes))
+
 	c2, err := ipam.AcquireChildPrefix(prefix, 22)
 	require.Nil(t, err)
 	require.NotNil(t, c2)
@@ -139,20 +151,47 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	require.True(t, strings.HasSuffix(c2.Cidr, "/22"))
 	require.True(t, strings.HasPrefix(c1.Cidr, "192.168."))
 	require.True(t, strings.HasPrefix(c2.Cidr, "192.168."))
+	allPrefixes, err = ipam.storage.ReadAllPrefixes()
+	require.Nil(t, err)
+	require.Equal(t, 3, len(allPrefixes))
 
 	err = ipam.ReleaseChildPrefix(c1)
 	require.Nil(t, err)
 	require.Equal(t, uint64(4), prefix.availablePrefixes())
 	require.Equal(t, uint64(1), prefix.acquiredPrefixes())
+	allPrefixes, err = ipam.storage.ReadAllPrefixes()
+	require.Nil(t, err)
+	require.Equal(t, 2, len(allPrefixes))
 
 	err = ipam.ReleaseChildPrefix(c2)
 	require.Nil(t, err)
 	require.Equal(t, uint64(4), prefix.availablePrefixes())
 	require.Equal(t, uint64(0), prefix.acquiredPrefixes())
 	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
+	allPrefixes, err = ipam.storage.ReadAllPrefixes()
+	require.Nil(t, err)
+	require.Equal(t, 1, len(allPrefixes))
 
 	err = ipam.ReleaseChildPrefix(c1)
 	require.Nil(t, err)
+
+	c3, err := ipam.AcquireChildPrefix(prefix, 22)
+	require.Nil(t, err)
+	require.NotNil(t, c2)
+
+	ip1, err := ipam.AcquireIP(c3)
+	require.Nil(t, err)
+	require.NotNil(t, ip1)
+	err = ipam.ReleaseChildPrefix(c3)
+	require.Errorf(t, err, "prefix %s has ips, deletion not possible", c3.Cidr)
+
+	err = ipam.ReleaseIP(ip1)
+	require.Nil(t, err)
+	err = ipam.ReleaseChildPrefix(c3)
+	require.Nil(t, err)
+	allPrefixes, err = ipam.storage.ReadAllPrefixes()
+	require.Nil(t, err)
+	require.Equal(t, 1, len(allPrefixes))
 
 }
 

@@ -44,6 +44,9 @@ func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error) {
 	prefix.Lock()
 	defer prefix.Unlock()
+	if len(prefix.IPs) > 2 {
+		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
+	}
 	ipnet, err := prefix.IPNet()
 	if err != nil {
 		return nil, err
@@ -116,11 +119,19 @@ func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
 	if parent == nil {
 		return fmt.Errorf("given prefix is no child prefix")
 	}
+	if len(child.IPs) > 2 {
+		return fmt.Errorf("prefix %s has ips, deletion not possible", child.Cidr)
+	}
+
 	parent.Lock()
 	defer parent.Unlock()
 
 	parent.AvailableChildPrefixes[child.Cidr] = true
-	_, err := i.storage.UpdatePrefix(parent)
+	_, err := i.storage.DeletePrefix(child)
+	if err != nil {
+		return fmt.Errorf("unable to release prefix %v:%v", child, err)
+	}
+	_, err = i.storage.UpdatePrefix(parent)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
@@ -140,6 +151,9 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 	prefix.Lock()
 	defer prefix.Unlock()
+	if prefix.ChildPrefixLength > 0 {
+		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
+	}
 	var acquired *IP
 	ipnet, err := prefix.IPNet()
 	if err != nil {
