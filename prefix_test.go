@@ -24,7 +24,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 		{
 			name: "Acquire next IP regularly",
 			fields: fields{
-				storage:     memory{},
+				storage:     NewMemory(),
 				prefixCIDR:  "192.168.1.0/24",
 				existingIPs: []string{},
 			},
@@ -33,7 +33,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 		{
 			name: "Want next IP, network already occupied a little",
 			fields: fields{
-				storage:     memory{},
+				storage:     NewMemory(),
 				prefixCIDR:  "192.168.2.0/30",
 				existingIPs: []string{"192.168.2.1"},
 			},
@@ -42,7 +42,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 		{
 			name: "Want next IP, but network is full",
 			fields: fields{
-				storage:     memory{},
+				storage:     NewMemory(),
 				prefixCIDR:  "192.168.3.0/30",
 				existingIPs: []string{"192.168.3.1", "192.168.3.2"},
 			},
@@ -51,7 +51,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 		{
 			name: "Want next IP, but network is full",
 			fields: fields{
-				storage:    memory{},
+				storage:    NewMemory(),
 				prefixCIDR: "192.168.4.0/32",
 			},
 			want: nil,
@@ -171,7 +171,7 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 		{
 			name: "Acquire next Prefix regularly",
 			fields: fields{
-				storage: memory{},
+				storage: NewMemory(),
 				prefix:  "192.168.0.0/31",
 				length:  32,
 			},

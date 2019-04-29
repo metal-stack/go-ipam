@@ -7,7 +7,8 @@ type Ipamer struct {
 
 // New returns a Ipamer with in memory storage for networks, prefixes and ips.
 func New() *Ipamer {
-	return &Ipamer{storage: memory{}}
+	storage := NewMemory()
+	return &Ipamer{storage: storage}
 }
 
 // NewWithStorage allows you to create a Ipamer instance with your Storage implementation.
