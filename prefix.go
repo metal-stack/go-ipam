@@ -19,10 +19,10 @@ type Prefix struct {
 
 // Usage of IPs and child Prefixes of a Prefix
 type Usage struct {
-	AvailableIPs      int64
-	AcquiredIPs       int64
-	AvailablePrefixes int64
-	AcquiredPrefixes  int64
+	AvailableIPs      uint64
+	AcquiredIPs       uint64
+	AvailablePrefixes uint64
+	AcquiredPrefixes  uint64
 }
 
 // NewPrefix create a new Prefix from a string notation.
@@ -242,7 +242,7 @@ func (p *Prefix) String() string {
 }
 
 func (u *Usage) String() string {
-	if u.AvailablePrefixes == int64(0) {
+	if u.AvailablePrefixes == uint64(0) {
 		return fmt.Sprintf("ip:%d/%d", u.AvailableIPs, u.AcquiredIPs)
 	}
 	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.AvailableIPs, u.AcquiredIPs, u.AvailablePrefixes, u.AcquiredPrefixes)
@@ -264,7 +264,7 @@ func (p *Prefix) Network() (net.IP, error) {
 }
 
 // AvailableIPs return the number of IPs available in this Prefix
-func (p *Prefix) availableIPs() int64 {
+func (p *Prefix) availableIPs() uint64 {
 	_, ipnet, err := net.ParseCIDR(p.Cidr)
 	if err != nil {
 		return 0
@@ -278,23 +278,23 @@ func (p *Prefix) availableIPs() int64 {
 
 	ones, _ := ipnet.Mask.Size()
 	// FIXME use big.Int
-	count := int64(math.Pow(float64(2), float64(bits-ones)))
+	count := uint64(math.Pow(float64(2), float64(bits-ones)))
 	return count
 }
 
 // AcquiredIPs return the number of IPs acquired in this Prefix
-func (p *Prefix) acquiredIPs() int64 {
-	return int64(len(p.IPs))
+func (p *Prefix) acquiredIPs() uint64 {
+	return uint64(len(p.IPs))
 }
 
 // AvailablePrefixes return the amount of possible prefixes of this prefix if this is a parent prefix
-func (p *Prefix) availablePrefixes() int64 {
-	return int64(len(p.AvailableChildPrefixes))
+func (p *Prefix) availablePrefixes() uint64 {
+	return uint64(len(p.AvailableChildPrefixes))
 }
 
 // AcquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
-func (p *Prefix) acquiredPrefixes() int64 {
-	var count int64
+func (p *Prefix) acquiredPrefixes() uint64 {
+	var count uint64
 	for _, available := range p.AvailableChildPrefixes {
 		if !available {
 			count++

@@ -89,30 +89,30 @@ func TestIpamer_AcquireIPCounts(t *testing.T) {
 
 	prefix, err := ipam.NewPrefix("192.168.0.0/24")
 	require.Nil(t, err)
-	require.Equal(t, prefix.availableIPs(), int64(256))
+	require.Equal(t, prefix.availableIPs(), uint64(256))
 	// network an broadcast are blocked
-	require.Equal(t, prefix.acquiredIPs(), int64(2))
+	require.Equal(t, prefix.acquiredIPs(), uint64(2))
 	ip1, err := ipam.AcquireIP(prefix)
 	require.Nil(t, err)
 	require.NotNil(t, ip1)
-	require.Equal(t, prefix.availableIPs(), int64(256))
-	require.Equal(t, prefix.acquiredIPs(), int64(3))
+	require.Equal(t, prefix.availableIPs(), uint64(256))
+	require.Equal(t, prefix.acquiredIPs(), uint64(3))
 	ip2, err := ipam.AcquireIP(prefix)
 	require.NotEqual(t, ip1, ip2)
-	require.Equal(t, prefix.availableIPs(), int64(256))
-	require.Equal(t, prefix.acquiredIPs(), int64(4))
+	require.Equal(t, prefix.availableIPs(), uint64(256))
+	require.Equal(t, prefix.acquiredIPs(), uint64(4))
 	require.True(t, strings.HasPrefix(ip1.IP.String(), "192.168.0"))
 	require.True(t, strings.HasPrefix(ip2.IP.String(), "192.168.0"))
 
 	err = ipam.ReleaseIP(ip1)
 	require.Nil(t, err)
-	require.Equal(t, prefix.availableIPs(), int64(256))
-	require.Equal(t, prefix.acquiredIPs(), int64(3))
+	require.Equal(t, prefix.availableIPs(), uint64(256))
+	require.Equal(t, prefix.acquiredIPs(), uint64(3))
 
 	err = ipam.ReleaseIP(ip2)
 	require.Nil(t, err)
-	require.Equal(t, prefix.availableIPs(), int64(256))
-	require.Equal(t, prefix.acquiredIPs(), int64(2))
+	require.Equal(t, prefix.availableIPs(), uint64(256))
+	require.Equal(t, prefix.acquiredIPs(), uint64(2))
 
 }
 
@@ -121,21 +121,21 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 
 	prefix, err := ipam.NewPrefix("192.168.0.0/20")
 	require.Nil(t, err)
-	require.Equal(t, prefix.availablePrefixes(), int64(0))
-	require.Equal(t, prefix.acquiredPrefixes(), int64(0))
-	require.Equal(t, prefix.Usage().AcquiredPrefixes, int64(0))
+	require.Equal(t, prefix.availablePrefixes(), uint64(0))
+	require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
+	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
 	c1, err := ipam.AcquireChildPrefix(prefix, 22)
 	require.Nil(t, err)
 	require.NotNil(t, c1)
-	require.Equal(t, prefix.availablePrefixes(), int64(4))
-	require.Equal(t, prefix.acquiredPrefixes(), int64(1))
-	require.Equal(t, prefix.Usage().AcquiredPrefixes, int64(1))
+	require.Equal(t, prefix.availablePrefixes(), uint64(4))
+	require.Equal(t, prefix.acquiredPrefixes(), uint64(1))
+	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(1))
 	c2, err := ipam.AcquireChildPrefix(prefix, 22)
 	require.Nil(t, err)
 	require.NotNil(t, c2)
-	require.Equal(t, prefix.availablePrefixes(), int64(4))
-	require.Equal(t, prefix.acquiredPrefixes(), int64(2))
-	require.Equal(t, prefix.Usage().AcquiredPrefixes, int64(2))
+	require.Equal(t, prefix.availablePrefixes(), uint64(4))
+	require.Equal(t, prefix.acquiredPrefixes(), uint64(2))
+	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(2))
 	require.True(t, strings.HasSuffix(c1.Cidr, "/22"))
 	require.True(t, strings.HasSuffix(c2.Cidr, "/22"))
 	require.True(t, strings.HasPrefix(c1.Cidr, "192.168."))
@@ -143,14 +143,14 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 
 	err = ipam.ReleaseChildPrefix(c1)
 	require.Nil(t, err)
-	require.Equal(t, int64(4), prefix.availablePrefixes())
-	require.Equal(t, int64(1), prefix.acquiredPrefixes())
+	require.Equal(t, uint64(4), prefix.availablePrefixes())
+	require.Equal(t, uint64(1), prefix.acquiredPrefixes())
 
 	err = ipam.ReleaseChildPrefix(c2)
 	require.Nil(t, err)
-	require.Equal(t, int64(4), prefix.availablePrefixes())
-	require.Equal(t, int64(0), prefix.acquiredPrefixes())
-	require.Equal(t, prefix.Usage().AcquiredPrefixes, int64(0))
+	require.Equal(t, uint64(4), prefix.availablePrefixes())
+	require.Equal(t, uint64(0), prefix.acquiredPrefixes())
+	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
 
 	err = ipam.ReleaseChildPrefix(c1)
 	require.Nil(t, err)
@@ -202,7 +202,7 @@ func TestPrefix_AvailableIPs(t *testing.T) {
 	tests := []struct {
 		name string
 		Cidr string
-		want int64
+		want uint64
 	}{
 		{
 			name: "large",
