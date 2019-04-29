@@ -193,6 +193,36 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 	return nil
 }
 
+// PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
+// with one of existingPrefixes
+func (i *Ipamer) PrefixesOverlapping(exitingPrefixes []string, newPrefixes []string) error {
+	for _, p := range exitingPrefixes {
+		existingPrefix := i.PrefixFrom(p)
+		if existingPrefix == nil {
+			return fmt.Errorf("unknown prefix %s", p)
+		}
+		existingPrefixNet, err := existingPrefix.IPNet()
+		if err != nil {
+			return err
+		}
+		for _, prefix := range newPrefixes {
+			newPrefix := i.PrefixFrom(prefix)
+			if existingPrefix == nil {
+				return fmt.Errorf("unknown prefix %s", prefix)
+			}
+			newPrefixNet, err := newPrefix.IPNet()
+			if err != nil {
+				return err
+			}
+			if existingPrefixNet.Contains(newPrefixNet.IP) || newPrefixNet.Contains(existingPrefixNet.IP) {
+				return fmt.Errorf("%s overlaps %s", newPrefix.Cidr, existingPrefix.Cidr)
+			}
+		}
+	}
+
+	return nil
+}
+
 // NewPrefix create a new Prefix from a string notation.
 func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	_, _, err := net.ParseCIDR(cidr)

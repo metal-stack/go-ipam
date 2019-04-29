@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// FIXME remove
+
 // Network is a collection of prefixes, not sharing a common prefix length.
 type Network struct {
 	sync.Mutex `json:"-"`
@@ -36,6 +38,7 @@ func (i *Ipamer) NewNetwork(prefixes ...*Prefix) (*Network, error) {
 	return nw, err
 }
 
+// FIXME remove
 func (i *Ipamer) prefixesOverlapping(prefixes ...*Prefix) (*Network, *Prefix, error) {
 	networks, err := i.Networks()
 	if err != nil {

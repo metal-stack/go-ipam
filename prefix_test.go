@@ -3,9 +3,8 @@ package ipam
 import (
 	"net"
 	"reflect"
-	"testing"
-
 	"strings"
+	"testing"
 
 	"github.com/stretchr/testify/require"
 )
@@ -237,6 +236,70 @@ func TestPrefix_AvailableIPs(t *testing.T) {
 			}
 			if got := p.availableIPs(); got != tt.want {
 				t.Errorf("Prefix.AvailableIPs() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIpamer_PrefixesOverlapping(t *testing.T) {
+	tests := []struct {
+		name            string
+		storage         Storage
+		exitingPrefixes []string
+		newPrefixes     []string
+		wantErr         bool
+		errorString     string
+	}{
+		{
+			name:            "simple",
+			storage:         NewMemory(),
+			exitingPrefixes: []string{"192.168.0.0/24"},
+			newPrefixes:     []string{"192.168.1.0/24"},
+			wantErr:         false,
+			errorString:     "",
+		},
+		{
+			name:            "one overlap",
+			storage:         NewMemory(),
+			exitingPrefixes: []string{"192.168.0.0/24", "192.168.1.0/24"},
+			newPrefixes:     []string{"192.168.1.0/24"},
+			wantErr:         true,
+			errorString:     "192.168.1.0/24 overlaps 192.168.1.0/24",
+		},
+		{
+			name:            "one overlap",
+			storage:         NewMemory(),
+			exitingPrefixes: []string{"192.168.0.0/24", "192.168.1.0/24"},
+			newPrefixes:     []string{"192.168.0.0/23"},
+			wantErr:         true,
+			errorString:     "192.168.0.0/23 overlaps 192.168.0.0/24",
+		},
+		{
+			name:            "one overlap",
+			storage:         NewMemory(),
+			exitingPrefixes: []string{"192.168.0.0/23", "192.168.2.0/23"},
+			newPrefixes:     []string{"192.168.3.0/24"},
+			wantErr:         true,
+			errorString:     "192.168.3.0/24 overlaps 192.168.2.0/23",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			i := &Ipamer{
+				storage: tt.storage,
+			}
+			for _, ep := range tt.exitingPrefixes {
+				i.NewPrefix(ep)
+			}
+			for _, np := range tt.newPrefixes {
+				i.NewPrefix(np)
+			}
+			err := i.PrefixesOverlapping(tt.exitingPrefixes, tt.newPrefixes)
+			if tt.wantErr && err.Error() != tt.errorString {
+				t.Errorf("Ipamer.PrefixesOverlapping() error = %v, wantErr %v, errorString = %v", err, tt.wantErr, tt.errorString)
+			}
+			if !tt.wantErr && err != nil {
+				t.Errorf("Ipamer.PrefixesOverlapping() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
