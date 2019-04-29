@@ -129,24 +129,11 @@ func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
 
 // PrefixFrom will return a known Prefix
 func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
-	prefixes, err := i.storage.ReadAllPrefixes()
+	prefix, err := i.storage.ReadPrefix(cidr)
 	if err != nil {
 		return nil
 	}
-	_, targetIpnet, err := net.ParseCIDR(cidr)
-	if err != nil {
-		return nil
-	}
-	for _, p := range prefixes {
-		ipnet, err := p.IPNet()
-		if err != nil {
-			return nil
-		}
-		if ipnet.IP.String() == targetIpnet.IP.String() && ipnet.Mask.String() == targetIpnet.Mask.String() {
-			return p
-		}
-	}
-	return nil
+	return prefix
 }
 
 // AcquireIP will return the next unused IP from this Prefix.
