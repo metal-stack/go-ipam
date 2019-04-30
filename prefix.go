@@ -39,6 +39,23 @@ func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	return newPrefix, nil
 }
 
+// DeletePrefix delete a Prefix from a string notation.
+func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
+	p := i.PrefixFrom(cidr)
+	if p == nil {
+		return nil, fmt.Errorf("delete prefix:%s not found", cidr)
+	}
+	if len(p.IPs) > 2 {
+		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
+	}
+	prefix, err := i.storage.DeletePrefix(p)
+	if err != nil {
+		return nil, fmt.Errorf("delete prefix:%s %v", cidr, err)
+	}
+
+	return prefix, nil
+}
+
 // AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
 // FIXME allow variable child prefix length
 func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error) {
@@ -127,7 +144,7 @@ func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
 	defer parent.Unlock()
 
 	parent.AvailableChildPrefixes[child.Cidr] = true
-	_, err := i.storage.DeletePrefix(child)
+	_, err := i.DeletePrefix(child.Cidr)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
@@ -209,6 +226,9 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 
 // PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
 // with one of existingPrefixes
+// FIXME should we change signature to PrefixOverlapping(newPrefix string) only
+// and find all non superPrefixes ourselves
+// that requires that newPrefix was not persisted before and we must implement .IPNet here as well.
 func (i *Ipamer) PrefixesOverlapping(exitingPrefixes []string, newPrefixes []string) error {
 	for _, p := range exitingPrefixes {
 		existingPrefix := i.PrefixFrom(p)
