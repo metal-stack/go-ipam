@@ -4,78 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-
 )
 
 type sql struct {
 	db *sqlx.DB
-}
-
-func (s *sql) CreateNetwork(network *Network) (*Network, error) {
-	if network.ID != "" {
-		return nil, fmt.Errorf("network already created:%v", network)
-	}
-	id, err := uuid.NewRandom()
-	if err != nil {
-		return nil, err
-	}
-	network.ID = id.String()
-	tx := s.db.MustBegin()
-	n, err := json.Marshal(network)
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal network:%v", err)
-	}
-	tx.MustExec("INSERT INTO networks (id, network) VALUES ($1, $2)", network.ID, n)
-	return network, tx.Commit()
-}
-func (s *sql) ReadNetwork(id string) (*Network, error) {
-	var result []byte
-	err := s.db.Get(&result, "SELECT network FROM networks WHERE id=$1", id)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read network:%v", err)
-	}
-	var network Network
-	err = json.Unmarshal(result, &network)
-	if err != nil {
-		return nil, fmt.Errorf("unable to unmarshal network:%v", err)
-	}
-
-	return &network, nil
-}
-
-func (s *sql) ReadAllNetworks() ([]*Network, error) {
-	var networks [][]byte
-	err := s.db.Select(&networks, "SELECT network FROM networks")
-	if err != nil {
-		return nil, fmt.Errorf("unable to read networks:%v", err)
-	}
-
-	var result []*Network
-	for _, v := range networks {
-		var net Network
-		err = json.Unmarshal(v, &net)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal network:%v", err)
-		}
-		result = append(result, &net)
-	}
-	return result, nil
-}
-func (s *sql) UpdateNetwork(network *Network) (*Network, error) {
-	tx := s.db.MustBegin()
-	n, err := json.Marshal(network)
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal network:%v", err)
-	}
-	tx.MustExec("UPDATE networks SET network=$1 WHERE id=$2", n, network.ID)
-	return network, tx.Commit()
-}
-func (s *sql) DeleteNetwork(network *Network) (*Network, error) {
-	tx := s.db.MustBegin()
-	tx.MustExec("DELETE from networks WHERE id=$1", network.ID)
-	return network, tx.Commit()
 }
 
 func (s *sql) prefixExists(prefix *Prefix) (*Prefix, bool) {
