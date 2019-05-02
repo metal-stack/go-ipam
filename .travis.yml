@@ -14,6 +14,6 @@ before_install:
 go:
   - "1.12.x"
 
-# run tests w/o coverage
+# run tests with coverage
 script:
-  - go test -v
+  - make test-ci
