@@ -15,19 +15,6 @@ func main() {
 
 	i := ipam.NewWithStorage(pgStorage)
 
-	_, err = i.NewNetwork()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	storedNetworks, err := pgStorage.ReadAllNetworks()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, n := range storedNetworks {
-		log.Printf("network:%v created\n", n)
-	}
-
 	_, err = i.NewPrefix("10.0.0.0/16")
 	if err != nil {
 		log.Fatal(err)
@@ -63,23 +50,9 @@ func main() {
 	p0 := i.PrefixFrom("10.0.2.0/22")
 	log.Printf("found prefix:%v", p0)
 
-	p1, _ := i.NewPrefix("1.2.1.0/24")
-	p2, _ := i.NewPrefix("1.2.2.0/24")
-	p3, _ := i.NewPrefix("1.2.3.0/24")
-	// p4, _ := i.NewPrefix("1.2.4.0/24")
-	// p5, _ := i.NewPrefix("1.2.5.0/24")
-	p6, _ := i.NewPrefix("1.2.0.0/22")
-	_, err = i.NewNetwork(p1, p2, p3)
-	if err != nil {
-		log.Fatal(err)
-	}
-	n1, err := i.NewNetwork()
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = i.AddPrefix(n1, p6)
-	if err != nil {
-		log.Fatal(err)
-	}
+	i.NewPrefix("1.2.1.0/24")
+	i.NewPrefix("1.2.2.0/24")
+	i.NewPrefix("1.2.3.0/24")
+	i.NewPrefix("1.2.0.0/22")
 
 }
