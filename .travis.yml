@@ -7,6 +7,7 @@ services:
 # create test database
 before_install:
   - psql -c 'create database ipamtest;' -U postgres
+  - go get github.com/mattn/goveralls
   - export SQLX_POSTGRES_DSN="postgres://postgres:@localhost/ipamtest?sslmode=disable"
 
 # go versions to test
@@ -16,3 +17,4 @@ go:
 # run tests with coverage
 script:
   - make test-ci
+  - travis_retry $GOPATH/bin/goveralls -service=travis-ci
