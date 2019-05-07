@@ -17,4 +17,7 @@ go:
 # run tests with coverage
 script:
   - make test-ci
-  - travis_retry $GOPATH/bin/goveralls -service=travis-ci
+
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)

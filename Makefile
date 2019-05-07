@@ -9,7 +9,7 @@ test:
 
 .PHONY: test-ci
 test-ci:
-	CGO_ENABLED=1 $(GO) test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out                                                                                                
+	CGO_ENABLED=1 $(GO) test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
 
 .PHONY: example
 example:
