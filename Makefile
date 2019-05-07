@@ -1,6 +1,7 @@
 .ONESHELL:
 CGO_ENABLED := $(or ${CGO_ENABLED},0)                                                                                                                                                                              
 GO := go                                                                                                                                                                                                           
+GO111MODULE := on
 
 .PHONY: test
 test:

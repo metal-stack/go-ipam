@@ -7,8 +7,7 @@ services:
 # create test database
 before_install:
   - psql -c 'create database ipamtest;' -U postgres
-  - go get github.com/mattn/goveralls
-  - export SQLX_POSTGRES_DSN="postgres://postgres:@localhost/sqlxtest?sslmode=disable"
+  - export SQLX_POSTGRES_DSN="postgres://postgres:@localhost/ipamtest?sslmode=disable"
 
 # go versions to test
 go:
