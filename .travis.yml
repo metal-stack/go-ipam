@@ -1,5 +1,8 @@
 language: go
 
+services:
+  - docker
+
 # start test database
 before_install:
   - docker pull postres:11
