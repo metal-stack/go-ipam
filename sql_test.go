@@ -7,7 +7,7 @@ import (
 )
 
 func createDB() (*sql, error) {
-	dbname := "ipamtest"
+	dbname := "postgres"
 	db, err := NewPostgresStorage("localhost", "5432", "postgres", "", dbname, "disable")
 	return db, err
 

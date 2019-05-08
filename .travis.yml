@@ -1,24 +1,10 @@
 language: go
 
-addons:
-  postgresql: "10"
-  apt:
-    packages:
-    - postgresql-10
-    - postgresql-client-10
-env:
-  global:
-  - PGPORT=5433
-
-# enable database services
-services:
-  - postgresql
-
-# create test database
+# start test database
 before_install:
-  - psql -c 'create database ipamtest;' -U postgres
+  - docker run -d -p 5432:5432 -e POSTGRES_PASSWORD="password" postgres:11
+  - docker ps
   - go get github.com/mattn/goveralls
-  - export SQLX_POSTGRES_DSN="postgres://postgres:@localhost/ipamtest?sslmode=disable"
 
 # go versions to test
 go:
