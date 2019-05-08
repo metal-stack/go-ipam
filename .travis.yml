@@ -2,6 +2,7 @@ language: go
 
 # start test database
 before_install:
+  - docker pull postres:11
   - docker run -d -p 5432:5432 -e POSTGRES_PASSWORD="password" postgres:11
   - docker ps
   - go get github.com/mattn/goveralls
