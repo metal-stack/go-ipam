@@ -1,5 +1,12 @@
 language: go
 
+addons:
+  postgresql: "10"
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
+
 # enable database services
 services:
   - postgresql
