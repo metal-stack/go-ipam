@@ -10,10 +10,6 @@ import (
 )
 
 const postgresSchema = `
-CREATE TABLE IF NOT EXISTS networks (
-	id       text PRIMARY KEY NOT NULL,
-	network  JSONB
-);
 CREATE TABLE IF NOT EXISTS prefixes (
 	cidr   text PRIMARY KEY NOT NULL,
 	prefix JSONB
