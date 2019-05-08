@@ -12,14 +12,14 @@ type sql struct {
 }
 
 func (s *sql) prefixExists(prefix *Prefix) (*Prefix, bool) {
-	pre, err := s.ReadPrefix(prefix.Cidr)
+	p, err := s.ReadPrefix(prefix.Cidr)
 	if err != nil {
 		return nil, false
 	}
-	if pre == nil {
+	if p == nil {
 		return nil, false
 	}
-	return pre, true
+	return p, true
 }
 
 func (s *sql) CreatePrefix(prefix *Prefix) (*Prefix, error) {
@@ -35,6 +35,7 @@ func (s *sql) CreatePrefix(prefix *Prefix) (*Prefix, error) {
 	tx.MustExec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
 	return prefix, tx.Commit()
 }
+
 func (s *sql) ReadPrefix(prefix string) (*Prefix, error) {
 	var result []byte
 	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1", prefix)
@@ -49,6 +50,7 @@ func (s *sql) ReadPrefix(prefix string) (*Prefix, error) {
 
 	return &pre, nil
 }
+
 func (s *sql) ReadAllPrefixes() ([]*Prefix, error) {
 	var prefixes [][]byte
 	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
@@ -56,7 +58,7 @@ func (s *sql) ReadAllPrefixes() ([]*Prefix, error) {
 		return nil, fmt.Errorf("unable to read prefixes:%v", err)
 	}
 
-	var result []*Prefix
+	result := []*Prefix{}
 	for _, v := range prefixes {
 		var pre Prefix
 		err = json.Unmarshal(v, &pre)
@@ -67,6 +69,7 @@ func (s *sql) ReadAllPrefixes() ([]*Prefix, error) {
 	}
 	return result, nil
 }
+
 func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	tx := s.db.MustBegin()
 	pn, err := json.Marshal(prefix)
@@ -76,6 +79,7 @@ func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2", pn, prefix.Cidr)
 	return prefix, tx.Commit()
 }
+
 func (s *sql) DeletePrefix(prefix *Prefix) (*Prefix, error) {
 	tx := s.db.MustBegin()
 	tx.MustExec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
