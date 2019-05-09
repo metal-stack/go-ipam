@@ -343,3 +343,51 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 		})
 	}
 }
+
+func TestIpamer_NewPrefix(t *testing.T) {
+	tests := []struct {
+		name        string
+		storage     Storage
+		cidr        string
+		wantErr     bool
+		errorString string
+	}{
+		{
+			name:    "valid Prefix",
+			storage: NewMemory(),
+			cidr:    "192.168.0.0/24",
+			wantErr: false,
+		},
+		{
+			name:        "invalid Prefix",
+			storage:     NewMemory(),
+			cidr:        "192.168.0.0/33",
+			wantErr:     true,
+			errorString: "unable to parse cidr:192.168.0.0/33 invalid CIDR address: 192.168.0.0/33",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			i := &Ipamer{
+				storage: tt.storage,
+			}
+			got, err := i.NewPrefix(tt.cidr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ipamer.NewPrefix() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if (err != nil) && tt.errorString != err.Error() {
+				t.Errorf("Ipamer.NewPrefix() error = %v, errorString %v", err, tt.errorString)
+				return
+			}
+
+			if err != nil {
+				return
+			}
+			if !reflect.DeepEqual(got.Cidr, tt.cidr) {
+				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.Cidr, tt.cidr)
+			}
+		})
+	}
+}

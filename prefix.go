@@ -29,11 +29,11 @@ type Usage struct {
 func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	p, err := i.newPrefix(cidr)
 	if err != nil {
-		return nil, fmt.Errorf("NewPrefix:%s %v", cidr, err)
+		return nil, err
 	}
 	newPrefix, err := i.storage.CreatePrefix(p)
 	if err != nil {
-		return nil, fmt.Errorf("newPrefix:%s %v", cidr, err)
+		return nil, err
 	}
 
 	return newPrefix, nil
