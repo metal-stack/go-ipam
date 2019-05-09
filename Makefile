@@ -7,6 +7,10 @@ GO111MODULE := on
 test:
 	CGO_ENABLED=1 $(GO) test -cover ./...
 
+.PHONY: bench
+bench:
+	CGO_ENABLED=1 $(GO) test -bench .
+
 .PHONY: test-ci
 test-ci:
 	CGO_ENABLED=1 $(GO) test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out

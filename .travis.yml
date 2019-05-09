@@ -19,6 +19,7 @@ go:
 # run tests with coverage
 script:
   - make test-ci
+  - make bench
 
 
 after_success:
