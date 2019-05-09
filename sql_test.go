@@ -8,7 +8,7 @@ import (
 
 func createDB() (*sql, error) {
 	dbname := "postgres"
-	db, err := NewPostgresStorage("localhost", "5432", "postgres", "", dbname, "disable")
+	db, err := NewPostgresStorage("localhost", "5433", "postgres", "", dbname, "disable")
 	return db, err
 
 }

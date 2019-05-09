@@ -8,7 +8,7 @@ services:
 # start test database
 before_install:
   - docker pull postgres:11-alpine
-  - docker run -d -p 5432:5432 -e POSTGRES_PASSWORD="password" postgres:11-alpine
+  - docker run -d -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:11-alpine
   - docker ps
   - go get github.com/mattn/goveralls
 
