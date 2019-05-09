@@ -221,44 +221,55 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 }
 
 func TestIpamer_AcquireChildPrefix(t *testing.T) {
-	type fields struct {
-		storage Storage
-		prefix  string
-		length  int
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{
-			name: "Acquire next Prefix regularly",
-			fields: fields{
-				storage: NewMemory(),
-				prefix:  "192.168.0.0/31",
-				length:  32,
-			},
-			want: "192.168.0.0/32",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			i := &Ipamer{
-				storage: tt.fields.storage,
-			}
-			p, err := i.NewPrefix(tt.fields.prefix)
-			if err != nil {
-				t.Errorf("Could not create prefix: %v", err)
-			}
-			got, err := i.AcquireChildPrefix(p, tt.fields.length)
-			if err != nil {
-				t.Errorf("Could not create prefix: %v", err)
-			}
-			if !reflect.DeepEqual(got.Cidr, tt.want) {
-				t.Errorf("Ipamer.AcquireChildPrefix() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	ipam := New()
+
+	prefix, err := ipam.NewPrefix("192.168.0.0/20")
+	require.Nil(t, err)
+	require.Equal(t, prefix.availablePrefixes(), uint64(0))
+	require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
+
+	// Same length
+	cp, err := ipam.AcquireChildPrefix(prefix, 20)
+	require.NotNil(t, err)
+	require.Equal(t, "given length:20 is smaller or equal of prefix length:20", err.Error())
+	require.Nil(t, cp)
+
+	// working length
+	cp, err = ipam.AcquireChildPrefix(prefix, 21)
+	require.Nil(t, err)
+	require.NotNil(t, cp)
+	require.True(t, strings.HasPrefix(cp.Cidr, "192.168."))
+	require.True(t, strings.HasSuffix(cp.Cidr, "/21"))
+	require.Equal(t, prefix.Cidr, cp.ParentCidr)
+
+	// different length
+	cp, err = ipam.AcquireChildPrefix(prefix, 22)
+	require.NotNil(t, err)
+	require.Equal(t, "given length:22 is not equal to existing child prefix length:21", err.Error())
+	require.Nil(t, cp)
+
+	// No more ChildPrefixes
+	cp, err = ipam.AcquireChildPrefix(prefix, 21)
+	require.Nil(t, err)
+	require.NotNil(t, cp)
+	cp, err = ipam.AcquireChildPrefix(prefix, 21)
+	require.NotNil(t, err)
+	require.Equal(t, "no more child prefixes contained in prefix pool", err.Error())
+	require.Nil(t, cp)
+
+	// Prefix has IPs
+	p2, err := ipam.NewPrefix("10.0.0.0/24")
+	require.Nil(t, err)
+	require.Equal(t, p2.availablePrefixes(), uint64(0))
+	require.Equal(t, p2.acquiredPrefixes(), uint64(0))
+	ip, err := ipam.AcquireIP(p2)
+	require.Nil(t, err)
+	require.NotNil(t, ip)
+	cp2, err := ipam.AcquireChildPrefix(p2, 25)
+	require.NotNil(t, err)
+	require.Equal(t, "prefix 10.0.0.0/24 has ips, acquire child prefix not possible", err.Error())
+	require.Nil(t, cp2)
+
 }
 
 func TestPrefix_AvailableIPs(t *testing.T) {
