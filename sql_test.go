@@ -6,11 +6,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createDB() (*sql, error) {
+func createDB(t *testing.T) (*sql, error) {
 	dbname := "postgres"
-	db, err := NewPostgresStorage("localhost", "5433", "postgres", "", dbname, "disable")
+	db, err := NewPostgresStorage("localhost", "5433", "postgres", "password", dbname, "disable")
+	err = db.db.Ping()
+	require.Nil(t, err)
 	return db, err
-
 }
 
 func destroy(s *sql) {
@@ -18,7 +19,7 @@ func destroy(s *sql) {
 }
 
 func Test_sql_prefixExists(t *testing.T) {
-	db, err := createDB()
+	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
 
@@ -49,7 +50,7 @@ func Test_sql_prefixExists(t *testing.T) {
 }
 
 func Test_sql_CreatePrefix(t *testing.T) {
-	db, err := createDB()
+	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
 
@@ -82,7 +83,7 @@ func Test_sql_CreatePrefix(t *testing.T) {
 }
 
 func Test_sql_ReadPrefix(t *testing.T) {
-	db, err := createDB()
+	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
 
@@ -107,7 +108,7 @@ func Test_sql_ReadPrefix(t *testing.T) {
 }
 
 func Test_sql_ReadAllPrefix(t *testing.T) {
-	db, err := createDB()
+	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
 
@@ -140,7 +141,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 }
 
 func Test_sql_UpdatePrefix(t *testing.T) {
-	db, err := createDB()
+	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
 
