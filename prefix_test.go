@@ -270,6 +270,23 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 	require.Equal(t, "prefix 10.0.0.0/24 has ips, acquire child prefix not possible", err.Error())
 	require.Nil(t, cp2)
 
+	// Prefix has Childs, AquireIP wont work
+	p3, err := ipam.NewPrefix("172.17.0.0/24")
+	require.Nil(t, err)
+	require.Equal(t, p3.availablePrefixes(), uint64(0))
+	require.Equal(t, p3.acquiredPrefixes(), uint64(0))
+	cp3, err := ipam.AcquireChildPrefix(p3, 25)
+	require.Nil(t, err)
+	require.NotNil(t, cp3)
+	ip, err = ipam.AcquireIP(p3)
+	require.NotNil(t, err)
+	require.Equal(t, "prefix 172.17.0.0/24 has childprefixes, acquire ip not possible", err.Error())
+	require.Nil(t, ip)
+
+	// Release Parent Prefix must not work
+	err = ipam.ReleaseChildPrefix(p3)
+	require.NotNil(t, err)
+	require.Equal(t, "prefix 172.17.0.0/24 is no child prefix", err.Error())
 }
 
 func TestPrefix_AvailableIPs(t *testing.T) {

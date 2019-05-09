@@ -134,7 +134,7 @@ func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
 	parent := i.PrefixFrom(child.ParentCidr)
 
 	if parent == nil {
-		return fmt.Errorf("given prefix is no child prefix")
+		return fmt.Errorf("prefix %s is no child prefix", child.Cidr)
 	}
 	if len(child.IPs) > 2 {
 		return fmt.Errorf("prefix %s has ips, deletion not possible", child.Cidr)
