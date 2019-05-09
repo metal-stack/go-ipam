@@ -83,6 +83,23 @@ func TestIpamer_AcquireIP(t *testing.T) {
 	}
 }
 
+func TestIpamer_ReleaseIPFromPrefix(t *testing.T) {
+	ipam := New()
+
+	prefix, err := ipam.NewPrefix("192.168.0.0/24")
+	require.Nil(t, err)
+	require.NotNil(t, prefix)
+
+	err = ipam.ReleaseIPFromPrefix(nil, "1.2.3.4")
+	require.NotNil(t, err)
+	require.Equal(t, "prefix is nil", err.Error())
+
+	err = ipam.ReleaseIPFromPrefix(prefix, "1.2.3.4")
+	require.NotNil(t, err)
+	require.Equal(t, "unable to release ip:1.2.3.4 because it is not allocated in prefix:192.168.0.0/24", err.Error())
+
+}
+
 func TestIpamer_AcquireIPCounts(t *testing.T) {
 	ipam := New()
 
@@ -127,6 +144,10 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	require.Equal(t, prefix.availablePrefixes(), uint64(0))
 	require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
 	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
+
+	usage := prefix.Usage()
+	require.Equal(t, "ip:4096/2", usage.String())
+
 	allPrefixes, err = ipam.storage.ReadAllPrefixes()
 	require.Nil(t, err)
 	require.Equal(t, 1, len(allPrefixes))
@@ -137,6 +158,10 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	require.Equal(t, prefix.availablePrefixes(), uint64(4))
 	require.Equal(t, prefix.acquiredPrefixes(), uint64(1))
 	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(1))
+
+	usage = prefix.Usage()
+	require.Equal(t, "ip:4096/2 prefix:4/1", usage.String())
+
 	allPrefixes, err = ipam.storage.ReadAllPrefixes()
 	require.Nil(t, err)
 	require.Equal(t, 2, len(allPrefixes))
@@ -390,4 +415,36 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIpamer_DeletePrefix(t *testing.T) {
+	ipam := New()
+
+	prefix, err := ipam.NewPrefix("192.168.0.0/20")
+	require.Nil(t, err)
+	require.Equal(t, prefix.availablePrefixes(), uint64(0))
+	require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
+	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
+
+	ip, err := ipam.AcquireIP(prefix)
+	require.Nil(t, err)
+	require.NotNil(t, ip)
+
+	_, err = ipam.DeletePrefix(prefix.Cidr)
+	require.NotNil(t, err)
+	require.Equal(t, "prefix 192.168.0.0/20 has ips, delete prefix not possible", err.Error())
+}
+
+func TestIpamer_PrefixFrom(t *testing.T) {
+	ipam := New()
+
+	prefix := ipam.PrefixFrom("192.168.0.0/20")
+	require.Nil(t, prefix)
+
+	prefix, err := ipam.NewPrefix("192.168.0.0/20")
+	require.Nil(t, err)
+
+	prefix = ipam.PrefixFrom("192.168.0.0/20")
+	require.NotNil(t, prefix)
+
 }
