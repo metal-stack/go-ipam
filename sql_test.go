@@ -9,6 +9,7 @@ import (
 func createDB(t *testing.T) (*sql, error) {
 	dbname := "postgres"
 	db, err := NewPostgresStorage("localhost", "5433", "postgres", "password", dbname, "disable")
+	require.Nil(t, err)
 	err = db.db.Ping()
 	require.Nil(t, err)
 	return db, err
@@ -41,6 +42,7 @@ func Test_sql_prefixExists(t *testing.T) {
 
 	// Delete Existing Prefix
 	_, err = db.DeletePrefix(prefix)
+	require.Nil(t, err)
 	got, exists = db.prefixExists(prefix)
 	require.False(t, exists)
 	require.Nil(t, got)
@@ -161,6 +163,8 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 	// Modify
 	prefix.ParentCidr = "13.0.0.0/12"
 	p, err = db.UpdatePrefix(prefix)
+	require.Nil(t, err)
+	require.NotNil(t, p)
 	p, err = db.ReadPrefix("13.0.0.0/16")
 	require.Nil(t, err)
 	require.NotNil(t, p)

@@ -1,5 +1,5 @@
 /*
-Package go-ipam is a ip address management library for ip's and prefixes (networks).
+Package ipam is a ip address management library for ip's and prefixes (networks).
 
 It uses either memory or postgresql database to store the ip's and prefixes.
 You can also bring you own Storage implementation as you need.

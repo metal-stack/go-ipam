@@ -190,7 +190,7 @@ func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 			prefix.IPs[ip.String()] = *acquired
 			_, err := i.storage.UpdatePrefix(prefix)
 			if err != nil {
-				return nil, fmt.Errorf("unable to persist aquired ip:%v", err)
+				return nil, fmt.Errorf("unable to persist acquired ip:%v", err)
 			}
 			return acquired, nil
 		}

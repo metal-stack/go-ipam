@@ -8,6 +8,7 @@ type memory struct {
 	prefixes map[string]*Prefix
 }
 
+// NewMemory create a memory storage for ipam
 func NewMemory() *memory {
 	prefixes := make(map[string]*Prefix)
 	return &memory{

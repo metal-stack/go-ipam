@@ -114,6 +114,7 @@ func TestIpamer_AcquireIPCounts(t *testing.T) {
 	require.Equal(t, prefix.availableIPs(), uint64(256))
 	require.Equal(t, prefix.acquiredIPs(), uint64(3))
 	ip2, err := ipam.AcquireIP(prefix)
+	require.Nil(t, err)
 	require.NotEqual(t, ip1, ip2)
 	require.Equal(t, prefix.availableIPs(), uint64(256))
 	require.Equal(t, prefix.acquiredIPs(), uint64(4))
@@ -471,6 +472,7 @@ func TestIpamer_PrefixFrom(t *testing.T) {
 
 	prefix, err := ipam.NewPrefix("192.168.0.0/20")
 	require.Nil(t, err)
+	require.NotNil(t, prefix)
 
 	prefix = ipam.PrefixFrom("192.168.0.0/20")
 	require.NotNil(t, prefix)
