@@ -12,7 +12,7 @@ func benchmarkNewPrefix(ipam *Ipamer, b *testing.B) {
 			panic(err)
 		}
 		if p == nil {
-			panic(err)
+			panic("Prefix nil")
 		}
 		_, err = ipam.DeletePrefix(p.Cidr)
 		if err != nil {
@@ -41,7 +41,7 @@ func benchmarkAquireIP(ipam *Ipamer, b *testing.B) {
 			panic(err)
 		}
 		if ip == nil {
-			panic(err)
+			panic("IP nil")
 		}
 		err = ipam.ReleaseIP(ip)
 		if err != nil {
