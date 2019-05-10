@@ -14,7 +14,7 @@ type Prefix struct {
 	ParentCidr             string          // if this prefix is a child a pointer back
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
 	ChildPrefixLength      int             // the length of the child prefixes
-	IPs                    map[string]IP   // The ips contained in this prefix
+	IPs                    map[string]bool // The ips contained in this prefix
 }
 
 // Usage of IPs and child Prefixes of a Prefix
@@ -187,7 +187,7 @@ func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
 			}
-			prefix.IPs[ip.String()] = *acquired
+			prefix.IPs[ip.String()] = true
 			_, err := i.storage.UpdatePrefix(prefix)
 			if err != nil {
 				return nil, fmt.Errorf("unable to persist acquired ip:%v", err)
@@ -195,7 +195,7 @@ func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 			return acquired, nil
 		}
 	}
-	return nil, fmt.Errorf("no more ips in prefix :%s left", prefix.Cidr)
+	return nil, fmt.Errorf("no more ips in prefix: %s left, length of prefix.IPs: %d", prefix.Cidr, len(prefix.IPs))
 }
 
 // ReleaseIP will release the given IP for later usage.
@@ -265,7 +265,7 @@ func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
-		IPs:                    make(map[string]IP),
+		IPs:                    make(map[string]bool),
 		AvailableChildPrefixes: make(map[string]bool),
 	}
 
@@ -278,8 +278,8 @@ func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.IPs[network.String()] = IP{IP: network}
-	p.IPs[broadcast.IP.String()] = *broadcast
+	p.IPs[network.String()] = true
+	p.IPs[broadcast.IP.String()] = true
 
 	return p, nil
 }
@@ -307,9 +307,9 @@ func (p *Prefix) String() string {
 
 func (u *Usage) String() string {
 	if u.AvailablePrefixes == uint64(0) {
-		return fmt.Sprintf("ip:%d/%d", u.AvailableIPs, u.AcquiredIPs)
+		return fmt.Sprintf("ip:%d/%d", u.AcquiredIPs, u.AvailableIPs)
 	}
-	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.AvailableIPs, u.AcquiredIPs, u.AvailablePrefixes, u.AcquiredPrefixes)
+	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, u.AvailablePrefixes)
 }
 
 // IPNet return the net.IPNet part of the Prefix

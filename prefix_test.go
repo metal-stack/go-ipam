@@ -66,8 +66,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				t.Errorf("Could not create prefix: %v", err)
 			}
 			for _, ipString := range tt.fields.existingIPs {
-				i := net.ParseIP(ipString)
-				p.IPs[ipString] = IP{IP: i}
+				p.IPs[ipString] = true
 			}
 			got, _ := i.AcquireIP(p)
 			if tt.want == nil || got == nil {
@@ -147,7 +146,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
 
 	usage := prefix.Usage()
-	require.Equal(t, "ip:4096/2", usage.String())
+	require.Equal(t, "ip:2/4096", usage.String())
 
 	allPrefixes, err = ipam.storage.ReadAllPrefixes()
 	require.Nil(t, err)
@@ -161,7 +160,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(1))
 
 	usage = prefix.Usage()
-	require.Equal(t, "ip:4096/2 prefix:4/1", usage.String())
+	require.Equal(t, "ip:2/4096 prefix:1/4", usage.String())
 
 	allPrefixes, err = ipam.storage.ReadAllPrefixes()
 	require.Nil(t, err)
