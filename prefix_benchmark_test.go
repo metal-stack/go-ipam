@@ -31,7 +31,7 @@ func BenchmarkNewPrefixPostgres(b *testing.B) {
 }
 
 func benchmarkAquireIP(ipam *Ipamer, b *testing.B) {
-	p, err := ipam.NewPrefix("192.168.0.0/24")
+	p, err := ipam.NewPrefix("10.0.0.0/8")
 	if err != nil {
 		panic(err)
 	}
