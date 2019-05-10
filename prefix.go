@@ -195,7 +195,7 @@ func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 			return acquired, nil
 		}
 	}
-	return nil, nil
+	return nil, fmt.Errorf("no more ips in prefix :%s left", prefix.Cidr)
 }
 
 // ReleaseIP will release the given IP for later usage.
