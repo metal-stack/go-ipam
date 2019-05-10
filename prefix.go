@@ -229,8 +229,8 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 // FIXME should we change signature to PrefixOverlapping(newPrefix string) only
 // and find all non superPrefixes ourselves
 // that requires that newPrefix was not persisted before and we must implement .IPNet here as well.
-func (i *Ipamer) PrefixesOverlapping(exitingPrefixes []string, newPrefixes []string) error {
-	for _, p := range exitingPrefixes {
+func (i *Ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error {
+	for _, p := range existingPrefixes {
 		existingPrefix := i.PrefixFrom(p)
 		if existingPrefix == nil {
 			return fmt.Errorf("unknown prefix %s", p)
@@ -241,7 +241,7 @@ func (i *Ipamer) PrefixesOverlapping(exitingPrefixes []string, newPrefixes []str
 		}
 		for _, prefix := range newPrefixes {
 			newPrefix := i.PrefixFrom(prefix)
-			if existingPrefix == nil {
+			if newPrefix == nil {
 				return fmt.Errorf("unknown prefix %s", prefix)
 			}
 			newPrefixNet, err := newPrefix.IPNet()
