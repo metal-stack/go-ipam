@@ -30,8 +30,8 @@ func BenchmarkNewPrefixPostgres(b *testing.B) {
 	benchmarkNewPrefix(ipam, b)
 }
 
-func benchmarkAquireIP(ipam *Ipamer, b *testing.B) {
-	p, err := ipam.NewPrefix("10.0.0.0/24")
+func benchmarkAquireIP(ipam *Ipamer, cidr string, b *testing.B) {
+	p, err := ipam.NewPrefix(cidr)
 	if err != nil {
 		panic(err)
 	}
@@ -48,16 +48,20 @@ func benchmarkAquireIP(ipam *Ipamer, b *testing.B) {
 			panic(err)
 		}
 	}
+	_, err = ipam.DeletePrefix(cidr)
+	if err != nil {
+		b.Logf("error deleting prefix:%v", err)
+	}
 }
 
 func BenchmarkAquireIPMemory(b *testing.B) {
 	ipam := New()
-	benchmarkAquireIP(ipam, b)
+	benchmarkAquireIP(ipam, "11.0.0.0/24", b)
 }
 func BenchmarkAquireIPPostgres(b *testing.B) {
 	storage, _ := NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
 	ipam := NewWithStorage(storage)
-	benchmarkAquireIP(ipam, b)
+	benchmarkAquireIP(ipam, "10.0.0.0/16", b)
 }
 
 func benchmarkAquireChildPrefix(parentLength, childLength int, b *testing.B) {
@@ -75,6 +79,10 @@ func benchmarkAquireChildPrefix(parentLength, childLength int, b *testing.B) {
 		if err != nil {
 			panic(err)
 		}
+	}
+	_, err = ipam.DeletePrefix(p.Cidr)
+	if err != nil {
+		b.Logf("error deleting prefix:%v", err)
 	}
 }
 func BenchmarkAquireChildPrefix1(b *testing.B)  { benchmarkAquireChildPrefix(8, 14, b) }
