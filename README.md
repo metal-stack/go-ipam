@@ -54,16 +54,18 @@ func main() {
 ## Performance
 
 ```bash
-BenchmarkNewPrefix-4                     1000000              1554 ns/op
-BenchmarkAquireIP-4                      1000000              1088 ns/op
-BenchmarkAquireChildPrefix1-4             300000              3667 ns/op
-BenchmarkAquireChildPrefix2-4             300000              3685 ns/op
-BenchmarkAquireChildPrefix3-4             300000              3921 ns/op
-BenchmarkAquireChildPrefix4-4             300000              4332 ns/op
-BenchmarkAquireChildPrefix5-4             200000              5684 ns/op
-BenchmarkAquireChildPrefix6-4             300000              3690 ns/op
-BenchmarkAquireChildPrefix7-4             300000              3731 ns/op
-BenchmarkAquireChildPrefix8-4             300000              4152 ns/op
-BenchmarkAquireChildPrefix9-4             500000              3727 ns/op
-BenchmarkAquireChildPrefix10-4            300000              3843 ns/op
+BenchmarkNewPrefixMemory-4                500000              4629 ns/op
+BenchmarkNewPrefixPostgres-4                 200           7425393 ns/op
+BenchmarkAquireIPMemory-4                2000000              1110 ns/op
+BenchmarkAquireIPPostgres-4                  100          10508799 ns/op
+BenchmarkAquireChildPrefix1-4             300000              3693 ns/op
+BenchmarkAquireChildPrefix2-4             300000              3727 ns/op
+BenchmarkAquireChildPrefix3-4             300000              4036 ns/op
+BenchmarkAquireChildPrefix4-4             300000              4372 ns/op
+BenchmarkAquireChildPrefix5-4             200000              5448 ns/op
+BenchmarkAquireChildPrefix6-4             300000              3729 ns/op
+BenchmarkAquireChildPrefix7-4             300000              3766 ns/op
+BenchmarkAquireChildPrefix8-4             500000              3986 ns/op
+BenchmarkAquireChildPrefix9-4             300000              3934 ns/op
+BenchmarkAquireChildPrefix10-4            300000              3858 ns/op
 ```
