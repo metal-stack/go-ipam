@@ -1,12 +1,7 @@
 package ipam
 
-// Storage is a interface to store network objects.
+// Storage is a interface to store ipam objects.
 type Storage interface {
-	PrefixStorage
-}
-
-// PrefixStorage will do CRUD operations on a Prefix
-type PrefixStorage interface {
 	CreatePrefix(prefix *Prefix) (*Prefix, error)
 	ReadPrefix(prefix string) (*Prefix, error)
 	ReadAllPrefixes() ([]*Prefix, error)

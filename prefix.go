@@ -11,7 +11,7 @@ import (
 type Prefix struct {
 	sync.Mutex             `json:"-"`
 	Cidr                   string          // The Cidr of this prefix
-	ParentCidr             string          // if this prefix is a child a pointer back
+	ParentCidr             string          // if this prefix is a child this is a pointer back
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
 	childPrefixLength      int             // the length of the child prefixes
 	ips                    map[string]bool // The ips contained in this prefix
