@@ -11,6 +11,45 @@ type sql struct {
 	db *sqlx.DB
 }
 
+// https://stackoverflow.com/questions/28035784/golang-marshal-unmarshal-json-with-both-exported-and-un-exported-fields?rq=1
+type prefixAlias Prefix
+
+type prefixJSON struct {
+	*prefixAlias
+	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
+	ChildPrefixLength      int             // the length of the child prefixes
+	IPs                    map[string]bool // The ips contained in this prefix
+}
+
+// MarshalJSON marshals a Prefix. (struct to JSON)
+func (p *Prefix) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&prefixJSON{
+		prefixAlias: (*prefixAlias)(p),
+		// Unexported or fields are listed here:
+		AvailableChildPrefixes: p.availableChildPrefixes,
+		ChildPrefixLength:      p.childPrefixLength,
+		IPs:                    p.ips,
+	})
+}
+
+// UnmarshalJSON unmarshals a Prefix. (JSON to struct)
+func (p *Prefix) UnmarshalJSON(data []byte) error {
+	temp := &prefixJSON{
+		prefixAlias: (*prefixAlias)(p),
+	}
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Copy the exported fields:
+	*p = (Prefix)(*(temp).prefixAlias)
+	// Each unexported field must be copied and/or converted individually:
+	p.availableChildPrefixes = temp.AvailableChildPrefixes
+	p.childPrefixLength = temp.childPrefixLength
+	p.ips = temp.IPs
+	return nil
+}
+
 func (s *sql) prefixExists(prefix *Prefix) (*Prefix, bool) {
 	p, err := s.ReadPrefix(prefix.Cidr)
 	if err != nil {

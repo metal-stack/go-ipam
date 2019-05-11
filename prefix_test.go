@@ -13,7 +13,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 	type fields struct {
 		storage     Storage
 		prefixCIDR  string
-		existingIPs []string
+		existingips []string
 	}
 	tests := []struct {
 		name   string
@@ -25,7 +25,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			fields: fields{
 				storage:     NewMemory(),
 				prefixCIDR:  "192.168.1.0/24",
-				existingIPs: []string{},
+				existingips: []string{},
 			},
 			want: &IP{IP: net.ParseIP("192.168.1.1")},
 		},
@@ -34,7 +34,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			fields: fields{
 				storage:     NewMemory(),
 				prefixCIDR:  "192.168.2.0/30",
-				existingIPs: []string{"192.168.2.1"},
+				existingips: []string{"192.168.2.1"},
 			},
 			want: &IP{IP: net.ParseIP("192.168.2.2")},
 		},
@@ -43,7 +43,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			fields: fields{
 				storage:     NewMemory(),
 				prefixCIDR:  "192.168.3.0/30",
-				existingIPs: []string{"192.168.3.1", "192.168.3.2"},
+				existingips: []string{"192.168.3.1", "192.168.3.2"},
 			},
 			want: nil,
 		},
@@ -65,8 +65,8 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
 			}
-			for _, ipString := range tt.fields.existingIPs {
-				p.IPs[ipString] = true
+			for _, ipString := range tt.fields.existingips {
+				p.ips[ipString] = true
 			}
 			got, _ := i.AcquireIP(p)
 			if tt.want == nil || got == nil {
@@ -104,31 +104,31 @@ func TestIpamer_AcquireIPCounts(t *testing.T) {
 
 	prefix, err := ipam.NewPrefix("192.168.0.0/24")
 	require.Nil(t, err)
-	require.Equal(t, prefix.availableIPs(), uint64(256))
+	require.Equal(t, prefix.availableips(), uint64(256))
 	// network an broadcast are blocked
-	require.Equal(t, prefix.acquiredIPs(), uint64(2))
+	require.Equal(t, prefix.acquiredips(), uint64(2))
 	ip1, err := ipam.AcquireIP(prefix)
 	require.Nil(t, err)
 	require.NotNil(t, ip1)
-	require.Equal(t, prefix.availableIPs(), uint64(256))
-	require.Equal(t, prefix.acquiredIPs(), uint64(3))
+	require.Equal(t, prefix.availableips(), uint64(256))
+	require.Equal(t, prefix.acquiredips(), uint64(3))
 	ip2, err := ipam.AcquireIP(prefix)
 	require.Nil(t, err)
 	require.NotEqual(t, ip1, ip2)
-	require.Equal(t, prefix.availableIPs(), uint64(256))
-	require.Equal(t, prefix.acquiredIPs(), uint64(4))
+	require.Equal(t, prefix.availableips(), uint64(256))
+	require.Equal(t, prefix.acquiredips(), uint64(4))
 	require.True(t, strings.HasPrefix(ip1.IP.String(), "192.168.0"))
 	require.True(t, strings.HasPrefix(ip2.IP.String(), "192.168.0"))
 
 	err = ipam.ReleaseIP(ip1)
 	require.Nil(t, err)
-	require.Equal(t, prefix.availableIPs(), uint64(256))
-	require.Equal(t, prefix.acquiredIPs(), uint64(3))
+	require.Equal(t, prefix.availableips(), uint64(256))
+	require.Equal(t, prefix.acquiredips(), uint64(3))
 
 	err = ipam.ReleaseIP(ip2)
 	require.Nil(t, err)
-	require.Equal(t, prefix.availableIPs(), uint64(256))
-	require.Equal(t, prefix.acquiredIPs(), uint64(2))
+	require.Equal(t, prefix.availableips(), uint64(256))
+	require.Equal(t, prefix.acquiredips(), uint64(2))
 
 }
 
@@ -257,7 +257,7 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 	require.Equal(t, "no more child prefixes contained in prefix pool", err.Error())
 	require.Nil(t, cp)
 
-	// Prefix has IPs
+	// Prefix has ips
 	p2, err := ipam.NewPrefix("10.0.0.0/24")
 	require.Nil(t, err)
 	require.Equal(t, p2.availablePrefixes(), uint64(0))
@@ -289,7 +289,7 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 	require.Equal(t, "prefix 172.17.0.0/24 is no child prefix", err.Error())
 }
 
-func TestPrefix_AvailableIPs(t *testing.T) {
+func TestPrefix_Availableips(t *testing.T) {
 	tests := []struct {
 		name string
 		Cidr string
@@ -326,8 +326,8 @@ func TestPrefix_AvailableIPs(t *testing.T) {
 			p := &Prefix{
 				Cidr: tt.Cidr,
 			}
-			if got := p.availableIPs(); got != tt.want {
-				t.Errorf("Prefix.AvailableIPs() = %v, want %v", got, tt.want)
+			if got := p.availableips(); got != tt.want {
+				t.Errorf("Prefix.Availableips() = %v, want %v", got, tt.want)
 			}
 		})
 	}

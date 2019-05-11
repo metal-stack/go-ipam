@@ -12,15 +12,15 @@ type Prefix struct {
 	sync.Mutex             `json:"-"`
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child a pointer back
-	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
-	ChildPrefixLength      int             // the length of the child prefixes
-	IPs                    map[string]bool // The ips contained in this prefix
+	availableChildPrefixes map[string]bool // available child prefixes of this prefix
+	childPrefixLength      int             // the length of the child prefixes
+	ips                    map[string]bool // The ips contained in this prefix
 }
 
-// Usage of IPs and child Prefixes of a Prefix
+// Usage of ips and child Prefixes of a Prefix
 type Usage struct {
-	AvailableIPs      uint64
-	AcquiredIPs       uint64
+	Availableips      uint64
+	Acquiredips       uint64
 	AvailablePrefixes uint64
 	AcquiredPrefixes  uint64
 }
@@ -45,7 +45,7 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	if p == nil {
 		return nil, fmt.Errorf("delete prefix:%s not found", cidr)
 	}
-	if len(p.IPs) > 2 {
+	if len(p.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
 	}
 	prefix, err := i.storage.DeletePrefix(p)
@@ -61,7 +61,7 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error) {
 	prefix.Lock()
 	defer prefix.Unlock()
-	if len(prefix.IPs) > 2 {
+	if len(prefix.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
 	}
 	ipnet, err := prefix.IPNet()
@@ -74,7 +74,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 	}
 
 	// If this is the first call, create a pool of available child prefixes with given length upfront
-	if prefix.ChildPrefixLength == 0 {
+	if prefix.childPrefixLength == 0 {
 		ip := ipnet.IP
 		// FIXME use big.Int
 		// power of 2 :-(
@@ -94,17 +94,17 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 			if err != nil {
 				return nil, err
 			}
-			prefix.AvailableChildPrefixes[child.Cidr] = true
+			prefix.availableChildPrefixes[child.Cidr] = true
 
 		}
-		prefix.ChildPrefixLength = length
+		prefix.childPrefixLength = length
 	}
-	if prefix.ChildPrefixLength != length {
-		return nil, fmt.Errorf("given length:%d is not equal to existing child prefix length:%d", length, prefix.ChildPrefixLength)
+	if prefix.childPrefixLength != length {
+		return nil, fmt.Errorf("given length:%d is not equal to existing child prefix length:%d", length, prefix.childPrefixLength)
 	}
 
 	var child *Prefix
-	for c, available := range prefix.AvailableChildPrefixes {
+	for c, available := range prefix.availableChildPrefixes {
 		if !available {
 			continue
 		}
@@ -118,7 +118,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 		return nil, fmt.Errorf("no more child prefixes contained in prefix pool")
 	}
 
-	prefix.AvailableChildPrefixes[child.Cidr] = false
+	prefix.availableChildPrefixes[child.Cidr] = false
 
 	i.storage.UpdatePrefix(prefix)
 	child, err = i.NewPrefix(child.Cidr)
@@ -136,14 +136,14 @@ func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
 	if parent == nil {
 		return fmt.Errorf("prefix %s is no child prefix", child.Cidr)
 	}
-	if len(child.IPs) > 2 {
+	if len(child.ips) > 2 {
 		return fmt.Errorf("prefix %s has ips, deletion not possible", child.Cidr)
 	}
 
 	parent.Lock()
 	defer parent.Unlock()
 
-	parent.AvailableChildPrefixes[child.Cidr] = true
+	parent.availableChildPrefixes[child.Cidr] = true
 	_, err := i.DeletePrefix(child.Cidr)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
@@ -168,7 +168,7 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 	prefix.Lock()
 	defer prefix.Unlock()
-	if prefix.ChildPrefixLength > 0 {
+	if prefix.childPrefixLength > 0 {
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
 	}
 	var acquired *IP
@@ -181,13 +181,13 @@ func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 		return nil, err
 	}
 	for ip := network.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
-		_, ok := prefix.IPs[ip.String()]
+		_, ok := prefix.ips[ip.String()]
 		if !ok {
 			acquired = &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
 			}
-			prefix.IPs[ip.String()] = true
+			prefix.ips[ip.String()] = true
 			_, err := i.storage.UpdatePrefix(prefix)
 			if err != nil {
 				return nil, fmt.Errorf("unable to persist acquired ip:%v", err)
@@ -195,7 +195,7 @@ func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 			return acquired, nil
 		}
 	}
-	return nil, fmt.Errorf("no more ips in prefix: %s left, length of prefix.IPs: %d", prefix.Cidr, len(prefix.IPs))
+	return nil, fmt.Errorf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips))
 }
 
 // ReleaseIP will release the given IP for later usage.
@@ -212,11 +212,11 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 	prefix.Lock()
 	defer prefix.Unlock()
 
-	_, ok := prefix.IPs[ip]
+	_, ok := prefix.ips[ip]
 	if !ok {
 		return fmt.Errorf("unable to release ip:%s because it is not allocated in prefix:%s", ip, prefix.Cidr)
 	}
-	delete(prefix.IPs, ip)
+	delete(prefix.ips, ip)
 	_, err := i.storage.UpdatePrefix(prefix)
 	if err != nil {
 		return fmt.Errorf("unable to release ip %v:%v", ip, err)
@@ -265,8 +265,8 @@ func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
-		IPs:                    make(map[string]bool),
-		AvailableChildPrefixes: make(map[string]bool),
+		ips:                    make(map[string]bool),
+		availableChildPrefixes: make(map[string]bool),
 	}
 
 	broadcast, err := p.broadcast()
@@ -278,8 +278,8 @@ func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.IPs[network.String()] = true
-	p.IPs[broadcast.IP.String()] = true
+	p.ips[network.String()] = true
+	p.ips[broadcast.IP.String()] = true
 
 	return p, nil
 }
@@ -307,9 +307,9 @@ func (p *Prefix) String() string {
 
 func (u *Usage) String() string {
 	if u.AvailablePrefixes == uint64(0) {
-		return fmt.Sprintf("ip:%d/%d", u.AcquiredIPs, u.AvailableIPs)
+		return fmt.Sprintf("ip:%d/%d", u.Acquiredips, u.Availableips)
 	}
-	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, u.AvailablePrefixes)
+	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.Acquiredips, u.Availableips, u.AcquiredPrefixes, u.AvailablePrefixes)
 }
 
 // IPNet return the net.IPNet part of the Prefix
@@ -327,8 +327,8 @@ func (p *Prefix) Network() (net.IP, error) {
 	return ip.Mask(ipnet.Mask), nil
 }
 
-// AvailableIPs return the number of IPs available in this Prefix
-func (p *Prefix) availableIPs() uint64 {
+// Availableips return the number of ips available in this Prefix
+func (p *Prefix) availableips() uint64 {
 	_, ipnet, err := net.ParseCIDR(p.Cidr)
 	if err != nil {
 		return 0
@@ -346,20 +346,20 @@ func (p *Prefix) availableIPs() uint64 {
 	return count
 }
 
-// AcquiredIPs return the number of IPs acquired in this Prefix
-func (p *Prefix) acquiredIPs() uint64 {
-	return uint64(len(p.IPs))
+// Acquiredips return the number of ips acquired in this Prefix
+func (p *Prefix) acquiredips() uint64 {
+	return uint64(len(p.ips))
 }
 
 // AvailablePrefixes return the amount of possible prefixes of this prefix if this is a parent prefix
 func (p *Prefix) availablePrefixes() uint64 {
-	return uint64(len(p.AvailableChildPrefixes))
+	return uint64(len(p.availableChildPrefixes))
 }
 
 // AcquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
 func (p *Prefix) acquiredPrefixes() uint64 {
 	var count uint64
-	for _, available := range p.AvailableChildPrefixes {
+	for _, available := range p.availableChildPrefixes {
 		if !available {
 			count++
 		}
@@ -370,8 +370,8 @@ func (p *Prefix) acquiredPrefixes() uint64 {
 // Usage report Prefix usage.
 func (p *Prefix) Usage() Usage {
 	return Usage{
-		AvailableIPs:      p.availableIPs(),
-		AcquiredIPs:       p.acquiredIPs(),
+		Availableips:      p.availableips(),
+		Acquiredips:       p.acquiredips(),
 		AvailablePrefixes: p.availablePrefixes(),
 		AcquiredPrefixes:  p.acquiredPrefixes(),
 	}
