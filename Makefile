@@ -9,7 +9,7 @@ test:
 
 .PHONY: bench
 bench:
-	CGO_ENABLED=1 $(GO) test -bench .
+	CGO_ENABLED=1 $(GO) test -bench . -benchmem
 
 .PHONY: test-ci
 test-ci:
