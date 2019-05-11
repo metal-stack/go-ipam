@@ -19,8 +19,8 @@ type Prefix struct {
 
 // Usage of ips and child Prefixes of a Prefix
 type Usage struct {
-	Availableips      uint64
-	Acquiredips       uint64
+	AvailableIPs      uint64
+	AcquiredIPs       uint64
 	AvailablePrefixes uint64
 	AcquiredPrefixes  uint64
 }
@@ -307,9 +307,9 @@ func (p *Prefix) String() string {
 
 func (u *Usage) String() string {
 	if u.AvailablePrefixes == uint64(0) {
-		return fmt.Sprintf("ip:%d/%d", u.Acquiredips, u.Availableips)
+		return fmt.Sprintf("ip:%d/%d", u.AcquiredIPs, u.AvailableIPs)
 	}
-	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.Acquiredips, u.Availableips, u.AcquiredPrefixes, u.AvailablePrefixes)
+	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, u.AvailablePrefixes)
 }
 
 // IPNet return the net.IPNet part of the Prefix
@@ -370,8 +370,8 @@ func (p *Prefix) acquiredPrefixes() uint64 {
 // Usage report Prefix usage.
 func (p *Prefix) Usage() Usage {
 	return Usage{
-		Availableips:      p.availableips(),
-		Acquiredips:       p.acquiredips(),
+		AvailableIPs:      p.availableips(),
+		AcquiredIPs:       p.acquiredips(),
 		AvailablePrefixes: p.availablePrefixes(),
 		AcquiredPrefixes:  p.acquiredPrefixes(),
 	}
