@@ -18,9 +18,8 @@ go:
 
 # run tests with coverage
 script:
-  - make test-ci
+  - make test
   - make bench
-
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)

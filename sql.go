@@ -25,7 +25,7 @@ type prefixJSON struct {
 func (p *Prefix) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&prefixJSON{
 		prefixAlias: (*prefixAlias)(p),
-		// Unexported or fields are listed here:
+		// Unexported fields are listed here:
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		ChildPrefixLength:      p.childPrefixLength,
 		IPs:                    p.ips,
