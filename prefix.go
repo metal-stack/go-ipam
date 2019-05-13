@@ -9,7 +9,7 @@ import (
 
 // Prefix is a expression of a ip with length and forms a classless network.
 type Prefix struct {
-	sync.Mutex             `json:"-"`
+	mux                    sync.Mutex
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
@@ -59,8 +59,8 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 // AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
 // FIXME allow variable child prefix length
 func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error) {
-	prefix.Lock()
-	defer prefix.Unlock()
+	prefix.mux.Lock()
+	defer prefix.mux.Unlock()
 	if len(prefix.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
 	}
@@ -140,8 +140,8 @@ func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
 		return fmt.Errorf("prefix %s has ips, deletion not possible", child.Cidr)
 	}
 
-	parent.Lock()
-	defer parent.Unlock()
+	parent.mux.Lock()
+	defer parent.mux.Unlock()
 
 	parent.availableChildPrefixes[child.Cidr] = true
 	_, err := i.DeletePrefix(child.Cidr)
@@ -166,8 +166,8 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 
 // AcquireIP will return the next unused IP from this Prefix.
 func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
-	prefix.Lock()
-	defer prefix.Unlock()
+	prefix.mux.Lock()
+	defer prefix.mux.Unlock()
 	if prefix.childPrefixLength > 0 {
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
 	}
@@ -209,8 +209,8 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 	if prefix == nil {
 		return fmt.Errorf("prefix is nil")
 	}
-	prefix.Lock()
-	defer prefix.Unlock()
+	prefix.mux.Lock()
+	defer prefix.mux.Unlock()
 
 	_, ok := prefix.ips[ip]
 	if !ok {
