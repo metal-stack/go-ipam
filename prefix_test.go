@@ -374,6 +374,14 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 			wantErr:         true,
 			errorString:     "192.168.3.0/24 overlaps 192.168.2.0/23",
 		},
+		{
+			name:            "one overlap",
+			storage:         NewMemory(),
+			exitingPrefixes: []string{"192.168.128.0/25"},
+			newPrefixes:     []string{"192.168.128.0/27"},
+			wantErr:         true,
+			errorString:     "192.168.128.0/27 overlaps 192.168.128.0/25",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -381,13 +389,19 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 				storage: tt.storage,
 			}
 			for _, ep := range tt.exitingPrefixes {
-				i.NewPrefix(ep)
-			}
-			for _, np := range tt.newPrefixes {
-				i.NewPrefix(np)
+				p, err := i.NewPrefix(ep)
+				if err != nil {
+					t.Errorf("Newprefix on ExistingPrefix failed:%v", err)
+				}
+				if p == nil {
+					t.Errorf("Newprefix on ExistingPrefix returns nil")
+				}
 			}
 			err := i.PrefixesOverlapping(tt.exitingPrefixes, tt.newPrefixes)
-			if tt.wantErr && err.Error() != tt.errorString {
+			if tt.wantErr && err == nil {
+				t.Errorf("Ipamer.PrefixesOverlapping() expected error but err was nil")
+			}
+			if tt.wantErr && err != nil && err.Error() != tt.errorString {
 				t.Errorf("Ipamer.PrefixesOverlapping() error = %v, wantErr %v, errorString = %v", err, tt.wantErr, tt.errorString)
 			}
 			if !tt.wantErr && err != nil {

@@ -230,26 +230,18 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
 // and find all non superPrefixes ourselves
 // that requires that newPrefix was not persisted before and we must implement .IPNet here as well.
 func (i *Ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error {
-	for _, p := range existingPrefixes {
-		existingPrefix := i.PrefixFrom(p)
-		if existingPrefix == nil {
-			return fmt.Errorf("unknown prefix %s", p)
-		}
-		existingPrefixNet, err := existingPrefix.IPNet()
+	for _, ep := range existingPrefixes {
+		eip, eipnet, err := net.ParseCIDR(ep)
 		if err != nil {
-			return err
+			return fmt.Errorf("parsing prefix %s failed:%v", ep, err)
 		}
-		for _, prefix := range newPrefixes {
-			newPrefix := i.PrefixFrom(prefix)
-			if newPrefix == nil {
-				return fmt.Errorf("unknown prefix %s", prefix)
-			}
-			newPrefixNet, err := newPrefix.IPNet()
+		for _, np := range newPrefixes {
+			nip, nipnet, err := net.ParseCIDR(np)
 			if err != nil {
-				return err
+				return fmt.Errorf("parsing prefix %s failed:%v", np, err)
 			}
-			if existingPrefixNet.Contains(newPrefixNet.IP) || newPrefixNet.Contains(existingPrefixNet.IP) {
-				return fmt.Errorf("%s overlaps %s", newPrefix.Cidr, existingPrefix.Cidr)
+			if eipnet.Contains(nip) || nipnet.Contains(eip) {
+				return fmt.Errorf("%s overlaps %s", np, ep)
 			}
 		}
 	}
