@@ -14,7 +14,7 @@ ip's from prefixes.
 
 ## Prefix
 
-A prefix is a network with ip and mask, typicaly in the form of *192.168.0.0/24*. To be able to manage IPs you have to create a prefix first.
+A prefix is a network with ip and mask, typically in the form of *192.168.0.0/24*. To be able to manage IPs you have to create a prefix first.
 
 example usage:
 
@@ -43,7 +43,7 @@ func main() {
     }
     fmt.Printf("got IP: %s", ip.IP)
 
-    err = ipam.ReleaseIP(ip)
+    prefix, err = ipam.ReleaseIP(ip)
     if err != nil {
         panic(err)
     }
@@ -56,16 +56,16 @@ func main() {
 ```bash
 BenchmarkNewPrefixMemory-4                500000              4629 ns/op
 BenchmarkNewPrefixPostgres-4                 200           7425393 ns/op
-BenchmarkAquireIPMemory-4                2000000              1110 ns/op
-BenchmarkAquireIPPostgres-4                  100          10508799 ns/op
-BenchmarkAquireChildPrefix1-4             300000              3693 ns/op
-BenchmarkAquireChildPrefix2-4             300000              3727 ns/op
-BenchmarkAquireChildPrefix3-4             300000              4036 ns/op
-BenchmarkAquireChildPrefix4-4             300000              4372 ns/op
-BenchmarkAquireChildPrefix5-4             200000              5448 ns/op
-BenchmarkAquireChildPrefix6-4             300000              3729 ns/op
-BenchmarkAquireChildPrefix7-4             300000              3766 ns/op
-BenchmarkAquireChildPrefix8-4             500000              3986 ns/op
-BenchmarkAquireChildPrefix9-4             300000              3934 ns/op
-BenchmarkAquireChildPrefix10-4            300000              3858 ns/op
+BenchmarkAcquireIPMemory-4                2000000              1110 ns/op
+BenchmarkAcquireIPPostgres-4                  100          10508799 ns/op
+BenchmarkAcquireChildPrefix1-4             300000              3693 ns/op
+BenchmarkAcquireChildPrefix2-4             300000              3727 ns/op
+BenchmarkAcquireChildPrefix3-4             300000              4036 ns/op
+BenchmarkAcquireChildPrefix4-4             300000              4372 ns/op
+BenchmarkAcquireChildPrefix5-4             200000              5448 ns/op
+BenchmarkAcquireChildPrefix6-4             300000              3729 ns/op
+BenchmarkAcquireChildPrefix7-4             300000              3766 ns/op
+BenchmarkAcquireChildPrefix8-4             500000              3986 ns/op
+BenchmarkAcquireChildPrefix9-4             300000              3934 ns/op
+BenchmarkAcquireChildPrefix10-4            300000              3858 ns/op
 ```

@@ -120,12 +120,12 @@ func TestIpamer_AcquireIPCounts(t *testing.T) {
 	require.True(t, strings.HasPrefix(ip1.IP.String(), "192.168.0"))
 	require.True(t, strings.HasPrefix(ip2.IP.String(), "192.168.0"))
 
-	err = ipam.ReleaseIP(ip1)
+	_, err = ipam.ReleaseIP(ip1)
 	require.Nil(t, err)
 	require.Equal(t, prefix.availableips(), uint64(256))
 	require.Equal(t, prefix.acquiredips(), uint64(3))
 
-	err = ipam.ReleaseIP(ip2)
+	_, err = ipam.ReleaseIP(ip2)
 	require.Nil(t, err)
 	require.Equal(t, prefix.availableips(), uint64(256))
 	require.Equal(t, prefix.acquiredips(), uint64(2))
@@ -210,7 +210,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	err = ipam.ReleaseChildPrefix(c3)
 	require.Errorf(t, err, "prefix %s has ips, deletion not possible", c3.Cidr)
 
-	err = ipam.ReleaseIP(ip1)
+	_, err = ipam.ReleaseIP(ip1)
 	require.Nil(t, err)
 	err = ipam.ReleaseChildPrefix(c3)
 	require.Nil(t, err)
@@ -270,7 +270,7 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 	require.Equal(t, "prefix 10.0.0.0/24 has ips, acquire child prefix not possible", err.Error())
 	require.Nil(t, cp2)
 
-	// Prefix has Childs, AquireIP wont work
+	// Prefix has Childs, AcquireIP wont work
 	p3, err := ipam.NewPrefix("172.17.0.0/24")
 	require.Nil(t, err)
 	require.Equal(t, p3.availablePrefixes(), uint64(0))
@@ -490,4 +490,42 @@ func TestIpamer_PrefixFrom(t *testing.T) {
 	prefix = ipam.PrefixFrom("192.168.0.0/20")
 	require.NotNil(t, prefix)
 
+}
+
+func testIpamer_AcquireIP(ipam *Ipamer, cidr string, t *testing.T) {
+	p, err := ipam.NewPrefix(cidr)
+	if err != nil {
+		panic(err)
+	}
+	for n := 0; n < 10; n++ {
+		if len(p.ips) != 2 {
+			t.Fatalf("expected 2 ips in prefix, got %d", len(p.ips))
+		}
+		ip, err := ipam.AcquireIP(p)
+		if err != nil {
+			panic(err)
+		}
+		if ip == nil {
+			panic("IP nil")
+		}
+		p, err = ipam.ReleaseIP(ip)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = ipam.DeletePrefix(cidr)
+	if err != nil {
+		t.Errorf("error deleting prefix:%v", err)
+	}
+}
+
+func TestIpamer_AcquireIPPostgres(t *testing.T) {
+	storage, _ := NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
+	ipam := NewWithStorage(storage)
+	testIpamer_AcquireIP(ipam, "10.0.0.0/16", t)
+}
+
+func TestIpamer_AcquireIPMemory(t *testing.T) {
+	ipam := New()
+	testIpamer_AcquireIP(ipam, "10.0.0.0/16", t)
 }
