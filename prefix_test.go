@@ -545,7 +545,10 @@ func NewPostgresWithCleanup() (*ExtendedSql, error) {
 // cleanup database before test
 func (e *ExtendedSql) cleanup() error {
 	tx := e.db.MustBegin()
-	e.db.Exec("TRUNCATE TABLE prefixes")
+	_, err := e.db.Exec("TRUNCATE TABLE prefixes")
+	if err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -556,8 +559,11 @@ func testWithBackends(t *testing.T, fn testMethod) {
 
 		storage := storageProvider.provide()
 
-		if t, ok := storage.(Cleanable); ok {
-			t.cleanup()
+		if tp, ok := storage.(Cleanable); ok {
+			err := tp.cleanup()
+			if err != nil {
+				t.Errorf("error cleaing up, %v", err)
+			}
 		}
 
 		ipamer := NewWithStorage(storage)
