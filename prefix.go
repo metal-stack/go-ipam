@@ -121,6 +121,9 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 	prefix.availableChildPrefixes[child.Cidr] = false
 
 	_, err = i.storage.UpdatePrefix(prefix)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update created child:%v", err)
+	}
 	child, err = i.NewPrefix(child.Cidr)
 	child.ParentCidr = prefix.Cidr
 	if err != nil {

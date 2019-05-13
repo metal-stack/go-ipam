@@ -492,7 +492,7 @@ func TestIpamer_PrefixFrom(t *testing.T) {
 
 }
 
-func testIpamer_AcquireIP(ipam *Ipamer, cidr string, t *testing.T) {
+func testIpamerAcquireIP(ipam *Ipamer, cidr string, t *testing.T) {
 	p, err := ipam.NewPrefix(cidr)
 	if err != nil {
 		panic(err)
@@ -522,10 +522,10 @@ func testIpamer_AcquireIP(ipam *Ipamer, cidr string, t *testing.T) {
 func TestIpamer_AcquireIPPostgres(t *testing.T) {
 	storage, _ := NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
 	ipam := NewWithStorage(storage)
-	testIpamer_AcquireIP(ipam, "10.0.0.0/16", t)
+	testIpamerAcquireIP(ipam, "10.0.0.0/16", t)
 }
 
 func TestIpamer_AcquireIPMemory(t *testing.T) {
 	ipam := New()
-	testIpamer_AcquireIP(ipam, "10.0.0.0/16", t)
+	testIpamerAcquireIP(ipam, "10.0.0.0/16", t)
 }
