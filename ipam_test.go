@@ -47,12 +47,12 @@ func ExampleIpamer_NewPrefix() {
 	// 192.168.0.2
 	// 192.168.0.0/24
 
-	err = ipamer.ReleaseIP(ip2)
+	_, err = ipamer.ReleaseIP(ip2)
 	if err != nil {
 		panic(err)
 	}
 
-	err = ipamer.ReleaseIP(ip1)
+	_, err = ipamer.ReleaseIP(ip1)
 	if err != nil {
 		panic(err)
 	}

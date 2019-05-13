@@ -120,7 +120,7 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 
 	prefix.availableChildPrefixes[child.Cidr] = false
 
-	i.storage.UpdatePrefix(prefix)
+	_, err = i.storage.UpdatePrefix(prefix)
 	child, err = i.NewPrefix(child.Cidr)
 	child.ParentCidr = prefix.Cidr
 	if err != nil {
@@ -198,10 +198,10 @@ func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 	return nil, fmt.Errorf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips))
 }
 
-// ReleaseIP will release the given IP for later usage.
-func (i *Ipamer) ReleaseIP(ip *IP) error {
+// ReleaseIP will release the given IP for later usage and returns the updated Prefix.
+func (i *Ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
 	prefix := i.PrefixFrom(ip.ParentPrefix)
-	return i.ReleaseIPFromPrefix(prefix, ip.IP.String())
+	return prefix, i.ReleaseIPFromPrefix(prefix, ip.IP.String())
 }
 
 // ReleaseIPFromPrefix will release the given IP for later usage.
