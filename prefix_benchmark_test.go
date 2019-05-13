@@ -95,3 +95,15 @@ func BenchmarkAquireChildPrefix7(b *testing.B)  { benchmarkAquireChildPrefix(16,
 func BenchmarkAquireChildPrefix8(b *testing.B)  { benchmarkAquireChildPrefix(16, 22, b) }
 func BenchmarkAquireChildPrefix9(b *testing.B)  { benchmarkAquireChildPrefix(16, 24, b) }
 func BenchmarkAquireChildPrefix10(b *testing.B) { benchmarkAquireChildPrefix(16, 26, b) }
+
+func BenchmarkPrefixOverlapping(b *testing.B) {
+	ipam := New()
+	existingPrefixes := []string{"192.168.0.0/24", "10.0.0.0/8"}
+	newPrefixes := []string{"192.168.1.0/24", "11.0.0.0/8"}
+	for n := 0; n < b.N; n++ {
+		err := ipam.PrefixesOverlapping(existingPrefixes, newPrefixes)
+		if err != nil {
+			b.Errorf("PrefixOverLapping error:%v", err)
+		}
+	}
+}
