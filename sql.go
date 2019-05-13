@@ -11,43 +11,33 @@ type sql struct {
 	db *sqlx.DB
 }
 
-// https://stackoverflow.com/questions/28035784/golang-marshal-unmarshal-json-with-both-exported-and-un-exported-fields?rq=1
-type prefixAlias Prefix
-
 type prefixJSON struct {
-	*prefixAlias
+	*Prefix
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
 	ChildPrefixLength      int             // the length of the child prefixes
 	IPs                    map[string]bool // The ips contained in this prefix
 }
 
-// MarshalJSON marshals a Prefix. (struct to JSON)
-func (p *Prefix) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&prefixJSON{
-		prefixAlias: (*prefixAlias)(p),
-		// Unexported fields are listed here:
+func (p *prefixJSON) toPrefix() *Prefix {
+	return &Prefix{
+		Cidr:                   p.Cidr,
+		ParentCidr:             p.ParentCidr,
+		availableChildPrefixes: p.AvailableChildPrefixes,
+		childPrefixLength:      p.ChildPrefixLength,
+		ips:                    p.IPs,
+	}
+}
+
+func (p *Prefix) toPrefixJSON() *prefixJSON {
+	return &prefixJSON{
+		Prefix: &Prefix{
+			Cidr:       p.Cidr,
+			ParentCidr: p.ParentCidr,
+		},
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		ChildPrefixLength:      p.childPrefixLength,
 		IPs:                    p.ips,
-	})
-}
-
-// UnmarshalJSON unmarshals a Prefix. (JSON to struct)
-func (p *Prefix) UnmarshalJSON(data []byte) error {
-	temp := &prefixJSON{
-		prefixAlias: (*prefixAlias)(p),
 	}
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return err
-	}
-
-	// Copy the exported fields:
-	*p = (Prefix)(*(temp).prefixAlias)
-	// Each unexported field must be copied and/or converted individually:
-	p.availableChildPrefixes = temp.AvailableChildPrefixes
-	p.childPrefixLength = temp.childPrefixLength
-	p.ips = temp.IPs
-	return nil
 }
 
 func (s *sql) prefixExists(prefix *Prefix) (*Prefix, bool) {
@@ -67,7 +57,7 @@ func (s *sql) CreatePrefix(prefix *Prefix) (*Prefix, error) {
 		return existingPrefix, nil
 	}
 	tx := s.db.MustBegin()
-	pj, err := json.Marshal(prefix)
+	pj, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%v", err)
 	}
@@ -81,13 +71,13 @@ func (s *sql) ReadPrefix(prefix string) (*Prefix, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to read prefix:%v", err)
 	}
-	var pre Prefix
+	var pre prefixJSON
 	err = json.Unmarshal(result, &pre)
 	if err != nil {
 		return nil, fmt.Errorf("unable to unmarshal prefix:%v", err)
 	}
 
-	return &pre, nil
+	return pre.toPrefix(), nil
 }
 
 func (s *sql) ReadAllPrefixes() ([]*Prefix, error) {
@@ -99,19 +89,19 @@ func (s *sql) ReadAllPrefixes() ([]*Prefix, error) {
 
 	result := []*Prefix{}
 	for _, v := range prefixes {
-		var pre Prefix
+		var pre prefixJSON
 		err = json.Unmarshal(v, &pre)
 		if err != nil {
 			return nil, fmt.Errorf("unable to unmarshal prefix:%v", err)
 		}
-		result = append(result, &pre)
+		result = append(result, pre.toPrefix())
 	}
 	return result, nil
 }
 
 func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	tx := s.db.MustBegin()
-	pn, err := json.Marshal(prefix)
+	pn, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%v", err)
 	}
