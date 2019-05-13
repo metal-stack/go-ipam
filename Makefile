@@ -19,6 +19,3 @@ postgres-up: postgres-rm
 postgres-rm:
 	docker rm -f ipamdb || true
 
-.PHONY: example
-example:
-	$(GO) run example/main.go
