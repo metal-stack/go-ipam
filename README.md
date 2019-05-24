@@ -55,18 +55,19 @@ func main() {
 ## Performance
 
 ```bash
-BenchmarkNewPrefixMemory-4                500000              4629 ns/op
-BenchmarkNewPrefixPostgres-4                 200           7425393 ns/op
-BenchmarkAcquireIPMemory-4                2000000              1110 ns/op
-BenchmarkAcquireIPPostgres-4                  100          10508799 ns/op
-BenchmarkAcquireChildPrefix1-4             300000              3693 ns/op
-BenchmarkAcquireChildPrefix2-4             300000              3727 ns/op
-BenchmarkAcquireChildPrefix3-4             300000              4036 ns/op
-BenchmarkAcquireChildPrefix4-4             300000              4372 ns/op
-BenchmarkAcquireChildPrefix5-4             200000              5448 ns/op
-BenchmarkAcquireChildPrefix6-4             300000              3729 ns/op
-BenchmarkAcquireChildPrefix7-4             300000              3766 ns/op
-BenchmarkAcquireChildPrefix8-4             500000              3986 ns/op
-BenchmarkAcquireChildPrefix9-4             300000              3934 ns/op
-BenchmarkAcquireChildPrefix10-4            300000              3858 ns/op
+BenchmarkNewPrefixMemory-4               1000000              1523 ns/op             712 B/op         27 allocs/op
+BenchmarkNewPrefixPostgres-4                 200           9184559 ns/op            6141 B/op        155 allocs/op
+BenchmarkAcquireIPMemory-4               2000000              1026 ns/op             232 B/op         15 allocs/op
+BenchmarkAcquireIPPostgres-4                 200           8695598 ns/op            5696 B/op        141 allocs/op
+BenchmarkAcquireChildPrefix1-4            300000              3625 ns/op            1496 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix2-4            300000              3657 ns/op            1496 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix3-4            300000              3878 ns/op            1509 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix4-4            300000              4337 ns/op            1549 B/op         60 allocs/op
+BenchmarkAcquireChildPrefix5-4            300000              4856 ns/op            1709 B/op         66 allocs/op
+BenchmarkAcquireChildPrefix6-4            300000              3637 ns/op            1496 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix7-4            500000              3659 ns/op            1496 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix8-4            300000              3655 ns/op            1496 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix9-4            300000              3657 ns/op            1496 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix10-4           300000              3802 ns/op            1499 B/op         58 allocs/op
+BenchmarkPrefixOverlapping-4             1000000              1404 ns/op             432 B/op         24 allocs/op
 ```
