@@ -291,6 +291,34 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 	})
 }
 
+func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFull(t *testing.T) {
+
+	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+		prefix, err := ipam.NewPrefix("192.168.0.0/16")
+		require.Nil(t, err)
+		require.Equal(t, uint64(0), prefix.availablePrefixes())
+		require.Equal(t, uint64(0), prefix.acquiredPrefixes())
+
+		uniquePrefixes := make(map[string]bool)
+		// acquire all /24 prefixes (2^8 = 256)
+		for i := 0; i < 256; i++ {
+			cp, err := ipam.AcquireChildPrefix(prefix, 24)
+			require.Nil(t, err)
+			require.NotNil(t, cp)
+			require.True(t, strings.HasPrefix(cp.Cidr, "192.168."))
+			require.True(t, strings.HasSuffix(cp.Cidr, "/24"))
+			require.Equal(t, prefix.Cidr, cp.ParentCidr)
+			_, ok := uniquePrefixes[cp.String()]
+			require.False(t, ok)
+			uniquePrefixes[cp.String()] = true
+		}
+		require.Equal(t, 256, len(uniquePrefixes))
+		require.Equal(t, uint64(256), prefix.availablePrefixes())
+		require.Equal(t, uint64(256), prefix.acquiredPrefixes())
+
+	})
+}
+
 func TestPrefix_Availableips(t *testing.T) {
 
 	tests := []struct {
