@@ -9,5 +9,5 @@ require (
 	github.com/lib/pq v1.1.1
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
 	github.com/stretchr/testify v1.3.0
-	google.golang.org/appengine v1.5.0 // indirect
+	google.golang.org/appengine v1.6.0 // indirect
 )
