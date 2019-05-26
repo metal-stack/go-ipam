@@ -13,7 +13,7 @@ test:
 
 .PHONY: postgres-up
 postgres-up: postgres-rm
-	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres
+	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:alpine
 
 .PHONY: postgres-rm
 postgres-rm:
