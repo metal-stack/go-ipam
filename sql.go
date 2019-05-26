@@ -56,10 +56,13 @@ func (s *sql) CreatePrefix(prefix *Prefix) (*Prefix, error) {
 	if exists {
 		return existingPrefix, nil
 	}
-	tx := s.db.MustBegin()
 	pj, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%v", err)
+	}
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return nil, fmt.Errorf("unable to start transaction:%v", err)
 	}
 	tx.MustExec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
 	return prefix, tx.Commit()
@@ -104,14 +107,20 @@ func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%v", err)
 	}
-	tx := s.db.MustBegin()
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return nil, fmt.Errorf("unable to start transaction:%v", err)
+	}
 	tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 FOR UPDATE", prefix.Cidr)
 	tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2", pn, prefix.Cidr)
 	return prefix, tx.Commit()
 }
 
 func (s *sql) DeletePrefix(prefix *Prefix) (*Prefix, error) {
-	tx := s.db.MustBegin()
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return nil, fmt.Errorf("unable to start transaction:%v", err)
+	}
 	tx.MustExec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
 	return prefix, tx.Commit()
 }
