@@ -100,11 +100,12 @@ func (s *sql) ReadAllPrefixes() ([]*Prefix, error) {
 }
 
 func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
-	tx := s.db.MustBegin()
 	pn, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%v", err)
 	}
+	tx := s.db.MustBegin()
+	tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 FOR UPDATE", prefix.Cidr)
 	tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2", pn, prefix.Cidr)
 	return prefix, tx.Commit()
 }
