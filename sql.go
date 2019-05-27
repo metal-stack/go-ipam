@@ -16,6 +16,7 @@ type prefixJSON struct {
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
 	ChildPrefixLength      int             // the length of the child prefixes
 	IPs                    map[string]bool // The ips contained in this prefix
+	Version                int64           // Version is used for optimistic locking
 }
 
 func (p *prefixJSON) toPrefix() *Prefix {
@@ -25,6 +26,7 @@ func (p *prefixJSON) toPrefix() *Prefix {
 		availableChildPrefixes: p.AvailableChildPrefixes,
 		childPrefixLength:      p.ChildPrefixLength,
 		ips:                    p.IPs,
+		version:                p.Version,
 	}
 }
 
@@ -37,6 +39,7 @@ func (p *Prefix) toPrefixJSON() *prefixJSON {
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		ChildPrefixLength:      p.childPrefixLength,
 		IPs:                    p.ips,
+		Version:                p.version,
 	}
 }
 
@@ -56,6 +59,7 @@ func (s *sql) CreatePrefix(prefix *Prefix) (*Prefix, error) {
 	if exists {
 		return existingPrefix, nil
 	}
+	prefix.version = int64(0)
 	pj, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%v", err)
@@ -103,6 +107,8 @@ func (s *sql) ReadAllPrefixes() ([]*Prefix, error) {
 }
 
 func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
+	oldVersion := prefix.version
+	prefix.version = oldVersion + 1
 	pn, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%v", err)
@@ -111,8 +117,24 @@ func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to start transaction:%v", err)
 	}
-	tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 FOR UPDATE", prefix.Cidr)
-	tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2", pn, prefix.Cidr)
+	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if rows == 0 {
+		tx.Rollback()
+		return nil, fmt.Errorf("select for update did not effect any row")
+	}
+	result = tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+	rows, err = result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if rows == 0 {
+		tx.Rollback()
+		return nil, fmt.Errorf("updatePrefix did not effect any row")
+	}
 	return prefix, tx.Commit()
 }
 

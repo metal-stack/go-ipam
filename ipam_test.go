@@ -26,11 +26,11 @@ func ExampleIpamer_NewPrefix() {
 	if err != nil {
 		panic(err)
 	}
-	ip1, err := ipamer.AcquireIP(prefix)
+	ip1, err := ipamer.AcquireIP(prefix.Cidr)
 	if err != nil {
 		panic(err)
 	}
-	ip2, err := ipamer.AcquireIP(prefix)
+	ip2, err := ipamer.AcquireIP(prefix.Cidr)
 	if err != nil {
 		panic(err)
 	}

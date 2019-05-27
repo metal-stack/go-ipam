@@ -15,6 +15,7 @@ type Prefix struct {
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
 	childPrefixLength      int             // the length of the child prefixes
 	ips                    map[string]bool // The ips contained in this prefix
+	version                int64           // version is used for optimistic locking
 }
 
 // Usage of ips and child Prefixes of a Prefix
@@ -58,7 +59,11 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 
 // AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
 // FIXME allow variable child prefix length
-func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error) {
+func (i *Ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, error) {
+	prefix := i.PrefixFrom(parentCidr)
+	if prefix == nil {
+		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
+	}
 	prefix.mux.Lock()
 	defer prefix.mux.Unlock()
 	if len(prefix.ips) > 2 {
@@ -122,13 +127,18 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 
 	_, err = i.storage.UpdatePrefix(prefix)
 	if err != nil {
-		return nil, fmt.Errorf("unable to update created child:%v", err)
+		return nil, fmt.Errorf("unable to update parent prefix:%v", err)
 	}
 	child, err = i.NewPrefix(child.Cidr)
-	child.ParentCidr = prefix.Cidr
 	if err != nil {
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
+	child.ParentCidr = prefix.Cidr
+	_, err = i.storage.UpdatePrefix(child)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update child prefix:%v", err)
+	}
+
 	return child, nil
 }
 
@@ -168,7 +178,11 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 }
 
 // AcquireIP will return the next unused IP from this Prefix.
-func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
+func (i *Ipamer) AcquireIP(prefixCidr string) (*IP, error) {
+	prefix := i.PrefixFrom(prefixCidr)
+	if prefix == nil {
+		return nil, fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
+	}
 	prefix.mux.Lock()
 	defer prefix.mux.Unlock()
 	if prefix.childPrefixLength > 0 {
@@ -203,12 +217,17 @@ func (i *Ipamer) AcquireIP(prefix *Prefix) (*IP, error) {
 
 // ReleaseIP will release the given IP for later usage and returns the updated Prefix.
 func (i *Ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
+	err := i.ReleaseIPFromPrefix(ip.ParentPrefix, ip.IP.String())
 	prefix := i.PrefixFrom(ip.ParentPrefix)
-	return prefix, i.ReleaseIPFromPrefix(prefix, ip.IP.String())
+	return prefix, err
 }
 
 // ReleaseIPFromPrefix will release the given IP for later usage.
-func (i *Ipamer) ReleaseIPFromPrefix(prefix *Prefix, ip string) error {
+func (i *Ipamer) ReleaseIPFromPrefix(prefixCidr, ip string) error {
+	prefix := i.PrefixFrom(prefixCidr)
+	if prefix == nil {
+		return fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
+	}
 	if prefix == nil {
 		return fmt.Errorf("prefix is nil")
 	}
