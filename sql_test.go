@@ -3,8 +3,6 @@ package ipam
 import (
 	"testing"
 
-	"sync"
-
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -181,6 +179,7 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 
 func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	db, err := createDB(t)
+	defer destroy(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
 
@@ -190,31 +189,22 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	_, err = ipamer.NewPrefix(parent)
 	require.Nil(t, err)
 
-	var wg sync.WaitGroup
-	count := 10
-	wg.Add(count)
-
+	count := 80
 	prefixes := make(chan string)
+	prefixMap := make(map[string]bool)
 	for i := 0; i < count; i++ {
-		go acquire(t, &wg, parent, prefixes)
-	}
-	t.Log("goroutines started.")
-	for {
-		select {
-		case prefix := <-prefixes:
-			t.Logf("got: %s", prefix)
-		}
+		go acquire(t, parent, prefixes)
 	}
 
-	for p := range prefixes {
-		t.Logf("prefix:%s", p)
+	for i := 0; i < count; i++ {
+		p := <-prefixes
+		_, ok := prefixMap[p]
+		require.False(t, ok, "prefix:%s already acquired", p)
+		prefixMap[p] = true
 	}
-	wg.Wait()
 }
 
-func acquire(t *testing.T, wg *sync.WaitGroup, prefix string, prefixes chan string) {
-	defer wg.Done()
-	t.Log("new thread")
+func acquire(t *testing.T, prefix string, prefixes chan string) {
 	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
@@ -222,15 +212,10 @@ func acquire(t *testing.T, wg *sync.WaitGroup, prefix string, prefixes chan stri
 
 	p := ipamer.PrefixFrom(prefix)
 	require.NotNil(t, p)
-	t.Logf("got prefix:%s", p.String())
 
 	var cp *Prefix
-	// var err error
 	for cp == nil {
-		cp, err = ipamer.AcquireChildPrefix(p, 24)
-		if err != nil {
-			t.Log(err.Error())
-		}
+		cp, _ = ipamer.AcquireChildPrefix(p, 26)
 		time.Sleep(100 * time.Millisecond)
 	}
 	prefixes <- cp.String()
