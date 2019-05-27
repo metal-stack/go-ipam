@@ -36,7 +36,7 @@ func benchmarkAcquireIP(ipam *Ipamer, cidr string, b *testing.B) {
 		panic(err)
 	}
 	for n := 0; n < b.N; n++ {
-		ip, err := ipam.AcquireIP(p)
+		ip, err := ipam.AcquireIP(p.Cidr)
 		if err != nil {
 			panic(err)
 		}
