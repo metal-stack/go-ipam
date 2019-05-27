@@ -11,9 +11,6 @@ import (
 func createDB(t *testing.T) (*sql, error) {
 	dbname := "postgres"
 	db, err := NewPostgresStorage("localhost", "5433", "postgres", "password", dbname, "disable")
-	require.Nil(t, err)
-	err = db.db.Ping()
-	require.Nil(t, err)
 	return db, err
 }
 
@@ -185,37 +182,39 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 
 	ipamer := NewWithStorage(db)
 
-	const parent = "1.0.0.0/16"
-	_, err = ipamer.NewPrefix(parent)
+	const parentCidr = "1.0.0.0/16"
+	_, err = ipamer.NewPrefix(parentCidr)
 	require.Nil(t, err)
 
-	count := 80
+	count := 50
 	prefixes := make(chan string)
-	prefixMap := make(map[string]bool)
 	for i := 0; i < count; i++ {
-		go acquire(t, parent, prefixes)
+		go acquire(t, parentCidr, prefixes)
 	}
 
+	prefixMap := make(map[string]bool)
 	for i := 0; i < count; i++ {
 		p := <-prefixes
-		_, ok := prefixMap[p]
-		require.False(t, ok, "prefix:%s already acquired", p)
+		_, duplicate := prefixMap[p]
+		if duplicate {
+			t.Errorf("prefix:%s already acquired", p)
+		}
 		prefixMap[p] = true
 	}
 }
 
-func acquire(t *testing.T, prefix string, prefixes chan string) {
+func acquire(t *testing.T, cidr string, prefixes chan string) {
 	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
 	ipamer := NewWithStorage(db)
 
-	p := ipamer.PrefixFrom(prefix)
-	require.NotNil(t, p)
-
 	var cp *Prefix
 	for cp == nil {
-		cp, _ = ipamer.AcquireChildPrefix(p, 26)
+		cp, err = ipamer.AcquireChildPrefix(cidr, 26)
+		if err != nil {
+			//fmt.Println(err)
+		}
 		time.Sleep(100 * time.Millisecond)
 	}
 	prefixes <- cp.String()

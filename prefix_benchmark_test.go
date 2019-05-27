@@ -71,7 +71,7 @@ func benchmarkAcquireChildPrefix(parentLength, childLength int, b *testing.B) {
 		panic(err)
 	}
 	for n := 0; n < b.N; n++ {
-		p, err := ipam.AcquireChildPrefix(p, childLength)
+		p, err := ipam.AcquireChildPrefix(p.Cidr, childLength)
 		if err != nil {
 			panic(err)
 		}

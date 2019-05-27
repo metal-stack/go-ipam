@@ -15,6 +15,7 @@ type Prefix struct {
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
 	childPrefixLength      int             // the length of the child prefixes
 	ips                    map[string]bool // The ips contained in this prefix
+	version                int64           // version is used for optimistic locking
 }
 
 // Usage of ips and child Prefixes of a Prefix
@@ -58,7 +59,11 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 
 // AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
 // FIXME allow variable child prefix length
-func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error) {
+func (i *Ipamer) AcquireChildPrefix(cidr string, length int) (*Prefix, error) {
+	prefix := i.PrefixFrom(cidr)
+	if prefix == nil {
+		return nil, fmt.Errorf("unable to find prefix for cidr:%s", cidr)
+	}
 	prefix.mux.Lock()
 	defer prefix.mux.Unlock()
 	if len(prefix.ips) > 2 {
@@ -122,13 +127,18 @@ func (i *Ipamer) AcquireChildPrefix(prefix *Prefix, length int) (*Prefix, error)
 
 	_, err = i.storage.UpdatePrefix(prefix)
 	if err != nil {
-		return nil, fmt.Errorf("unable to update created child:%v", err)
+		return nil, fmt.Errorf("unable to update parent prefix:%v", err)
 	}
 	child, err = i.NewPrefix(child.Cidr)
-	child.ParentCidr = prefix.Cidr
 	if err != nil {
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
+	child.ParentCidr = prefix.Cidr
+	_, err = i.storage.UpdatePrefix(child)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update child prefix:%v", err)
+	}
+
 	return child, nil
 }
 

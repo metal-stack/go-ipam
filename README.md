@@ -38,7 +38,7 @@ func main() {
         panic(err)
     }
 
-    ip, err := ipam.AcquireIP(prefix)
+    ip, err := ipam.AcquireIP(prefix.Cidr)
     if err != nil {
         panic(err)
     }
@@ -55,19 +55,19 @@ func main() {
 ## Performance
 
 ```bash
-BenchmarkNewPrefixMemory-4               1000000              1523 ns/op             712 B/op         27 allocs/op
-BenchmarkNewPrefixPostgres-4                 200           9184559 ns/op            6141 B/op        155 allocs/op
-BenchmarkAcquireIPMemory-4               2000000              1026 ns/op             232 B/op         15 allocs/op
-BenchmarkAcquireIPPostgres-4                 200           8695598 ns/op            5696 B/op        141 allocs/op
-BenchmarkAcquireChildPrefix1-4            300000              3625 ns/op            1496 B/op         58 allocs/op
-BenchmarkAcquireChildPrefix2-4            300000              3657 ns/op            1496 B/op         58 allocs/op
-BenchmarkAcquireChildPrefix3-4            300000              3878 ns/op            1509 B/op         58 allocs/op
-BenchmarkAcquireChildPrefix4-4            300000              4337 ns/op            1549 B/op         60 allocs/op
-BenchmarkAcquireChildPrefix5-4            300000              4856 ns/op            1709 B/op         66 allocs/op
-BenchmarkAcquireChildPrefix6-4            300000              3637 ns/op            1496 B/op         58 allocs/op
-BenchmarkAcquireChildPrefix7-4            500000              3659 ns/op            1496 B/op         58 allocs/op
-BenchmarkAcquireChildPrefix8-4            300000              3655 ns/op            1496 B/op         58 allocs/op
-BenchmarkAcquireChildPrefix9-4            300000              3657 ns/op            1496 B/op         58 allocs/op
-BenchmarkAcquireChildPrefix10-4           300000              3802 ns/op            1499 B/op         58 allocs/op
-BenchmarkPrefixOverlapping-4             1000000              1404 ns/op             432 B/op         24 allocs/op
+BenchmarkNewPrefixMemory-4               1000000              1637 ns/op             728 B/op         27 allocs/op
+BenchmarkNewPrefixPostgres-4                 200           8611579 ns/op            6170 B/op        155 allocs/op
+BenchmarkAcquireIPMemory-4               1000000              1234 ns/op             232 B/op         15 allocs/op
+BenchmarkAcquireIPPostgres-4                 200          11583345 ns/op            7252 B/op        184 allocs/op
+BenchmarkAcquireChildPrefix1-4            300000              3771 ns/op            1528 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix2-4            300000              3773 ns/op            1528 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix3-4            300000              3997 ns/op            1541 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix4-4            300000              4877 ns/op            1581 B/op         60 allocs/op
+BenchmarkAcquireChildPrefix5-4            200000              5541 ns/op            1854 B/op         70 allocs/op
+BenchmarkAcquireChildPrefix6-4            300000              4123 ns/op            1528 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix7-4            300000              4954 ns/op            1528 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix8-4            300000              5017 ns/op            1528 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix9-4            300000              5309 ns/op            1528 B/op         58 allocs/op
+BenchmarkAcquireChildPrefix10-4           200000              5234 ns/op            1532 B/op         58 allocs/op
+BenchmarkPrefixOverlapping-4             1000000              1934 ns/op             432 B/op         24 allocs/op
 ```
