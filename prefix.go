@@ -337,7 +337,7 @@ func (p *Prefix) broadcast() (*IP, error) {
 }
 
 func (p *Prefix) String() string {
-	return fmt.Sprintf("%s", p.Cidr)
+	return p.Cidr
 }
 
 func (u *Usage) String() string {

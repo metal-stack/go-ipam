@@ -211,10 +211,7 @@ func acquire(t *testing.T, cidr string, prefixes chan string) {
 
 	var cp *Prefix
 	for cp == nil {
-		cp, err = ipamer.AcquireChildPrefix(cidr, 26)
-		if err != nil {
-			//fmt.Println(err)
-		}
+		cp, _ = ipamer.AcquireChildPrefix(cidr, 26)
 		time.Sleep(100 * time.Millisecond)
 	}
 	prefixes <- cp.String()

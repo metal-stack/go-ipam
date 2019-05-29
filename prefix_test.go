@@ -579,17 +579,17 @@ type Cleanable interface {
 }
 
 // extended sql interface
-type ExtendedSql struct {
+type ExtendedSQL struct {
 	*sql
 }
 
-func NewPostgresWithCleanup() (*ExtendedSql, error) {
+func NewPostgresWithCleanup() (*ExtendedSQL, error) {
 	s, err := NewPostgres()
 	if err != nil {
 		return nil, err
 	}
 
-	ext := &ExtendedSql{
+	ext := &ExtendedSQL{
 		s,
 	}
 
@@ -597,7 +597,7 @@ func NewPostgresWithCleanup() (*ExtendedSql, error) {
 }
 
 // cleanup database before test
-func (e *ExtendedSql) cleanup() error {
+func (e *ExtendedSQL) cleanup() error {
 	tx := e.db.MustBegin()
 	_, err := e.db.Exec("TRUNCATE TABLE prefixes")
 	if err != nil {
@@ -616,7 +616,7 @@ func testWithBackends(t *testing.T, fn testMethod) {
 		if tp, ok := storage.(Cleanable); ok {
 			err := tp.cleanup()
 			if err != nil {
-				t.Errorf("error cleaing up, %v", err)
+				t.Errorf("error cleaning up, %v", err)
 			}
 		}
 
