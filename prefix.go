@@ -268,6 +268,30 @@ func (i *Ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []st
 	return nil
 }
 
+// GetHostAddresses will return all possible ipadresses a host can get in the given prefix.
+func (i *Ipamer) GetHostAddresses(prefix string) ([]string, error) {
+	hostAddresses := []string{}
+
+	p, err := i.NewPrefix(prefix)
+	if err != nil {
+		return hostAddresses, err
+	}
+
+	empty := false
+	for !empty {
+		ip, err := i.AcquireIP(p.Cidr)
+		if err != nil {
+			return hostAddresses, nil
+		}
+		if ip == nil {
+			return hostAddresses, nil
+		}
+		hostAddresses = append(hostAddresses, ip.IP.String())
+	}
+
+	return hostAddresses, nil
+}
+
 // NewPrefix create a new Prefix from a string notation.
 func (i *Ipamer) newPrefix(cidr string) (*Prefix, error) {
 	_, _, err := net.ParseCIDR(cidr)

@@ -549,6 +549,26 @@ func TestIpamerAcquireIP(t *testing.T) {
 	})
 }
 
+func TestGetHostAddresses(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+		cidr := "4.1.0.0/24"
+		ips, err := ipam.GetHostAddresses(cidr)
+		if err != nil {
+			panic(err)
+		}
+		require.NotNil(t, ips)
+		require.Equal(t, 254, len(ips))
+
+		cidr = "3.1.0.0/26"
+		ips, err = ipam.GetHostAddresses(cidr)
+		if err != nil {
+			panic(err)
+		}
+		require.NotNil(t, ips)
+		require.Equal(t, 62, len(ips))
+	})
+}
+
 func NewPostgres() (*sql, error) {
 	return NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
 }
