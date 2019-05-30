@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS prefixes (
 	cidr   text PRIMARY KEY NOT NULL,
 	prefix JSONB
 );
+
+CREATE INDEX IF NOT EXISTS prefix_idx ON prefixes USING GIN(prefix);
 `
 
 // NewPostgresStorage creates a new Storage which uses postgres.
