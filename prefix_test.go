@@ -93,6 +93,52 @@ func TestIpamer_ReleaseIPFromPrefix(t *testing.T) {
 	})
 }
 
+func TestIpamer_AcquireSpecificIP(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+		prefix, err := ipam.NewPrefix("192.168.99.0/24")
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		// network an broadcast are blocked
+		require.Equal(t, prefix.acquiredips(), uint64(2))
+		ip1, err := ipam.AcquireSpecificIP(prefix.Cidr, "192.168.99.1")
+		require.Nil(t, err)
+		require.NotNil(t, ip1)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(3))
+		ip2, err := ipam.AcquireSpecificIP(prefix.Cidr, "192.168.99.2")
+		require.Nil(t, err)
+		require.NotEqual(t, ip1, ip2)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(4))
+		require.Equal(t, "192.168.99.1", ip1.IP.String())
+		require.Equal(t, "192.168.99.2", ip2.IP.String())
+
+		// Wish IP out of prefix
+		ip3, err := ipam.AcquireSpecificIP(prefix.Cidr, "192.168.98.2")
+		require.Nil(t, ip3)
+		require.NotNil(t, err)
+		require.Equal(t, "given ip:192.168.98.2 is not in 192.168.99.0/24", err.Error())
+
+		// Wish IP is invalid
+		ip4, err := ipam.AcquireSpecificIP(prefix.Cidr, "192.168.99.1.invalid")
+		require.Nil(t, ip4)
+		require.NotNil(t, err)
+		require.Equal(t, "given ip:192.168.99.1.invalid in not valid", err.Error())
+
+		prefix, err = ipam.ReleaseIP(ip1)
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(3))
+
+		prefix, err = ipam.ReleaseIP(ip2)
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(2))
+	})
+}
+
 func TestIpamer_AcquireIPCounts(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
