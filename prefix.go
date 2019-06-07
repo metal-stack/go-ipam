@@ -177,8 +177,8 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 	return prefix
 }
 
-// AcquireIP will return the next unused IP from this Prefix.
-func (i *Ipamer) AcquireIP(prefixCidr string) (*IP, error) {
+// AcquireSpecificIP will acquire given IP an mark this IP as used, if already in use, return nil.
+func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
@@ -197,9 +197,23 @@ func (i *Ipamer) AcquireIP(prefixCidr string) (*IP, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if specificIP != "" {
+		specificIPnet := net.ParseIP(specificIP)
+		if specificIPnet == nil {
+			return nil, fmt.Errorf("given ip:%s in not valid", specificIP)
+		}
+		if !ipnet.Contains(specificIPnet) {
+			return nil, fmt.Errorf("given ip:%s is not in %s", specificIP, prefixCidr)
+		}
+	}
+
 	for ip := network.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
 		_, ok := prefix.ips[ip.String()]
-		if !ok {
+		if ok {
+			continue
+		}
+		if specificIP == "" || specificIP == ip.String() {
 			acquired = &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
@@ -213,6 +227,11 @@ func (i *Ipamer) AcquireIP(prefixCidr string) (*IP, error) {
 		}
 	}
 	return nil, fmt.Errorf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips))
+}
+
+// AcquireIP will return the next unused IP from this Prefix.
+func (i *Ipamer) AcquireIP(prefixCidr string) (*IP, error) {
+	return i.AcquireSpecificIP(prefixCidr, "")
 }
 
 // ReleaseIP will release the given IP for later usage and returns the updated Prefix.
