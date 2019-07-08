@@ -186,7 +186,7 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	_, err = ipamer.NewPrefix(parentCidr)
 	require.Nil(t, err)
 
-	count := 2
+	count := 50
 	prefixes := make(chan string)
 	for i := 0; i < count; i++ {
 		go acquire(t, parentCidr, prefixes)
@@ -205,16 +205,20 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 
 func acquire(t *testing.T, cidr string, prefixes chan string) {
 	db, err := createDB(t)
+
 	require.Nil(t, err)
 	require.NotNil(t, db)
 	ipamer := NewWithStorage(db)
 
 	var cp *Prefix
 	for cp == nil {
-		cp, err = ipamer.AcquireChildPrefix(cidr, 26)
-		if err != nil {
-			t.Error(err)
-		}
+		cp, _ = ipamer.AcquireChildPrefix(cidr, 26)
+		// fmt.Printf("ChildPrefix: %v\n", cp)
+		// fmt.Printf("Error: %v\n", err)
+		// if err != nil {
+		// 	t.Error(err)
+		// }
+
 		time.Sleep(100 * time.Millisecond)
 	}
 	prefixes <- cp.String()

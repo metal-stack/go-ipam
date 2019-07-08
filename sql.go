@@ -1,5 +1,7 @@
 package ipam
 
+import "fmt"
+
 type sql struct {
 	tsql *tsql
 }
@@ -43,7 +45,11 @@ func (s *sql) CreatePrefix(prefix *Prefix) (*Prefix, error) {
 	}
 	prefix, err = s.tsql.CreatePrefix(prefix)
 	if err != nil {
-		return nil, s.tsql.Rollback()
+		rollbackErr := s.tsql.Rollback()
+		if rollbackErr != nil {
+			return nil, fmt.Errorf("during rollback due to an error (%v), another error occurred: %v", err, rollbackErr)
+		}
+		return nil, err
 	}
 	return prefix, s.tsql.Commit()
 }
@@ -63,7 +69,11 @@ func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	}
 	prefix, err = s.tsql.UpdatePrefix(prefix)
 	if err != nil {
-		return nil, s.tsql.Rollback()
+		rollbackErr := s.tsql.Rollback()
+		if rollbackErr != nil {
+			return nil, fmt.Errorf("during rollback due to an error (%v), another error occurred: %v", err, rollbackErr)
+		}
+		return nil, err
 	}
 	return prefix, s.tsql.Commit()
 }
@@ -75,7 +85,11 @@ func (s *sql) DeletePrefix(prefix *Prefix) (*Prefix, error) {
 	}
 	prefix, err = s.tsql.DeletePrefix(prefix)
 	if err != nil {
-		return nil, s.tsql.Rollback()
+		rollbackErr := s.tsql.Rollback()
+		if rollbackErr != nil {
+			return nil, fmt.Errorf("during rollback due to an error (%v), another error occurred: %v", err, rollbackErr)
+		}
+		return nil, err
 	}
 	return prefix, s.tsql.Commit()
 

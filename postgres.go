@@ -25,10 +25,9 @@ func NewPostgresTransactionalStorage(host, port, user, password, dbname, sslmode
 		return nil, fmt.Errorf("unable to connect to database:%v", err)
 	}
 	db.MustExec(postgresSchema)
-	t := &tsql{
+	return &tsql{
 		db: db,
-	}
-	return t, nil
+	}, nil
 }
 
 // NewPostgresStorage creates a new Storage which uses postgres.

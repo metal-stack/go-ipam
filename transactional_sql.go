@@ -33,7 +33,17 @@ func (t *tsql) Commit() error {
 }
 
 func (t *tsql) Rollback() error {
-	return t.tx.Rollback()
+	if t.tx != nil {
+		if !t.inTX {
+			return fmt.Errorf("not in transaction")
+		}
+		err := t.tx.Rollback()
+		if err == nil {
+			t.inTX = false
+		}
+		return err
+	}
+	return fmt.Errorf("no transaction to rollback")
 }
 
 func (t *tsql) CreatePrefix(prefix *Prefix) (*Prefix, error) {
@@ -103,8 +113,7 @@ func (t *tsql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 		return nil, err
 	}
 	if rows == 0 {
-		err := t.Rollback()
-		return nil, fmt.Errorf("select for update did not effect any row, %v", err)
+		return nil, fmt.Errorf("select for update did not effect any row")
 	}
 	result = t.tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
 	rows, err = result.RowsAffected()
@@ -112,8 +121,7 @@ func (t *tsql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 		return nil, err
 	}
 	if rows == 0 {
-		err := t.Rollback()
-		return nil, fmt.Errorf("updatePrefix did not effect any row, %v", err)
+		return nil, fmt.Errorf("updatePrefix did not effect any row, other errors")
 	}
 	return prefix, nil
 }
