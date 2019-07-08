@@ -14,7 +14,6 @@ func NewMemory() *memory {
 	return &memory{
 		prefixes: prefixes,
 	}
-
 }
 
 func (m *memory) CreatePrefix(prefix *Prefix) (*Prefix, error) {

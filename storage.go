@@ -8,3 +8,11 @@ type Storage interface {
 	UpdatePrefix(prefix *Prefix) (*Prefix, error)
 	DeletePrefix(prefix *Prefix) (*Prefix, error)
 }
+
+// TransactionalStorage is a Storage implementation with explicit transaction boundaries.
+type TransactionalStorage interface {
+	Storage
+	Begin() error
+	Commit() error
+	Rollback() error
+}

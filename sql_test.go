@@ -15,7 +15,7 @@ func createDB(t *testing.T) (*sql, error) {
 }
 
 func destroy(s *sql) {
-	s.db.MustExec("DROP TABLE prefixes")
+	s.tsql.db.MustExec("DROP TABLE prefixes")
 }
 
 func Test_sql_prefixExists(t *testing.T) {
@@ -29,20 +29,20 @@ func Test_sql_prefixExists(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, p)
 	require.Equal(t, prefix.Cidr, p.Cidr)
-	got, exists := db.prefixExists(prefix)
+	got, exists := db.tsql.prefixExists(prefix)
 	require.True(t, exists)
 	require.Equal(t, got.Cidr, prefix.Cidr)
 
 	// NonExisting Prefix
 	notExistingPrefix := &Prefix{Cidr: "10.0.0.0/8"}
-	got, exists = db.prefixExists(notExistingPrefix)
+	got, exists = db.tsql.prefixExists(notExistingPrefix)
 	require.False(t, exists)
 	require.Nil(t, got)
 
 	// Delete Existing Prefix
 	_, err = db.DeletePrefix(prefix)
 	require.Nil(t, err)
-	got, exists = db.prefixExists(prefix)
+	got, exists = db.tsql.prefixExists(prefix)
 	require.False(t, exists)
 	require.Nil(t, got)
 
@@ -57,14 +57,14 @@ func Test_sql_CreatePrefix(t *testing.T) {
 
 	// Existing Prefix
 	prefix := &Prefix{Cidr: "11.0.0.0/16"}
-	got, exists := db.prefixExists(prefix)
+	got, exists := db.tsql.prefixExists(prefix)
 	require.False(t, exists)
 	require.Nil(t, got)
 	p, err := db.CreatePrefix(prefix)
 	require.Nil(t, err)
 	require.NotNil(t, p)
 	require.Equal(t, prefix.Cidr, p.Cidr)
-	got, exists = db.prefixExists(prefix)
+	got, exists = db.tsql.prefixExists(prefix)
 	require.True(t, exists)
 	require.Equal(t, got.Cidr, prefix.Cidr)
 
@@ -186,7 +186,7 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	_, err = ipamer.NewPrefix(parentCidr)
 	require.Nil(t, err)
 
-	count := 50
+	count := 2
 	prefixes := make(chan string)
 	for i := 0; i < count; i++ {
 		go acquire(t, parentCidr, prefixes)
@@ -211,7 +211,10 @@ func acquire(t *testing.T, cidr string, prefixes chan string) {
 
 	var cp *Prefix
 	for cp == nil {
-		cp, _ = ipamer.AcquireChildPrefix(cidr, 26)
+		cp, err = ipamer.AcquireChildPrefix(cidr, 26)
+		if err != nil {
+			t.Error(err)
+		}
 		time.Sleep(100 * time.Millisecond)
 	}
 	prefixes <- cp.String()

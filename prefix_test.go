@@ -644,8 +644,8 @@ func NewPostgresWithCleanup() (*ExtendedSQL, error) {
 
 // cleanup database before test
 func (e *ExtendedSQL) cleanup() error {
-	tx := e.db.MustBegin()
-	_, err := e.db.Exec("TRUNCATE TABLE prefixes")
+	tx := e.tsql.db.MustBegin()
+	_, err := e.tsql.db.Exec("TRUNCATE TABLE prefixes")
 	if err != nil {
 		return err
 	}

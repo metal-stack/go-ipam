@@ -29,7 +29,7 @@ func BenchmarkNewPrefixPostgres(b *testing.B) {
 	if err != nil {
 		panic(err)
 	}
-	defer storage.db.Close()
+	defer storage.tsql.db.Close()
 	ipam := NewWithStorage(storage)
 	benchmarkNewPrefix(ipam, b)
 }
@@ -67,7 +67,7 @@ func BenchmarkAcquireIPPostgres(b *testing.B) {
 	if err != nil {
 		panic(err)
 	}
-	defer storage.db.Close()
+	defer storage.tsql.db.Close()
 	ipam := NewWithStorage(storage)
 	benchmarkAcquireIP(ipam, "10.0.0.0/16", b)
 }
