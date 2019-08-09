@@ -2,9 +2,13 @@ package ipam
 
 import (
 	"fmt"
+	"github.com/avast/retry-go"
+	"github.com/pkg/errors"
 	"math"
+	"math/rand"
 	"net"
 	"sync"
+	"time"
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
@@ -58,8 +62,19 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 }
 
 // AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
-// FIXME allow variable child prefix length
 func (i *Ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, error) {
+	var prefix *Prefix
+	var err error
+	retryOnOptimisticLock(func() error {
+		prefix, err = i.acquireChildPrefixInternal(parentCidr, length)
+		return err
+	})
+	return prefix, err
+}
+
+// acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
+// FIXME allow variable child prefix length
+func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Prefix, error) {
 	prefix := i.PrefixFrom(parentCidr)
 	if prefix == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
@@ -127,7 +142,7 @@ func (i *Ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, err
 
 	_, err = i.storage.UpdatePrefix(prefix)
 	if err != nil {
-		return nil, fmt.Errorf("unable to update parent prefix:%v", err)
+		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", prefix)
 	}
 	child, err = i.NewPrefix(child.Cidr)
 	if err != nil {
@@ -136,7 +151,7 @@ func (i *Ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, err
 	child.ParentCidr = prefix.Cidr
 	_, err = i.storage.UpdatePrefix(child)
 	if err != nil {
-		return nil, fmt.Errorf("unable to update child prefix:%v", err)
+		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", child)
 	}
 
 	return child, nil
@@ -144,6 +159,16 @@ func (i *Ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, err
 
 // ReleaseChildPrefix will mark this child Prefix as available again.
 func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
+	var err error
+	retryOnOptimisticLock(func() error {
+		err = i.releaseChildPrefixInternal(child)
+		return err
+	})
+	return err
+}
+
+// releaseChildPrefixInternal will mark this child Prefix as available again.
+func (i *Ipamer) releaseChildPrefixInternal(child *Prefix) error {
 	parent := i.PrefixFrom(child.ParentCidr)
 
 	if parent == nil {
@@ -177,8 +202,18 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 	return prefix
 }
 
-// AcquireSpecificIP will acquire given IP an mark this IP as used, if already in use, return nil.
 func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
+	var ip *IP
+	var err error
+	retryOnOptimisticLock(func() error {
+		ip, err = i.acquireSpecificIPInternal(prefixCidr, specificIP)
+		return err
+	})
+	return ip, err
+}
+
+// acquireSpecificIPInternal will acquire given IP an mark this IP as used, if already in use, return nil.
+func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
@@ -221,7 +256,7 @@ func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 			prefix.ips[ip.String()] = true
 			_, err := i.storage.UpdatePrefix(prefix)
 			if err != nil {
-				return nil, fmt.Errorf("unable to persist acquired ip:%v", err)
+				return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
 			}
 			return acquired, nil
 		}
@@ -243,6 +278,16 @@ func (i *Ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
 
 // ReleaseIPFromPrefix will release the given IP for later usage.
 func (i *Ipamer) ReleaseIPFromPrefix(prefixCidr, ip string) error {
+	var err error
+	retryOnOptimisticLock(func() error {
+		err = i.releaseIPFromPrefixInternal(prefixCidr, ip)
+		return err
+	})
+	return err
+}
+
+// releaseIPFromPrefixInternal will release the given IP for later usage.
+func (i *Ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
 		return fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
@@ -429,5 +474,30 @@ func (p *Prefix) Usage() Usage {
 		AvailablePrefixes: p.availablePrefixes(),
 		AcquiredPrefixes:  p.acquiredPrefixes(),
 	}
+}
 
+// retries the given function if the reported error is an OptimisticLockError
+// with ten attempts and jitter delay ~100ms
+func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) {
+	retry.Do(
+		retryableFunc,
+		retry.RetryIf(func(err error) bool {
+			_, isOptimisticLock := errors.Cause(err).(OptimisticLockError)
+			return isOptimisticLock
+		}),
+		retry.Attempts(10),
+		retry.DelayType(JitterDelay))
+}
+
+// jitter will add jitter to a time.Duration.
+func jitter(d time.Duration) time.Duration {
+	const jitter = 0.50
+	jit := 1 + jitter*(rand.Float64()*2-1)
+	return time.Duration(jit * float64(d))
+}
+
+// JitterDelay is a DelayType which varies delay in each iterations
+func JitterDelay(_ uint, config *retry.Config) time.Duration {
+	// fields in config are private, so we hardcode the average delay duration
+	return jitter(100 * time.Millisecond)
 }

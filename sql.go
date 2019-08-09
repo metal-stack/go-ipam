@@ -106,6 +106,8 @@ func (s *sql) ReadAllPrefixes() ([]*Prefix, error) {
 	return result, nil
 }
 
+// UpdatePrefix tries to update the prefix.
+// Returns OptimisticLockError if it does not succeed due to a concurrent update.
 func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
@@ -124,7 +126,7 @@ func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	}
 	if rows == 0 {
 		tx.Rollback()
-		return nil, fmt.Errorf("select for update did not effect any row")
+		return nil, NewOptimisticLockError("select for update did not effect any row")
 	}
 	result = tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
 	rows, err = result.RowsAffected()
@@ -133,7 +135,7 @@ func (s *sql) UpdatePrefix(prefix *Prefix) (*Prefix, error) {
 	}
 	if rows == 0 {
 		tx.Rollback()
-		return nil, fmt.Errorf("updatePrefix did not effect any row")
+		return nil, NewOptimisticLockError("updatePrefix did not effect any row")
 	}
 	return prefix, tx.Commit()
 }
