@@ -605,6 +605,12 @@ func TestGetHostAddresses(t *testing.T) {
 		require.NotNil(t, ips)
 		require.Equal(t, 254, len(ips))
 
+		ip, err := ipam.AcquireIP(cidr)
+		require.Error(t, err)
+		require.IsType(t, NoIPAvailableError{}, err)
+		require.Equal(t, "no more ips in prefix: 4.1.0.0/24 left, length of prefix.ips: 256", err.Error())
+		require.Nil(t, ip)
+
 		cidr = "3.1.0.0/26"
 		ips, err = ipam.GetHostAddresses(cidr)
 		if err != nil {
@@ -612,6 +618,12 @@ func TestGetHostAddresses(t *testing.T) {
 		}
 		require.NotNil(t, ips)
 		require.Equal(t, 62, len(ips))
+
+		ip, err = ipam.AcquireIP(cidr)
+		require.Error(t, err)
+		require.IsType(t, NoIPAvailableError{}, err)
+		require.Equal(t, "no more ips in prefix: 3.1.0.0/26 left, length of prefix.ips: 64", err.Error())
+		require.Nil(t, ip)
 	})
 }
 
