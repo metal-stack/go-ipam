@@ -62,12 +62,11 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 // AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
 func (i *Ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, error) {
 	var prefix *Prefix
-	var err error
-	_ = retryOnOptimisticLock(func() error {
+	return prefix, retryOnOptimisticLock(func() error {
+		var err error
 		prefix, err = i.acquireChildPrefixInternal(parentCidr, length)
 		return err
 	})
-	return prefix, err
 }
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
@@ -155,12 +154,9 @@ func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 
 // ReleaseChildPrefix will mark this child Prefix as available again.
 func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
-	var err error
-	_ = retryOnOptimisticLock(func() error {
-		err = i.releaseChildPrefixInternal(child)
-		return err
+	return retryOnOptimisticLock(func() error {
+		return i.releaseChildPrefixInternal(child)
 	})
-	return err
 }
 
 // releaseChildPrefixInternal will mark this child Prefix as available again.
@@ -200,12 +196,11 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 // If there is no free IP an NewNoIPAvailableError is returned.
 func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 	var ip *IP
-	var err error
-	_ = retryOnOptimisticLock(func() error {
+	return ip, retryOnOptimisticLock(func() error {
+		var err error
 		ip, err = i.acquireSpecificIPInternal(prefixCidr, specificIP)
 		return err
 	})
-	return ip, err
 }
 
 // acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
@@ -275,12 +270,9 @@ func (i *Ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
 
 // ReleaseIPFromPrefix will release the given IP for later usage.
 func (i *Ipamer) ReleaseIPFromPrefix(prefixCidr, ip string) error {
-	var err error
-	_ = retryOnOptimisticLock(func() error {
-		err = i.releaseIPFromPrefixInternal(prefixCidr, ip)
-		return err
+	return retryOnOptimisticLock(func() error {
+		return i.releaseIPFromPrefixInternal(prefixCidr, ip)
 	})
-	return err
 }
 
 // releaseIPFromPrefixInternal will release the given IP for later usage.
@@ -482,8 +474,9 @@ func NewNoIPAvailableError(msg string) NoIPAvailableError {
 
 // retries the given function if the reported error is an OptimisticLockError
 // with ten attempts and jitter delay ~100ms
-// returns error-log (retry.Error) of all attempts
+// returns only error of last failed attempt
 func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
+
 	return retry.Do(
 		retryableFunc,
 		retry.RetryIf(func(err error) bool {
@@ -491,7 +484,8 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 			return isOptimisticLock
 		}),
 		retry.Attempts(10),
-		retry.DelayType(JitterDelay))
+		retry.DelayType(JitterDelay),
+		retry.LastErrorOnly(true))
 }
 
 // jitter will add jitter to a time.Duration.
