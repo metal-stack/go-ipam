@@ -24,7 +24,7 @@ func Test_sql_prefixExists(t *testing.T) {
 	require.NotNil(t, db)
 
 	// Existing Prefix
-	prefix := &Prefix{Cidr: "10.0.0.0/16"}
+	prefix := Prefix{Cidr: "10.0.0.0/16"}
 	p, err := db.CreatePrefix(prefix)
 	require.Nil(t, err)
 	require.NotNil(t, p)
@@ -34,7 +34,7 @@ func Test_sql_prefixExists(t *testing.T) {
 	require.Equal(t, got.Cidr, prefix.Cidr)
 
 	// NonExisting Prefix
-	notExistingPrefix := &Prefix{Cidr: "10.0.0.0/8"}
+	notExistingPrefix := Prefix{Cidr: "10.0.0.0/8"}
 	got, exists = db.prefixExists(notExistingPrefix)
 	require.False(t, exists)
 	require.Nil(t, got)
@@ -56,7 +56,7 @@ func Test_sql_CreatePrefix(t *testing.T) {
 	require.NotNil(t, db)
 
 	// Existing Prefix
-	prefix := &Prefix{Cidr: "11.0.0.0/16"}
+	prefix := Prefix{Cidr: "11.0.0.0/16"}
 	got, exists := db.prefixExists(prefix)
 	require.False(t, exists)
 	require.Nil(t, got)
@@ -92,9 +92,9 @@ func Test_sql_ReadPrefix(t *testing.T) {
 	p, err := db.ReadPrefix("12.0.0.0/8")
 	require.NotNil(t, err)
 	require.Equal(t, "unable to read prefix:sql: no rows in result set", err.Error())
-	require.Nil(t, p)
+	require.Empty(t, p)
 
-	prefix := &Prefix{Cidr: "12.0.0.0/16"}
+	prefix := Prefix{Cidr: "12.0.0.0/16"}
 	p, err = db.CreatePrefix(prefix)
 	require.Nil(t, err)
 	require.NotNil(t, p)
@@ -120,7 +120,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 	require.Equal(t, 0, len(ps))
 
 	// One Prefix
-	prefix := &Prefix{Cidr: "12.0.0.0/16"}
+	prefix := Prefix{Cidr: "12.0.0.0/16"}
 	p, err := db.CreatePrefix(prefix)
 	require.Nil(t, err)
 	require.NotNil(t, p)
@@ -147,7 +147,7 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 	require.NotNil(t, db)
 
 	// Prefix
-	prefix := &Prefix{Cidr: "13.0.0.0/16", ParentCidr: "13.0.0.0/8"}
+	prefix := Prefix{Cidr: "13.0.0.0/16", ParentCidr: "13.0.0.0/8"}
 	p, err := db.CreatePrefix(prefix)
 	require.Nil(t, err)
 	require.NotNil(t, p)

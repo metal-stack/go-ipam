@@ -34,12 +34,12 @@ func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	newPrefix, err := i.storage.CreatePrefix(p)
+	newPrefix, err := i.storage.CreatePrefix(*p)
 	if err != nil {
 		return nil, err
 	}
 
-	return newPrefix, nil
+	return &newPrefix, nil
 }
 
 // DeletePrefix delete a Prefix from a string notation.
@@ -51,12 +51,12 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	if len(p.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
 	}
-	prefix, err := i.storage.DeletePrefix(p)
+	prefix, err := i.storage.DeletePrefix(*p)
 	if err != nil {
 		return nil, fmt.Errorf("delete prefix:%s %v", cidr, err)
 	}
 
-	return prefix, nil
+	return &prefix, nil
 }
 
 // AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
@@ -135,7 +135,7 @@ func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 
 	prefix.availableChildPrefixes[child.Cidr] = false
 
-	_, err = i.storage.UpdatePrefix(prefix)
+	_, err = i.storage.UpdatePrefix(*prefix)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", prefix)
 	}
@@ -144,7 +144,7 @@ func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
 	child.ParentCidr = prefix.Cidr
-	_, err = i.storage.UpdatePrefix(child)
+	_, err = i.storage.UpdatePrefix(*child)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", child)
 	}
@@ -175,20 +175,20 @@ func (i *Ipamer) releaseChildPrefixInternal(child *Prefix) error {
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
-	_, err = i.storage.UpdatePrefix(parent)
+	_, err = i.storage.UpdatePrefix(*parent)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
 	return nil
 }
 
-// PrefixFrom will return a known Prefix
+// PrefixFrom will return a known Prefix.
 func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 	prefix, err := i.storage.ReadPrefix(cidr)
 	if err != nil {
 		return nil
 	}
-	return prefix
+	return &prefix
 }
 
 // acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
@@ -245,7 +245,7 @@ func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 				ParentPrefix: prefix.Cidr,
 			}
 			prefix.ips[ip.String()] = true
-			_, err := i.storage.UpdatePrefix(prefix)
+			_, err := i.storage.UpdatePrefix(*prefix)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
 			}
@@ -286,7 +286,7 @@ func (i *Ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 		return fmt.Errorf("unable to release ip:%s because it is not allocated in prefix:%s", ip, prefix.Cidr)
 	}
 	delete(prefix.ips, ip)
-	_, err := i.storage.UpdatePrefix(prefix)
+	_, err := i.storage.UpdatePrefix(*prefix)
 	if err != nil {
 		return fmt.Errorf("unable to release ip %v:%v", ip, err)
 	}

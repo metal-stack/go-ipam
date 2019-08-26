@@ -62,11 +62,13 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			for _, ipString := range tt.fields.existingips {
 				p.ips[ipString] = true
 			}
-			p, err = ipam.storage.UpdatePrefix(p)
+
+			var updatedPrefix Prefix
+			updatedPrefix, err = ipam.storage.UpdatePrefix(*p)
 			if err != nil {
 				t.Errorf("Could not update prefix: %v", err)
 			}
-			got, _ := ipam.AcquireIP(p.Cidr)
+			got, _ := ipam.AcquireIP(updatedPrefix.Cidr)
 			if tt.want == nil || got == nil {
 				if !reflect.DeepEqual(got, tt.want) {
 					t.Errorf("Ipamer.AcquireIP() = %v, want %v", got, tt.want)
