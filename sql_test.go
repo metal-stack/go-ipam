@@ -213,7 +213,7 @@ func acquire(t *testing.T, cidr string, prefixes chan string) {
 	for cp == nil {
 		cp, err = ipamer.AcquireChildPrefix(cidr, 26)
 		if err != nil {
-			t.Error("error AcquireChildPrefix")
+			t.Error(err)
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
