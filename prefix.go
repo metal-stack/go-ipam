@@ -20,6 +20,25 @@ type Prefix struct {
 	version                int64           // version is used for optimistic locking
 }
 
+func (p Prefix) DeepCopy() *Prefix {
+	return &Prefix{
+		Cidr:                   p.Cidr,
+		ParentCidr:             p.ParentCidr,
+		availableChildPrefixes: copyMap(p.availableChildPrefixes),
+		childPrefixLength:      p.childPrefixLength,
+		ips:                    copyMap(p.ips),
+		version:                p.version,
+	}
+}
+
+func copyMap(m map[string]bool) map[string]bool {
+	cm := make(map[string]bool, len(m))
+	for k, v := range m {
+		cm[k] = v
+	}
+	return cm
+}
+
 // Usage of ips and child Prefixes of a Prefix
 type Usage struct {
 	AvailableIPs      uint64

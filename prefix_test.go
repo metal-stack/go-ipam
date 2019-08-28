@@ -629,6 +629,29 @@ func TestGetHostAddresses(t *testing.T) {
 	})
 }
 
+func TestPrefixDeepCopy(t *testing.T) {
+
+	p1 := &Prefix{
+		Cidr:                   "4.1.1.0/24",
+		ParentCidr:             "4.1.0.0/16",
+		availableChildPrefixes: map[string]bool{},
+		childPrefixLength:      256,
+		ips:                    map[string]bool{},
+		version:                2,
+	}
+
+	p1.availableChildPrefixes["4.1.2.0/24"] = true
+	p1.ips["4.1.1.1"] = true
+	p1.ips["4.1.1.2"] = true
+
+	p2 := p1.DeepCopy()
+
+	require.False(t, p1 == p2)
+	require.Equal(t, p1, p2)
+	require.False(t, &(p1.availableChildPrefixes) == &(p2.availableChildPrefixes))
+	require.False(t, &(p1.ips) == &(p2.ips))
+}
+
 func NewPostgres() (*sql, error) {
 	return NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
 }
