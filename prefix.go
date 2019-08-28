@@ -7,19 +7,36 @@ import (
 	"math"
 	"math/rand"
 	"net"
-	"sync"
 	"time"
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
 type Prefix struct {
-	mux                    sync.Mutex
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
 	childPrefixLength      int             // the length of the child prefixes
 	ips                    map[string]bool // The ips contained in this prefix
 	version                int64           // version is used for optimistic locking
+}
+
+func (p Prefix) DeepCopy() *Prefix {
+	return &Prefix{
+		Cidr:                   p.Cidr,
+		ParentCidr:             p.ParentCidr,
+		availableChildPrefixes: copyMap(p.availableChildPrefixes),
+		childPrefixLength:      p.childPrefixLength,
+		ips:                    copyMap(p.ips),
+		version:                p.version,
+	}
+}
+
+func copyMap(m map[string]bool) map[string]bool {
+	cm := make(map[string]bool, len(m))
+	for k, v := range m {
+		cm[k] = v
+	}
+	return cm
 }
 
 // Usage of ips and child Prefixes of a Prefix
@@ -36,12 +53,12 @@ func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	newPrefix, err := i.storage.CreatePrefix(p)
+	newPrefix, err := i.storage.CreatePrefix(*p)
 	if err != nil {
 		return nil, err
 	}
 
-	return newPrefix, nil
+	return &newPrefix, nil
 }
 
 // DeletePrefix delete a Prefix from a string notation.
@@ -53,23 +70,22 @@ func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	if len(p.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
 	}
-	prefix, err := i.storage.DeletePrefix(p)
+	prefix, err := i.storage.DeletePrefix(*p)
 	if err != nil {
 		return nil, fmt.Errorf("delete prefix:%s %v", cidr, err)
 	}
 
-	return prefix, nil
+	return &prefix, nil
 }
 
 // AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
 func (i *Ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, error) {
 	var prefix *Prefix
-	var err error
-	retryOnOptimisticLock(func() error {
+	return prefix, retryOnOptimisticLock(func() error {
+		var err error
 		prefix, err = i.acquireChildPrefixInternal(parentCidr, length)
 		return err
 	})
-	return prefix, err
 }
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
@@ -79,8 +95,6 @@ func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 	if prefix == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
 	}
-	prefix.mux.Lock()
-	defer prefix.mux.Unlock()
 	if len(prefix.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
 	}
@@ -140,7 +154,7 @@ func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 
 	prefix.availableChildPrefixes[child.Cidr] = false
 
-	_, err = i.storage.UpdatePrefix(prefix)
+	_, err = i.storage.UpdatePrefix(*prefix)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", prefix)
 	}
@@ -149,7 +163,7 @@ func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
 	child.ParentCidr = prefix.Cidr
-	_, err = i.storage.UpdatePrefix(child)
+	_, err = i.storage.UpdatePrefix(*child)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", child)
 	}
@@ -159,12 +173,9 @@ func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 
 // ReleaseChildPrefix will mark this child Prefix as available again.
 func (i *Ipamer) ReleaseChildPrefix(child *Prefix) error {
-	var err error
-	retryOnOptimisticLock(func() error {
-		err = i.releaseChildPrefixInternal(child)
-		return err
+	return retryOnOptimisticLock(func() error {
+		return i.releaseChildPrefixInternal(child)
 	})
-	return err
 }
 
 // releaseChildPrefixInternal will mark this child Prefix as available again.
@@ -178,48 +189,47 @@ func (i *Ipamer) releaseChildPrefixInternal(child *Prefix) error {
 		return fmt.Errorf("prefix %s has ips, deletion not possible", child.Cidr)
 	}
 
-	parent.mux.Lock()
-	defer parent.mux.Unlock()
-
 	parent.availableChildPrefixes[child.Cidr] = true
 	_, err := i.DeletePrefix(child.Cidr)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
-	_, err = i.storage.UpdatePrefix(parent)
+	_, err = i.storage.UpdatePrefix(*parent)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
 	return nil
 }
 
-// PrefixFrom will return a known Prefix
+// PrefixFrom will return a known Prefix.
 func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 	prefix, err := i.storage.ReadPrefix(cidr)
 	if err != nil {
 		return nil
 	}
-	return prefix
+	return &prefix
 }
 
+// acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
+// If specificIP is empty, the next free IP is returned.
+// If there is no free IP an NewNoIPAvailableError is returned.
 func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 	var ip *IP
-	var err error
-	retryOnOptimisticLock(func() error {
+	return ip, retryOnOptimisticLock(func() error {
+		var err error
 		ip, err = i.acquireSpecificIPInternal(prefixCidr, specificIP)
 		return err
 	})
-	return ip, err
 }
 
-// acquireSpecificIPInternal will acquire given IP an mark this IP as used, if already in use, return nil.
+// acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
+// If specificIP is empty, the next free IP is returned.
+// If there is no free IP an NewNoIPAvailableError is returned.
 func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
 	}
-	prefix.mux.Lock()
-	defer prefix.mux.Unlock()
 	if prefix.childPrefixLength > 0 {
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
 	}
@@ -254,14 +264,15 @@ func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 				ParentPrefix: prefix.Cidr,
 			}
 			prefix.ips[ip.String()] = true
-			_, err := i.storage.UpdatePrefix(prefix)
+			_, err := i.storage.UpdatePrefix(*prefix)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
 			}
 			return acquired, nil
 		}
 	}
-	return nil, fmt.Errorf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips))
+
+	return nil, NewNoIPAvailableError(fmt.Sprintf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips)))
 }
 
 // AcquireIP will return the next unused IP from this Prefix.
@@ -278,12 +289,9 @@ func (i *Ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
 
 // ReleaseIPFromPrefix will release the given IP for later usage.
 func (i *Ipamer) ReleaseIPFromPrefix(prefixCidr, ip string) error {
-	var err error
-	retryOnOptimisticLock(func() error {
-		err = i.releaseIPFromPrefixInternal(prefixCidr, ip)
-		return err
+	return retryOnOptimisticLock(func() error {
+		return i.releaseIPFromPrefixInternal(prefixCidr, ip)
 	})
-	return err
 }
 
 // releaseIPFromPrefixInternal will release the given IP for later usage.
@@ -292,18 +300,12 @@ func (i *Ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 	if prefix == nil {
 		return fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
 	}
-	if prefix == nil {
-		return fmt.Errorf("prefix is nil")
-	}
-	prefix.mux.Lock()
-	defer prefix.mux.Unlock()
-
 	_, ok := prefix.ips[ip]
 	if !ok {
 		return fmt.Errorf("unable to release ip:%s because it is not allocated in prefix:%s", ip, prefix.Cidr)
 	}
 	delete(prefix.ips, ip)
-	_, err := i.storage.UpdatePrefix(prefix)
+	_, err := i.storage.UpdatePrefix(*prefix)
 	if err != nil {
 		return fmt.Errorf("unable to release ip %v:%v", ip, err)
 	}
@@ -333,6 +335,7 @@ func (i *Ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []st
 }
 
 // GetHostAddresses will return all possible ipadresses a host can get in the given prefix.
+// The IPs will be acquired by this method, so that the prefix has no free IPs afterwards.
 func (i *Ipamer) GetHostAddresses(prefix string) ([]string, error) {
 	hostAddresses := []string{}
 
@@ -341,19 +344,17 @@ func (i *Ipamer) GetHostAddresses(prefix string) ([]string, error) {
 		return hostAddresses, err
 	}
 
-	empty := false
-	for !empty {
+	// loop till AcquireIP signals that it has no ips left
+	for {
 		ip, err := i.AcquireIP(p.Cidr)
-		if err != nil {
+		if _, noIPAvailable := err.(NoIPAvailableError); noIPAvailable {
 			return hostAddresses, nil
 		}
-		if ip == nil {
-			return hostAddresses, nil
+		if err != nil {
+			return nil, err
 		}
 		hostAddresses = append(hostAddresses, ip.IP.String())
 	}
-
-	return hostAddresses, nil
 }
 
 // NewPrefix create a new Prefix from a string notation.
@@ -476,17 +477,34 @@ func (p *Prefix) Usage() Usage {
 	}
 }
 
+// NoIPAvailableError indicates that the acquire-operation could not be executed
+// because the specified prefix has no free IP anymore.
+type NoIPAvailableError struct {
+	msg string
+}
+
+func (o NoIPAvailableError) Error() string {
+	return o.msg
+}
+
+func NewNoIPAvailableError(msg string) NoIPAvailableError {
+	return NoIPAvailableError{msg: msg}
+}
+
 // retries the given function if the reported error is an OptimisticLockError
 // with ten attempts and jitter delay ~100ms
-func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) {
-	retry.Do(
+// returns only error of last failed attempt
+func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
+
+	return retry.Do(
 		retryableFunc,
 		retry.RetryIf(func(err error) bool {
 			_, isOptimisticLock := errors.Cause(err).(OptimisticLockError)
 			return isOptimisticLock
 		}),
 		retry.Attempts(10),
-		retry.DelayType(JitterDelay))
+		retry.DelayType(JitterDelay),
+		retry.LastErrorOnly(true))
 }
 
 // jitter will add jitter to a time.Duration.
