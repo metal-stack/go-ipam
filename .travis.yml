@@ -11,6 +11,8 @@ before_install:
   - docker run -d -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:11-alpine
   - docker ps
   - go get github.com/mattn/goveralls
+  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get github.com/securego/gosec/cmd/gosec
 
 # go versions to test
 go:
@@ -20,6 +22,8 @@ go:
 script:
   - make test
   - make bench
+  - golangci-lint run
+  - gosec ./...
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
