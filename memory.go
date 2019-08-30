@@ -2,8 +2,9 @@ package ipam
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 type memory struct {
@@ -14,10 +15,9 @@ type memory struct {
 // NewMemory create a memory storage for ipam
 func NewMemory() *memory {
 	prefixes := make(map[string]Prefix)
-	lock := sync.RWMutex{}
 	return &memory{
 		prefixes: prefixes,
-		lock:     lock,
+		lock:     sync.RWMutex{},
 	}
 }
 
