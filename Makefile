@@ -11,6 +11,10 @@ bench:
 test:
 	CGO_ENABLED=1 $(GO) test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
 
+.PHONY: lint
+lint:
+	CGO_ENABLED=1 golangci-lint run -verbose
+
 .PHONY: postgres-up
 postgres-up: postgres-rm
 	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:alpine
