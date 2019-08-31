@@ -13,7 +13,7 @@ test:
 
 .PHONY: lint
 lint:
-	CGO_ENABLED=1 golangci-lint run -verbose
+	CGO_ENABLED=1 golangci-lint run
 
 .PHONY: postgres-up
 postgres-up: postgres-rm
