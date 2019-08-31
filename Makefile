@@ -11,8 +11,12 @@ bench:
 test:
 	CGO_ENABLED=1 $(GO) test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
 
+.PHONY: golangcicheck
+golangcicheck:
+	@/bin/bash -c "type -P golangci-lint;" 2>/dev/null || (echo "golangci-lint is required but not available in current PATH. Install: https://github.com/golangci/golangci-lint#install"; exit 1)
+
 .PHONY: lint
-lint:
+lint: golangcicheck
 	CGO_ENABLED=1 golangci-lint run
 
 .PHONY: postgres-up
