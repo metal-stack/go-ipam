@@ -6,16 +6,16 @@
 [![codecov](https://codecov.io/gh/metal-pod/go-ipam/branch/master/graph/badge.svg)](https://codecov.io/gh/metal-pod/go-ipam)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/metal-pod/go-ipam/blob/master/LICENSE)
 
-go-ipam is a module to handle IPAddress management. It can operate on Networks, Prefixes and IPs.
+go-ipam is a module to handle IP address management. It can operate on Networks, Prefixes and IPs.
 
 ## IP
 
-Most obvious this library is all about ip management. the main purpose is to acquire and release an ip, or a bunch of
-ip's from prefixes.
+Most obvious this library is all about IP management. The main purpose is to acquire and release an IP, or a bunch of
+IP's from prefixes.
 
 ## Prefix
 
-A prefix is a network with ip and mask, typically in the form of *192.168.0.0/24*. To be able to manage IPs you have to create a prefix first.
+A prefix is a network with IP and mask, typically in the form of *192.168.0.0/24*. To be able to manage IPs you have to create a prefix first.
 
 example usage:
 
@@ -27,7 +27,6 @@ import (
     "fmt"
     goipam "github.com/metal-pod/go-ipam"
 )
-
 
 func main() {
     // create a ipamer with in memory storage
