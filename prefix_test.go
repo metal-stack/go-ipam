@@ -62,11 +62,13 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			for _, ipString := range tt.fields.existingips {
 				p.ips[ipString] = true
 			}
-			p, err = ipam.storage.UpdatePrefix(p)
+
+			var updatedPrefix Prefix
+			updatedPrefix, err = ipam.storage.UpdatePrefix(*p)
 			if err != nil {
 				t.Errorf("Could not update prefix: %v", err)
 			}
-			got, _ := ipam.AcquireIP(p.Cidr)
+			got, _ := ipam.AcquireIP(updatedPrefix.Cidr)
 			if tt.want == nil || got == nil {
 				if !reflect.DeepEqual(got, tt.want) {
 					t.Errorf("Ipamer.AcquireIP() = %v, want %v", got, tt.want)
@@ -605,6 +607,12 @@ func TestGetHostAddresses(t *testing.T) {
 		require.NotNil(t, ips)
 		require.Equal(t, 254, len(ips))
 
+		ip, err := ipam.AcquireIP(cidr)
+		require.Error(t, err)
+		require.IsType(t, NoIPAvailableError{}, err)
+		require.Equal(t, "no more ips in prefix: 4.1.0.0/24 left, length of prefix.ips: 256", err.Error())
+		require.Nil(t, ip)
+
 		cidr = "3.1.0.0/26"
 		ips, err = ipam.GetHostAddresses(cidr)
 		if err != nil {
@@ -612,7 +620,36 @@ func TestGetHostAddresses(t *testing.T) {
 		}
 		require.NotNil(t, ips)
 		require.Equal(t, 62, len(ips))
+
+		ip, err = ipam.AcquireIP(cidr)
+		require.Error(t, err)
+		require.IsType(t, NoIPAvailableError{}, err)
+		require.Equal(t, "no more ips in prefix: 3.1.0.0/26 left, length of prefix.ips: 64", err.Error())
+		require.Nil(t, ip)
 	})
+}
+
+func TestPrefixDeepCopy(t *testing.T) {
+
+	p1 := &Prefix{
+		Cidr:                   "4.1.1.0/24",
+		ParentCidr:             "4.1.0.0/16",
+		availableChildPrefixes: map[string]bool{},
+		childPrefixLength:      256,
+		ips:                    map[string]bool{},
+		version:                2,
+	}
+
+	p1.availableChildPrefixes["4.1.2.0/24"] = true
+	p1.ips["4.1.1.1"] = true
+	p1.ips["4.1.1.2"] = true
+
+	p2 := p1.DeepCopy()
+
+	require.False(t, p1 == p2)
+	require.Equal(t, p1, p2)
+	require.False(t, &(p1.availableChildPrefixes) == &(p2.availableChildPrefixes))
+	require.False(t, &(p1.ips) == &(p2.ips))
 }
 
 func NewPostgres() (*sql, error) {
