@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/metal-pod/go-ipam/branch/master/graph/badge.svg)](https://codecov.io/gh/metal-pod/go-ipam)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/metal-pod/go-ipam/blob/master/LICENSE)
 
-go-ipam is a module to handle IP address management. It can operate on Networks, Prefixes and IPs.
+go-ipam is a module to handle IP address management. It can operate on networks, prefixes and IPs.
 
 ## IP
 
