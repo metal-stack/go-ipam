@@ -17,7 +17,7 @@ IP's from prefixes.
 
 A prefix is a network with IP and mask, typically in the form of *192.168.0.0/24*. To be able to manage IPs you have to create a prefix first.
 
-example usage:
+Example usage:
 
 ```go
 
