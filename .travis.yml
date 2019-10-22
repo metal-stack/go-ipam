@@ -4,22 +4,20 @@ language: go
 
 # go versions to test
 go:
-  - "1.12.x"
+  - "1.13.x"
 
 services:
   - docker
 
 # start test database
 before_install:
-  - docker pull postgres:11-alpine
-  - docker run -d -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:11-alpine
-  - docker ps
   - go get github.com/mattn/goveralls
   # binary will be $(go env GOPATH)/bin/golangci-lint
-  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.17.1
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
 
 # run tests with coverage
 script:
+  - make postgres-up
   - make lint
   - make test
   - make bench
