@@ -17,7 +17,7 @@ golangcicheck:
 
 .PHONY: lint
 lint: golangcicheck
-	CGO_ENABLED=1 golangci-lint run
+	golangci-lint run
 
 .PHONY: postgres-up
 postgres-up: postgres-rm
