@@ -9,8 +9,8 @@ import (
 )
 
 func createDB(t *testing.T) (*sql, error) {
-	dbname := "postgres"
-	db, err := NewPostgresStorage("localhost", "5433", "postgres", "password", dbname, "disable")
+	dbname := "defaultdb"
+	db, err := NewPostgresStorage("localhost", "5433", "root", "", dbname, false)
 	return db, err
 }
 

@@ -21,7 +21,7 @@ lint: golangcicheck
 
 .PHONY: postgres-up
 postgres-up: postgres-rm
-	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:12-alpine
+	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_USER="root" -e POSTGRES_PASSWORD="" -e POSTGRES_DB="defaultdb" postgres:12-alpine
 
 .PHONY: postgres-rm
 postgres-rm:

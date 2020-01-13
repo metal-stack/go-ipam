@@ -653,7 +653,7 @@ func TestPrefixDeepCopy(t *testing.T) {
 }
 
 func NewPostgres() (*sql, error) {
-	return NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
+	return NewPostgresStorage("localhost", "5433", "root", "", "defaultdb", false)
 }
 
 // interface for impls that support cleaning before each testrun

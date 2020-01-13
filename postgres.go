@@ -19,8 +19,8 @@ CREATE INDEX IF NOT EXISTS prefix_idx ON prefixes USING GIN(prefix);
 `
 
 // NewPostgresStorage creates a new Storage which uses postgres.
-func NewPostgresStorage(host, port, user, password, dbname, sslmode string) (*sql, error) {
-	db, err := sqlx.Connect("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s", host, port, user, dbname, password, sslmode))
+func NewPostgresStorage(host, port, user, password, dbname string, ssl bool) (*sql, error) {
+	db, err := sqlx.Connect("postgres", dataSource(host, port, user, password, dbname, ssl))
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database:%v", err)
 	}
@@ -28,4 +28,12 @@ func NewPostgresStorage(host, port, user, password, dbname, sslmode string) (*sq
 	return &sql{
 		db: db,
 	}, nil
+}
+
+func dataSource(host, port, user, password, dbname string, ssl bool) string {
+	sslmode := "sslmode=disable"
+	if ssl {
+		sslmode = "sslmode=enable"
+	}
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s", user, password, host, port, dbname, sslmode)
 }
