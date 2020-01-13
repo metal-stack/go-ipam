@@ -70,3 +70,24 @@ BenchmarkAcquireChildPrefix9-4            300000              5309 ns/op        
 BenchmarkAcquireChildPrefix10-4           200000              5234 ns/op            1532 B/op         58 allocs/op
 BenchmarkPrefixOverlapping-4             1000000              1934 ns/op             432 B/op         24 allocs/op
 ```
+
+## CockroachDB
+
+There are currently test undergoing, make this code work as well with cockroachdb, this works with no code modifications except for the concurrent access.
+If running `make test` the following error occurs:
+
+```bash
+--- FAIL: Test_ConcurrentAcquirePrefix (7.07s)
+    sql_test.go:216: unable to update parent prefix:1.0.0.0/16: pq: restart transaction: TransactionRetryWithProtoRefreshError: TransactionAbortedError(ABORT_REASON_PUSHER_ABORTED): "sql txn" id=3cdd3c6c key=/Ta
+ble/78/1/"1.0.0.0/16"/0 rw=true pri=0.01752018 stat=ABORTED epo=0 ts=1578921623.657150405,1 orig=1578921623.654689427,0 min=1578921623.654689427,0 max=1578921624.154689427,0 wto=false seq=1
+    sql_test.go:216: unable to update parent prefix:1.0.0.0/16: pq: restart transaction: TransactionRetryWithProtoRefreshError: TransactionAbortedError(ABORT_REASON_PUSHER_ABORTED): "sql txn" id=2f9fd074 key=/Ta
+ble/78/1/"1.0.0.0/16"/0 rw=true pri=0.02781474 stat=ABORTED epo=0 ts=1578921623.657150405,1 orig=1578921623.653808793,0 min=1578921623.653808793,0 max=1578921624.153808793,0 wto=false seq=1
+    sql_test.go:216: unable to update parent prefix:1.0.0.0/16: pq: restart transaction: TransactionRetryWithProtoRefreshError: TransactionAbortedError(ABORT_REASON_PUSHER_ABORTED): "sql txn" id=fc520ec2 key=/Ta
+ble/78/1/"1.0.0.0/16"/0 rw=true pri=0.00422574 stat=ABORTED epo=0 ts=1578921623.669968618,1 orig=1578921623.650526792,0 min=1578921623.650526792,0 max=1578921624.150526792,0 wto=false seq=1
+    sql_test.go:216: unable to update parent prefix:1.0.0.0/16: pq: restart transaction: TransactionRetryWithProtoRefreshError: WriteTooOldError: write at timestamp 1578921623.664788862,0 too old; wrote at 15789
+21623.913407511,1
+    sql_test.go:216: unable to update parent prefix:1.0.0.0/16: pq: restart transaction: TransactionRetryWithProtoRefreshError: WriteTooOldError: write at timestamp 1578921623.669392554,0 too old; wrote at 15789
+21623.913407511,1
+```
+
+I could not find any matching issue on the cockroachdb issue tracker thought.
