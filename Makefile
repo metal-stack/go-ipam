@@ -28,7 +28,13 @@ postgres-rm:
 	docker rm -f ipamdb || true
 
 .PHONY: cockroach-up
-cockroach-up: cockroach-rm
+cockroach-up: cockroach-rm postgres-rm
+	# https://www.cockroachlabs.com/docs/v19.2/start-a-local-cluster-in-docker-linux.html#main-content
+	docker network create -d bridge roachnet
+	docker run -d --name=roach1 --hostname=roach1 --net=roachnet -p 5433:26257 -p 8080:8080 cockroachdb/cockroach:v19.2.2 start-single-node --insecure --listen-addr=0.0.0.0
+
+.PHONY: cockroach-up-cluster
+cockroach-up-cluster: cockroach-rm
 	# https://www.cockroachlabs.com/docs/v19.2/start-a-local-cluster-in-docker-linux.html#main-content
 	docker network create -d bridge roachnet
 	docker run -d --name=roach1 --hostname=roach1 --net=roachnet -p 5433:26257 -p 8080:8080 cockroachdb/cockroach:v19.2.2 start --insecure --join=roach1,roach2,roach3
