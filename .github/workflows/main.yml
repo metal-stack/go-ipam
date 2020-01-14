@@ -24,7 +24,7 @@ jobs:
 
     - name: build and test
       run: |
-        make postgres-up
+        make cockroach-up
         make test
         make bench
     
