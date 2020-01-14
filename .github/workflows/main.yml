@@ -22,11 +22,19 @@ jobs:
     - name: Run golangci-lint
       run: $(go env GOPATH)/bin/golangci-lint run
 
-    - name: build and test
+    - name: build and test postgres
+      run: |
+        make postgres-up
+        make test
+        make bench
+        make postgres-rm
+
+    - name: build and test cockroach
       run: |
         make cockroach-up
         make test
         make bench
+        make cockroach-rm
     
     - name: Publish Codecoverage report
       run: bash <(curl -s https://codecov.io/bash)

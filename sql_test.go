@@ -23,6 +23,9 @@ func Test_sql_prefixExists(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, db)
 
+	// cleanup
+	defer destroy(db)
+
 	// Existing Prefix
 	prefix := Prefix{Cidr: "10.0.0.0/16"}
 	p, err := db.CreatePrefix(prefix)
@@ -45,15 +48,15 @@ func Test_sql_prefixExists(t *testing.T) {
 	got, exists = db.prefixExists(prefix)
 	require.False(t, exists)
 	require.Nil(t, got)
-
-	// cleanup
-	destroy(db)
 }
 
 func Test_sql_CreatePrefix(t *testing.T) {
 	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
+
+	// cleanup
+	defer destroy(db)
 
 	// Existing Prefix
 	prefix := Prefix{Cidr: "11.0.0.0/16"}
@@ -78,15 +81,15 @@ func Test_sql_CreatePrefix(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, ps)
 	require.Equal(t, 1, len(ps))
-
-	// cleanup
-	destroy(db)
 }
 
 func Test_sql_ReadPrefix(t *testing.T) {
 	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
+
+	// cleanup
+	defer destroy(db)
 
 	// Prefix
 	p, err := db.ReadPrefix("12.0.0.0/8")
@@ -103,15 +106,15 @@ func Test_sql_ReadPrefix(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, p)
 	require.Equal(t, "12.0.0.0/16", p.Cidr)
-
-	// cleanup
-	destroy(db)
 }
 
 func Test_sql_ReadAllPrefix(t *testing.T) {
 	db, err := createDB(t)
 	require.Nil(t, err)
 	require.NotNil(t, db)
+
+	// cleanup
+	defer destroy(db)
 
 	// no Prefixes
 	ps, err := db.ReadAllPrefixes()
@@ -136,9 +139,6 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, ps)
 	require.Equal(t, 0, len(ps))
-
-	// cleanup
-	destroy(db)
 }
 
 func Test_sql_UpdatePrefix(t *testing.T) {
@@ -176,9 +176,11 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 
 func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	db, err := createDB(t)
-	defer destroy(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
+
+	// cleanup
+	defer destroy(db)
 
 	ipamer := NewWithStorage(db)
 
@@ -209,10 +211,11 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	require.NoError(t, err)
 	// 1 parent & 30 child prefixes
 	require.Equal(t, concurrency+1, len(pfxs))
-	// check prefixes
-	p := pfxs[0]
+	// check parent prefix
+
+	pprefix, err := db.ReadPrefix(parentCidr)
 	takenPrefixesCount := 0
-	for _, available := range p.availableChildPrefixes {
+	for _, available := range pprefix.availableChildPrefixes {
 		if !available {
 			takenPrefixesCount++
 		}
