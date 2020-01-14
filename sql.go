@@ -115,7 +115,6 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
 	}
 
-	resultPrefix := Prefix{}
 	err = crdb.ExecuteTx(context.TODO(), s.db.DB, nil, func(tx *sq.Tx) error {
 
 		// FOR UPDATE is currently not supported for cockroach
@@ -141,13 +140,15 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		if rows == 0 {
 			return NewOptimisticLockError("updatePrefix did not effect any row")
 		}
+		if rows > 1 {
+			return NewOptimisticLockError("updatePrefix effected more than one row")
+		}
 
-		// FIXME seems faulty to me - I would expect that the updated prefix (from database with new version!) is returned
-		resultPrefix = prefix
 		return nil
 	})
 
-	return resultPrefix, err
+	// We return the incoming prefix with incremented version instead of re-reading it from db for simplicity and performance reasons.
+	return prefix, err
 }
 
 func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {

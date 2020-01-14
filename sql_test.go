@@ -161,9 +161,16 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 
 	// Modify
 	prefix.ParentCidr = "13.0.0.0/12"
-	p, err = db.UpdatePrefix(prefix)
+	updatedp, err := db.UpdatePrefix(prefix)
 	require.Nil(t, err)
-	require.NotNil(t, p)
+	require.NotNil(t, updatedp)
+
+	// Update modified prefix must also succeed
+	updatedTwiceP, err := db.UpdatePrefix(updatedp)
+	require.Nil(t, err)
+	require.NotNil(t, updatedTwiceP)
+
+	// Now read the very first prefix
 	p, err = db.ReadPrefix("13.0.0.0/16")
 	require.Nil(t, err)
 	require.NotNil(t, p)
