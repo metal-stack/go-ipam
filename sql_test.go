@@ -214,6 +214,7 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	// check parent prefix
 
 	pprefix, err := db.ReadPrefix(parentCidr)
+	require.NoError(t, err)
 	takenPrefixesCount := 0
 	for _, available := range pprefix.availableChildPrefixes {
 		if !available {
