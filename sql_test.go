@@ -186,14 +186,14 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	_, err = ipamer.NewPrefix(parentCidr)
 	require.Nil(t, err)
 
-	count := 30
+	concurrency := 30
 	prefixes := make(chan string)
-	for i := 0; i < count; i++ {
+	for i := 0; i < concurrency; i++ {
 		go acquire(t, parentCidr, prefixes)
 	}
 
 	prefixMap := make(map[string]bool)
-	for i := 0; i < count; i++ {
+	for i := 0; i < concurrency; i++ {
 		p := <-prefixes
 		_, duplicate := prefixMap[p]
 		if duplicate {
@@ -201,6 +201,23 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 		}
 		prefixMap[p] = true
 	}
+
+	// check expectations
+	require.Equal(t, concurrency, len(prefixMap))
+
+	pfxs, err := db.ReadAllPrefixes()
+	require.NoError(t, err)
+	// 1 parent & 30 child prefixes
+	require.Equal(t, concurrency+1, len(pfxs))
+	// check prefixes
+	p := pfxs[0]
+	takenPrefixesCount := 0
+	for _, available := range p.availableChildPrefixes {
+		if !available {
+			takenPrefixesCount++
+		}
+	}
+	require.Equal(t, concurrency, takenPrefixesCount)
 }
 
 func acquire(t *testing.T, cidr string, prefixes chan string) {
@@ -215,7 +232,7 @@ func acquire(t *testing.T, cidr string, prefixes chan string) {
 		if err != nil {
 			t.Error(err)
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(jitter(100 * time.Millisecond))
 	}
 	prefixes <- cp.String()
 }

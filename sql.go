@@ -1,9 +1,11 @@
 package ipam
 
 import (
+	"context"
+	sq "database/sql" // standard interfaces for crdb compatibility
 	"encoding/json"
 	"fmt"
-
+	"github.com/cockroachdb/cockroach-go/crdb" // crdb is a wrapper around the logic for issuing SQL transactions which performs retries (as required by CockroachDB)
 	"github.com/jmoiron/sqlx"
 )
 
@@ -112,38 +114,40 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
 	}
-	tx, err := s.db.Beginx()
-	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
-	}
-	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return Prefix{}, err
-	}
-	if rows == 0 {
-		err := tx.Rollback()
+
+	resultPrefix := Prefix{}
+	err = crdb.ExecuteTx(context.TODO(), s.db.DB, nil, func(tx *sq.Tx) error {
+
+		// FOR UPDATE is currently not supported for cockroach
+		result, err := tx.Exec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
 		if err != nil {
-			return Prefix{}, NewOptimisticLockError("select for update did not effect any row, but rollback did not work:" + err.Error())
+			return err
 		}
-		return Prefix{}, NewOptimisticLockError("select for update did not effect any row")
-	}
-	result, err = tx.Exec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
-	if err != nil {
-		return Prefix{}, err
-	}
-	rows, err = result.RowsAffected()
-	if err != nil {
-		return Prefix{}, err
-	}
-	if rows == 0 {
-		err := tx.Rollback()
+		rows, err := result.RowsAffected()
 		if err != nil {
-			return Prefix{}, NewOptimisticLockError("updatePrefix did not effect any row, but rollback did not work:" + err.Error())
+			return err
 		}
-		return Prefix{}, NewOptimisticLockError("updatePrefix did not effect any row")
-	}
-	return prefix, tx.Commit()
+		if rows == 0 {
+			return NewOptimisticLockError("select for update did not effect any row")
+		}
+		result, err = tx.Exec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+		if err != nil {
+			return err
+		}
+		rows, err = result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return NewOptimisticLockError("updatePrefix did not effect any row")
+		}
+
+		// FIXME seems faulty to me - I would expect that the updated prefix (from database with new version!) is returned
+		resultPrefix = prefix
+		return nil
+	})
+
+	return resultPrefix, err
 }
 
 func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {

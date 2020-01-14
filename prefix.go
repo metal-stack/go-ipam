@@ -165,7 +165,7 @@ func (i *Ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 	child.ParentCidr = prefix.Cidr
 	_, err = i.storage.UpdatePrefix(*child)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", child)
+		return nil, errors.Wrapf(err, "unable to update child prefix:%v", child)
 	}
 
 	return child, nil

@@ -90,4 +90,10 @@ ble/78/1/"1.0.0.0/16"/0 rw=true pri=0.00422574 stat=ABORTED epo=0 ts=1578921623.
 21623.913407511,1
 ```
 
-I could not find any matching issue on the cockroachdb issue tracker thought.
+These errors are caused by cockroach's distributed transactions, see https://www.cockroachlabs.com/docs/stable/transactions.html.
+This implies special handling in client-code, see https://www.cockroachlabs.com/docs/stable/advanced-client-side-transaction-retries.html.
+
+crdb is a wrapper around the logic for issuing SQL transactions which performs retries (as required by CockroachDB)
+https://github.com/cockroachdb/cockroach-go/tree/master/crdb
+
+PLEASE NOTE: SELECT FOR UPDATE is currently not supported, see https://github.com/cockroachdb/cockroach/issues/6583 and https://github.com/cockroachdb/cockroach/pull/40206, it seems they work on fundamentals to support it https://github.com/cockroachdb/cockroach/pull/43775
