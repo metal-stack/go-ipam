@@ -1,10 +1,10 @@
 # go-ipam
 
-[![Actions](https://github.com/metal-pod/go-ipam/workflows/build/badge.svg)](https://github.com/metal-pod/go-ipam/actions)
-[![GoDoc](https://godoc.org/github.com/metal-pod/go-ipam?status.svg)](https://godoc.org/github.com/metal-pod/go-ipam)
-[![Go Report Card](https://goreportcard.com/badge/github.com/metal-pod/go-ipam)](https://goreportcard.com/report/github.com/metal-pod/go-ipam)
-[![codecov](https://codecov.io/gh/metal-pod/go-ipam/branch/master/graph/badge.svg)](https://codecov.io/gh/metal-pod/go-ipam)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/metal-pod/go-ipam/blob/master/LICENSE)
+[![Actions](https://github.com/metal-stack/go-ipam/workflows/build/badge.svg)](https://github.com/metal-stack/go-ipam/actions)
+[![GoDoc](https://godoc.org/github.com/metal-stack/go-ipam?status.svg)](https://godoc.org/github.com/metal-stack/go-ipam)
+[![Go Report Card](https://goreportcard.com/badge/github.com/metal-stack/go-ipam)](https://goreportcard.com/report/github.com/metal-stack/go-ipam)
+[![codecov](https://codecov.io/gh/metal-stack/go-ipam/branch/master/graph/badge.svg)](https://codecov.io/gh/metal-stack/go-ipam)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/metal-stack/go-ipam/blob/master/LICENSE)
 
 go-ipam is a module to handle IP address management. It can operate on networks, prefixes and IPs.
 
@@ -25,7 +25,7 @@ package main
 
 import (
     "fmt"
-    goipam "github.com/metal-pod/go-ipam"
+    goipam "github.com/metal-stack/go-ipam"
 )
 
 func main() {

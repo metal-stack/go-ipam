@@ -1,6 +1,6 @@
-module github.com/metal-pod/go-ipam
+module github.com/metal-stack/go-ipam
 
-go 1.12
+go 1.13
 
 require (
 	github.com/avast/retry-go v2.4.2+incompatible
