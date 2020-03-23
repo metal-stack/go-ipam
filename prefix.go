@@ -2,12 +2,13 @@ package ipam
 
 import (
 	"fmt"
-	"github.com/avast/retry-go"
-	"github.com/pkg/errors"
 	"math"
 	"math/rand"
 	"net"
 	"time"
+
+	"github.com/avast/retry-go"
+	"github.com/pkg/errors"
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
@@ -210,9 +211,9 @@ func (i *Ipamer) PrefixFrom(cidr string) *Prefix {
 	return &prefix
 }
 
-// acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
+// AcquireSpecificIP will acquire given IP and mark this IP as used, if already in use, return nil.
 // If specificIP is empty, the next free IP is returned.
-// If there is no free IP an NewNoIPAvailableError is returned.
+// If there is no free IP an NoIPAvailableError is returned.
 func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 	var ip *IP
 	return ip, retryOnOptimisticLock(func() error {
@@ -224,7 +225,7 @@ func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 
 // acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
 // If specificIP is empty, the next free IP is returned.
-// If there is no free IP an NewNoIPAvailableError is returned.
+// If there is no free IP an NoIPAvailableError is returned.
 func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
@@ -272,7 +273,7 @@ func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		}
 	}
 
-	return nil, NewNoIPAvailableError(fmt.Sprintf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips)))
+	return nil, newNoIPAvailableError(fmt.Sprintf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips)))
 }
 
 // AcquireIP will return the next unused IP from this Prefix.
@@ -487,7 +488,7 @@ func (o NoIPAvailableError) Error() string {
 	return o.msg
 }
 
-func NewNoIPAvailableError(msg string) NoIPAvailableError {
+func newNoIPAvailableError(msg string) NoIPAvailableError {
 	return NoIPAvailableError{msg: msg}
 }
 
