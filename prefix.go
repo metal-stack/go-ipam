@@ -21,6 +21,7 @@ type Prefix struct {
 	version                int64           // version is used for optimistic locking
 }
 
+// DeepCopy to a new Prefix
 func (p Prefix) DeepCopy() *Prefix {
 	return &Prefix{
 		Cidr:                   p.Cidr,
