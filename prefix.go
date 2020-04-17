@@ -64,6 +64,7 @@ func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 }
 
 // DeletePrefix delete a Prefix from a string notation.
+// If the Prefix is not found an NotFoundError is returned.
 func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	p := i.PrefixFrom(cidr)
 	if p == nil {
@@ -274,7 +275,7 @@ func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		}
 	}
 
-	return nil, newNoIPAvailableError(fmt.Sprintf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips)))
+	return nil, newNoIPAvailableErrorf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips))
 }
 
 // AcquireIP will return the next unused IP from this Prefix.
@@ -283,6 +284,7 @@ func (i *Ipamer) AcquireIP(prefixCidr string) (*IP, error) {
 }
 
 // ReleaseIP will release the given IP for later usage and returns the updated Prefix.
+// If the IP is not found an NotFoundError is returned.
 func (i *Ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
 	err := i.ReleaseIPFromPrefix(ip.ParentPrefix, ip.IP.String())
 	prefix := i.PrefixFrom(ip.ParentPrefix)
@@ -290,6 +292,7 @@ func (i *Ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
 }
 
 // ReleaseIPFromPrefix will release the given IP for later usage.
+// If the Prefix or the IP is not found an NotFoundError is returned.
 func (i *Ipamer) ReleaseIPFromPrefix(prefixCidr, ip string) error {
 	return retryOnOptimisticLock(func() error {
 		return i.releaseIPFromPrefixInternal(prefixCidr, ip)
@@ -489,8 +492,21 @@ func (o NoIPAvailableError) Error() string {
 	return o.msg
 }
 
-func newNoIPAvailableError(msg string) NoIPAvailableError {
-	return NoIPAvailableError{msg: msg}
+func newNoIPAvailableErrorf(msg string, a ...interface{}) NoIPAvailableError {
+	return NoIPAvailableError{msg: fmt.Sprintf(msg, a...)}
+}
+
+// NotFoundError is raised if the given Prefix or Cidr was not found
+type NotFoundError struct {
+	msg string
+}
+
+func (n NotFoundError) Error() string {
+	return n.msg
+}
+
+func newNotFoundErrorf(msg string, a ...interface{}) NotFoundError {
+	return NotFoundError{msg: fmt.Sprintf(msg, a...)}
 }
 
 // retries the given function if the reported error is an OptimisticLockError

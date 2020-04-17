@@ -49,10 +49,10 @@ func startDB() (container testcontainers.Container, dn *sql, err error) {
 	return postgresC, db, err
 }
 
-func stopDB(c testcontainers.Container) error {
-	ctx := context.Background()
-	return c.Terminate(ctx)
-}
+// func stopDB(c testcontainers.Container) error {
+// 	ctx := context.Background()
+// 	return c.Terminate(ctx)
+// }
 
 func cleanUp(s *sql) {
 	s.db.MustExec("DROP TABLE prefixes")
