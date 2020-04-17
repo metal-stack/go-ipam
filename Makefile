@@ -3,6 +3,8 @@ CGO_ENABLED := $(or ${CGO_ENABLED},0)
 GO := go
 GO111MODULE := on
 
+all: test bench
+
 .PHONY: bench
 bench:
 	CGO_ENABLED=1 $(GO) test -bench . -benchmem
@@ -21,7 +23,7 @@ lint: golangcicheck
 
 .PHONY: postgres-up
 postgres-up: postgres-rm
-	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:12-alpine
+	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:12-alpine postgres -c 'max_connections=200'
 
 .PHONY: postgres-rm
 postgres-rm:
