@@ -67,7 +67,7 @@ func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	p := i.PrefixFrom(cidr)
 	if p == nil {
-		return nil, fmt.Errorf("delete prefix:%s not found", cidr)
+		return nil, newNotFoundErrorf("delete prefix:%s not found", cidr)
 	}
 	if len(p.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
@@ -230,7 +230,7 @@ func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
-		return nil, fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
+		return nil, newNotFoundErrorf("unable to find prefix for cidr:%s", prefixCidr)
 	}
 	if prefix.childPrefixLength > 0 {
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
@@ -300,11 +300,11 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefixCidr, ip string) error {
 func (i *Ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
-		return fmt.Errorf("unable to find prefix for cidr:%s", prefixCidr)
+		return newNotFoundErrorf("unable to find prefix for cidr:%s", prefixCidr)
 	}
 	_, ok := prefix.ips[ip]
 	if !ok {
-		return fmt.Errorf("unable to release ip:%s because it is not allocated in prefix:%s", ip, prefix.Cidr)
+		return newNotFoundErrorf("unable to release ip:%s because it is not allocated in prefix:%s", ip, prefix.Cidr)
 	}
 	delete(prefix.ips, ip)
 	_, err := i.storage.UpdatePrefix(*prefix)

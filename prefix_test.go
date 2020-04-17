@@ -91,7 +91,13 @@ func TestIpamer_ReleaseIPFromPrefix(t *testing.T) {
 
 		err = ipam.ReleaseIPFromPrefix(prefix.Cidr, "1.2.3.4")
 		require.NotNil(t, err)
+		require.IsType(t, NotFoundError{}, err)
 		require.Equal(t, "unable to release ip:1.2.3.4 because it is not allocated in prefix:192.168.0.0/24", err.Error())
+
+		err = ipam.ReleaseIPFromPrefix("4.5.6.7/23", "1.2.3.4")
+		require.NotNil(t, err)
+		require.IsType(t, NotFoundError{}, err)
+		require.Equal(t, "unable to find prefix for cidr:4.5.6.7/23", err.Error())
 	})
 }
 
@@ -128,6 +134,13 @@ func TestIpamer_AcquireSpecificIP(t *testing.T) {
 		require.Nil(t, ip4)
 		require.NotNil(t, err)
 		require.Equal(t, "given ip:192.168.99.1.invalid in not valid", err.Error())
+
+		// Cidr is invalid
+		ip5, err := ipam.AcquireSpecificIP("3.4.5.6/27", "192.168.99.1.invalid")
+		require.Nil(t, ip5)
+		require.NotNil(t, err)
+		require.IsType(t, NotFoundError{}, err)
+		require.Equal(t, "unable to find prefix for cidr:3.4.5.6/27", err.Error())
 
 		prefix, err = ipam.ReleaseIP(ip1)
 		require.Nil(t, err)
