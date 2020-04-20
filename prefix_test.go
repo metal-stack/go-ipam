@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -91,13 +92,15 @@ func TestIpamer_ReleaseIPFromPrefix(t *testing.T) {
 
 		err = ipam.ReleaseIPFromPrefix(prefix.Cidr, "1.2.3.4")
 		require.NotNil(t, err)
-		require.IsType(t, NotFoundError{}, err)
-		require.Equal(t, "unable to release ip:1.2.3.4 because it is not allocated in prefix:192.168.0.0/24", err.Error())
+		require.True(t, errors.As(err, &NotFoundError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNotFound), "error must be NotFound")
+		require.Equal(t, "NotFound: unable to release ip:1.2.3.4 because it is not allocated in prefix:192.168.0.0/24", err.Error())
 
 		err = ipam.ReleaseIPFromPrefix("4.5.6.7/23", "1.2.3.4")
 		require.NotNil(t, err)
-		require.IsType(t, NotFoundError{}, err)
-		require.Equal(t, "unable to find prefix for cidr:4.5.6.7/23", err.Error())
+		require.True(t, errors.As(err, &NotFoundError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNotFound), "error must be NotFound")
+		require.Equal(t, "NotFound: unable to find prefix for cidr:4.5.6.7/23", err.Error())
 	})
 }
 
@@ -139,8 +142,9 @@ func TestIpamer_AcquireSpecificIP(t *testing.T) {
 		ip5, err := ipam.AcquireSpecificIP("3.4.5.6/27", "192.168.99.1.invalid")
 		require.Nil(t, ip5)
 		require.NotNil(t, err)
-		require.IsType(t, NotFoundError{}, err)
-		require.Equal(t, "unable to find prefix for cidr:3.4.5.6/27", err.Error())
+		require.True(t, errors.As(err, &NotFoundError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNotFound), "error must be NotFound")
+		require.Equal(t, "NotFound: unable to find prefix for cidr:3.4.5.6/27", err.Error())
 
 		prefix, err = ipam.ReleaseIP(ip1)
 		require.Nil(t, err)
@@ -622,8 +626,9 @@ func TestGetHostAddresses(t *testing.T) {
 
 		ip, err := ipam.AcquireIP(cidr)
 		require.Error(t, err)
-		require.IsType(t, NoIPAvailableError{}, err)
-		require.Equal(t, "no more ips in prefix: 4.1.0.0/24 left, length of prefix.ips: 256", err.Error())
+		require.True(t, errors.As(err, &NoIPAvailableError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNoIPAvailable), "error must be NoIPAvailable")
+		require.Equal(t, "NoIPAvailableError: no more ips in prefix: 4.1.0.0/24 left, length of prefix.ips: 256", err.Error())
 		require.Nil(t, ip)
 
 		cidr = "3.1.0.0/26"
@@ -636,8 +641,9 @@ func TestGetHostAddresses(t *testing.T) {
 
 		ip, err = ipam.AcquireIP(cidr)
 		require.Error(t, err)
-		require.IsType(t, NoIPAvailableError{}, err)
-		require.Equal(t, "no more ips in prefix: 3.1.0.0/26 left, length of prefix.ips: 64", err.Error())
+		require.True(t, errors.As(err, &NoIPAvailableError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNoIPAvailable), "error must be NoIPAvailable")
+		require.Equal(t, "NoIPAvailableError: no more ips in prefix: 3.1.0.0/26 left, length of prefix.ips: 64", err.Error())
 		require.Nil(t, ip)
 	})
 }

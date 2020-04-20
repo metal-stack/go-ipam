@@ -11,6 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrNotFound      NotFoundError
+	ErrNoIPAvailable NoIPAvailableError
+)
+
 // Prefix is a expression of a ip with length and forms a classless network.
 type Prefix struct {
 	Cidr                   string          // The Cidr of this prefix
@@ -68,7 +73,7 @@ func (i *Ipamer) NewPrefix(cidr string) (*Prefix, error) {
 func (i *Ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	p := i.PrefixFrom(cidr)
 	if p == nil {
-		return nil, newNotFoundErrorf("delete prefix:%s not found", cidr)
+		return nil, fmt.Errorf("%w: delete prefix:%s", ErrNotFound, cidr)
 	}
 	if len(p.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
@@ -232,7 +237,7 @@ func (i *Ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
-		return nil, newNotFoundErrorf("unable to find prefix for cidr:%s", prefixCidr)
+		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
 	}
 	if prefix.childPrefixLength > 0 {
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
@@ -276,7 +281,7 @@ func (i *Ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		}
 	}
 
-	return nil, newNoIPAvailableErrorf("no more ips in prefix: %s left, length of prefix.ips: %d", prefix.Cidr, len(prefix.ips))
+	return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
 }
 
 // AcquireIP will return the next unused IP from this Prefix.
@@ -304,11 +309,11 @@ func (i *Ipamer) ReleaseIPFromPrefix(prefixCidr, ip string) error {
 func (i *Ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
-		return newNotFoundErrorf("unable to find prefix for cidr:%s", prefixCidr)
+		return fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
 	}
 	_, ok := prefix.ips[ip]
 	if !ok {
-		return newNotFoundErrorf("unable to release ip:%s because it is not allocated in prefix:%s", ip, prefix.Cidr)
+		return fmt.Errorf("%w: unable to release ip:%s because it is not allocated in prefix:%s", ErrNotFound, ip, prefixCidr)
 	}
 	delete(prefix.ips, ip)
 	_, err := i.storage.UpdatePrefix(*prefix)
@@ -353,7 +358,7 @@ func (i *Ipamer) GetHostAddresses(prefix string) ([]string, error) {
 	// loop till AcquireIP signals that it has no ips left
 	for {
 		ip, err := i.AcquireIP(p.Cidr)
-		if _, noIPAvailable := err.(NoIPAvailableError); noIPAvailable {
+		if errors.Is(err, ErrNoIPAvailable) {
 			return hostAddresses, nil
 		}
 		if err != nil {
@@ -486,28 +491,18 @@ func (p *Prefix) Usage() Usage {
 // NoIPAvailableError indicates that the acquire-operation could not be executed
 // because the specified prefix has no free IP anymore.
 type NoIPAvailableError struct {
-	msg string
 }
 
 func (o NoIPAvailableError) Error() string {
-	return o.msg
-}
-
-func newNoIPAvailableErrorf(msg string, a ...interface{}) NoIPAvailableError {
-	return NoIPAvailableError{msg: fmt.Sprintf(msg, a...)}
+	return "NoIPAvailableError"
 }
 
 // NotFoundError is raised if the given Prefix or Cidr was not found
 type NotFoundError struct {
-	msg string
 }
 
-func (n NotFoundError) Error() string {
-	return n.msg
-}
-
-func newNotFoundErrorf(msg string, a ...interface{}) NotFoundError {
-	return NotFoundError{msg: fmt.Sprintf(msg, a...)}
+func (o NotFoundError) Error() string {
+	return "NotFound"
 }
 
 // retries the given function if the reported error is an OptimisticLockError
