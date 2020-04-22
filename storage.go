@@ -19,6 +19,6 @@ func (o OptimisticLockError) Error() string {
 	return o.msg
 }
 
-func NewOptimisticLockError(msg string) OptimisticLockError {
+func newOptimisticLockError(msg string) OptimisticLockError {
 	return OptimisticLockError{msg: msg}
 }
