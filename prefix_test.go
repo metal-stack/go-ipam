@@ -671,8 +671,8 @@ func TestPrefixDeepCopy(t *testing.T) {
 	require.False(t, &(p1.ips) == &(p2.ips))
 }
 
-func NewPostgres() (*sql, error) {
-	return NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
+func newPostgres() (*sql, error) {
+	return NewPostgresStorage("localhost", "5433", "root", "", "defaultdb", SSLModeDisable)
 }
 
 // interface for impls that support cleaning before each testrun
@@ -685,8 +685,8 @@ type ExtendedSQL struct {
 	*sql
 }
 
-func NewPostgresWithCleanup() (*ExtendedSQL, error) {
-	s, err := NewPostgres()
+func newPostgresWithCleanup() (*ExtendedSQL, error) {
+	s, err := newPostgres()
 	if err != nil {
 		return nil, err
 	}
@@ -748,7 +748,7 @@ func storageProviders() []StorageProvider {
 		{
 			name: "Postgres",
 			provide: func() Storage {
-				storage, err := NewPostgresWithCleanup()
+				storage, err := newPostgresWithCleanup()
 				if err != nil {
 					panic("error getting postgres storage")
 				}
