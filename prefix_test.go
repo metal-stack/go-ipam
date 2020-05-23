@@ -65,7 +65,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			}
 
 			var updatedPrefix Prefix
-			updatedPrefix, err = ipam.storage.UpdatePrefix(*p)
+			updatedPrefix, err = ipam.storage.UpdatePrefix(ipam.namespace, *p)
 			if err != nil {
 				t.Errorf("Could not update prefix: %v", err)
 			}
@@ -196,7 +196,7 @@ func TestIpamer_AcquireIPCounts(t *testing.T) {
 func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
-		allPrefixes, err := ipam.storage.ReadAllPrefixes()
+		allPrefixes, err := ipam.storage.ReadAllPrefixes(ipam.namespace)
 		require.Nil(t, err)
 		require.Equal(t, 0, len(allPrefixes))
 
@@ -209,7 +209,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		usage := prefix.Usage()
 		require.Equal(t, "ip:2/4096", usage.String())
 
-		allPrefixes, err = ipam.storage.ReadAllPrefixes()
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ipam.namespace)
 		require.Nil(t, err)
 		require.Equal(t, 1, len(allPrefixes))
 
@@ -224,7 +224,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		usage = prefix.Usage()
 		require.Equal(t, "ip:2/4096 prefix:1/4", usage.String())
 
-		allPrefixes, err = ipam.storage.ReadAllPrefixes()
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ipam.namespace)
 		require.Nil(t, err)
 		require.Equal(t, 2, len(allPrefixes))
 
@@ -239,7 +239,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		require.True(t, strings.HasSuffix(c2.Cidr, "/22"))
 		require.True(t, strings.HasPrefix(c1.Cidr, "192.168."))
 		require.True(t, strings.HasPrefix(c2.Cidr, "192.168."))
-		allPrefixes, err = ipam.storage.ReadAllPrefixes()
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ipam.namespace)
 		require.Nil(t, err)
 		require.Equal(t, 3, len(allPrefixes))
 
@@ -249,7 +249,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, uint64(4), prefix.availablePrefixes())
 		require.Equal(t, uint64(1), prefix.acquiredPrefixes())
-		allPrefixes, err = ipam.storage.ReadAllPrefixes()
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ipam.namespace)
 		require.Nil(t, err)
 		require.Equal(t, 2, len(allPrefixes))
 
@@ -260,7 +260,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		require.Equal(t, uint64(4), prefix.availablePrefixes())
 		require.Equal(t, uint64(0), prefix.acquiredPrefixes())
 		require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
-		allPrefixes, err = ipam.storage.ReadAllPrefixes()
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ipam.namespace)
 		require.Nil(t, err)
 		require.Equal(t, 1, len(allPrefixes))
 
@@ -284,7 +284,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		err = ipam.ReleaseChildPrefix(c3)
 		require.Nil(t, err)
 
-		allPrefixes, err = ipam.storage.ReadAllPrefixes()
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ipam.namespace)
 		require.Nil(t, err)
 		require.Equal(t, 1, len(allPrefixes))
 	})
@@ -721,14 +721,24 @@ func testWithBackends(t *testing.T, fn testMethod) {
 				t.Errorf("error cleaning up, %v", err)
 			}
 		}
-
-		//ipamer := NewWithStorage(storage)
-		ipamer := &ipamer{storage: storage}
+		ipmr := &ipamer{storage: storage}
 		testName := storageProvider.name
 
 		t.Run(testName, func(t *testing.T) {
-			fn(t, ipamer)
+			fn(t, ipmr)
 		})
+
+		namespace := "testing"
+		ipmr = &ipamer{
+			storage:   storage,
+			namespace: &namespace,
+		}
+		testName = storageProvider.name + "-" + namespace
+
+		t.Run(testName, func(t *testing.T) {
+			fn(t, ipmr)
+		})
+
 	}
 }
 

@@ -30,8 +30,15 @@ type Ipamer interface {
 	PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error
 }
 
+// NamespacedIpamer will create Prefixes seperated in Namespaces.
+// This is useful for scenarios where you want to create overlapping Networks and IPs
+type NamespacedIpamer interface {
+	Ipamer
+}
+
 type ipamer struct {
-	storage Storage
+	storage   Storage
+	namespace *string
 }
 
 // New returns a Ipamer with in memory storage for networks, prefixes and ips.
@@ -44,4 +51,22 @@ func New() Ipamer {
 // The Storage interface must be implemented.
 func NewWithStorage(storage Storage) Ipamer {
 	return &ipamer{storage: storage}
+}
+
+// NewNamespaced returns a Ipamer with in memory storage for networks, prefixes and ips.
+func NewNamespaced(namespace *string) Ipamer {
+	storage := NewMemory()
+	return &ipamer{
+		storage:   storage,
+		namespace: namespace,
+	}
+}
+
+// NewNamespacedWithStorage allows you to create a Ipamer instance with your Storage implementation.
+// The Storage interface must be implemented.
+func NewNamespacedWithStorage(namespace *string, storage Storage) Ipamer {
+	return &ipamer{
+		storage:   storage,
+		namespace: namespace,
+	}
 }

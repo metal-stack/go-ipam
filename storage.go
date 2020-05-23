@@ -2,11 +2,11 @@ package ipam
 
 // Storage is a interface to store ipam objects.
 type Storage interface {
-	CreatePrefix(prefix Prefix) (Prefix, error)
-	ReadPrefix(prefix string) (Prefix, error)
-	ReadAllPrefixes() ([]Prefix, error)
-	UpdatePrefix(prefix Prefix) (Prefix, error)
-	DeletePrefix(prefix Prefix) (Prefix, error)
+	CreatePrefix(namespace *string, prefix Prefix) (Prefix, error)
+	ReadPrefix(namespace *string, prefix string) (Prefix, error)
+	ReadAllPrefixes(namespace *string) ([]Prefix, error)
+	UpdatePrefix(namespace *string, prefix Prefix) (Prefix, error)
+	DeletePrefix(namespace *string, prefix Prefix) (Prefix, error)
 }
 
 // OptimisticLockError indicates that the operation could not be executed because the dataset to update has changed in the meantime.

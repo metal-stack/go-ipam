@@ -17,6 +17,7 @@ type prefixJSON struct {
 	ChildPrefixLength      int             // the length of the child prefixes
 	IPs                    map[string]bool // The ips contained in this prefix
 	Version                int64           // Version is used for optimistic locking
+	Namespace              string          // namespace in which this prefix resides
 }
 
 func (p prefixJSON) toPrefix() Prefix {
@@ -27,6 +28,7 @@ func (p prefixJSON) toPrefix() Prefix {
 		childPrefixLength:      p.ChildPrefixLength,
 		ips:                    p.IPs,
 		version:                p.Version,
+		Namespace:              p.Namespace,
 	}
 }
 
@@ -40,23 +42,27 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 		ChildPrefixLength:      p.childPrefixLength,
 		IPs:                    p.ips,
 		Version:                p.version,
+		Namespace:              p.Namespace,
 	}
 }
 
-func (s *sql) prefixExists(prefix Prefix) (*Prefix, bool) {
-	p, err := s.ReadPrefix(prefix.Cidr)
+func (s *sql) prefixExists(namespace *string, prefix Prefix) (*Prefix, bool) {
+	p, err := s.ReadPrefix(namespace, prefix.Cidr)
 	if err != nil {
 		return nil, false
 	}
 	return &p, true
 }
 
-func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
-	existingPrefix, exists := s.prefixExists(prefix)
+func (s *sql) CreatePrefix(namespace *string, prefix Prefix) (Prefix, error) {
+	existingPrefix, exists := s.prefixExists(namespace, prefix)
 	if exists {
 		return *existingPrefix, nil
 	}
 	prefix.version = int64(0)
+	if namespace != nil {
+		prefix.Namespace = *namespace
+	}
 	pj, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
@@ -65,13 +71,15 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
 	}
-	tx.MustExec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
+	key := namespacedKey(namespace, prefix)
+	tx.MustExec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", key, pj)
 	return prefix, tx.Commit()
 }
 
-func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
+func (s *sql) ReadPrefix(namespace *string, prefix string) (Prefix, error) {
 	var result []byte
-	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1", prefix)
+	key := namespacePrefix(namespace) + prefix
+	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1", key)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read prefix:%v", err)
 	}
@@ -84,9 +92,14 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 	return pre.toPrefix(), nil
 }
 
-func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
+func (s *sql) ReadAllPrefixes(namespace *string) ([]Prefix, error) {
 	var prefixes [][]byte
-	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
+	whereClause := ""
+	if namespace != nil {
+		whereClause = " WHERE cidr LIKE " + "'" + namespacePrefix(namespace) + "%'"
+	}
+
+	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes"+whereClause)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read prefixes:%v", err)
 	}
@@ -105,7 +118,7 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 
 // UpdatePrefix tries to update the prefix.
 // Returns OptimisticLockError if it does not succeed due to a concurrent update.
-func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
+func (s *sql) UpdatePrefix(namespace *string, prefix Prefix) (Prefix, error) {
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
 	pn, err := json.Marshal(prefix.toPrefixJSON())
@@ -116,7 +129,8 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
 	}
-	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
+	key := namespacedKey(namespace, prefix)
+	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", key, oldVersion)
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return Prefix{}, err
@@ -128,7 +142,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		}
 		return Prefix{}, newOptimisticLockError("select for update did not effect any row")
 	}
-	result = tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+	result = tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, key, oldVersion)
 	rows, err = result.RowsAffected()
 	if err != nil {
 		return Prefix{}, err
@@ -143,11 +157,25 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	return prefix, tx.Commit()
 }
 
-func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {
+func (s *sql) DeletePrefix(namespace *string, prefix Prefix) (Prefix, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
 	}
-	tx.MustExec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
+	key := namespacedKey(namespace, prefix)
+	tx.MustExec("DELETE from prefixes WHERE cidr=$1", key)
 	return prefix, tx.Commit()
+}
+
+const namespaceSeperator = "#"
+
+func namespacedKey(namespace *string, prefix Prefix) string {
+	return namespacePrefix(namespace) + prefix.Cidr
+}
+
+func namespacePrefix(namespace *string) string {
+	if namespace != nil {
+		return *namespace + namespaceSeperator
+	}
+	return ""
 }

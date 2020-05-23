@@ -26,6 +26,7 @@ type Prefix struct {
 	childPrefixLength      int             // the length of the child prefixes
 	ips                    map[string]bool // The ips contained in this prefix
 	version                int64           // version is used for optimistic locking
+	Namespace              string          // namespace in which this prefix resides
 }
 
 // DeepCopy to a new Prefix
@@ -37,6 +38,7 @@ func (p Prefix) DeepCopy() *Prefix {
 		childPrefixLength:      p.childPrefixLength,
 		ips:                    copyMap(p.ips),
 		version:                p.version,
+		Namespace:              p.Namespace,
 	}
 }
 
@@ -61,7 +63,7 @@ func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	newPrefix, err := i.storage.CreatePrefix(*p)
+	newPrefix, err := i.storage.CreatePrefix(i.namespace, *p)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +79,7 @@ func (i *ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	if len(p.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
 	}
-	prefix, err := i.storage.DeletePrefix(*p)
+	prefix, err := i.storage.DeletePrefix(i.namespace, *p)
 	if err != nil {
 		return nil, fmt.Errorf("delete prefix:%s %v", cidr, err)
 	}
@@ -160,7 +162,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 
 	prefix.availableChildPrefixes[child.Cidr] = false
 
-	_, err = i.storage.UpdatePrefix(*prefix)
+	_, err = i.storage.UpdatePrefix(i.namespace, *prefix)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", prefix)
 	}
@@ -169,7 +171,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
 	child.ParentCidr = prefix.Cidr
-	_, err = i.storage.UpdatePrefix(*child)
+	_, err = i.storage.UpdatePrefix(i.namespace, *child)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", child)
 	}
@@ -199,7 +201,7 @@ func (i *ipamer) releaseChildPrefixInternal(child *Prefix) error {
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
-	_, err = i.storage.UpdatePrefix(*parent)
+	_, err = i.storage.UpdatePrefix(i.namespace, *parent)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%v", child, err)
 	}
@@ -207,7 +209,7 @@ func (i *ipamer) releaseChildPrefixInternal(child *Prefix) error {
 }
 
 func (i *ipamer) PrefixFrom(cidr string) *Prefix {
-	prefix, err := i.storage.ReadPrefix(cidr)
+	prefix, err := i.storage.ReadPrefix(i.namespace, cidr)
 	if err != nil {
 		return nil
 	}
@@ -266,7 +268,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 				ParentPrefix: prefix.Cidr,
 			}
 			prefix.ips[ip.String()] = true
-			_, err := i.storage.UpdatePrefix(*prefix)
+			_, err := i.storage.UpdatePrefix(i.namespace, *prefix)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
 			}
@@ -304,7 +306,7 @@ func (i *ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 		return fmt.Errorf("%w: unable to release ip:%s because it is not allocated in prefix:%s", ErrNotFound, ip, prefixCidr)
 	}
 	delete(prefix.ips, ip)
-	_, err := i.storage.UpdatePrefix(*prefix)
+	_, err := i.storage.UpdatePrefix(i.namespace, *prefix)
 	if err != nil {
 		return fmt.Errorf("unable to release ip %v:%v", ip, err)
 	}

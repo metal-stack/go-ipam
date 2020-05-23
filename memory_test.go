@@ -11,17 +11,17 @@ func Test_ReadPrefix(t *testing.T) {
 	m := NewMemory()
 
 	// Prefix
-	p, err := m.ReadPrefix("12.0.0.0/8")
+	p, err := m.ReadPrefix(nil, "12.0.0.0/8")
 	require.NotNil(t, err)
 	require.Equal(t, "Prefix 12.0.0.0/8 not found", err.Error())
 	require.Empty(t, p)
 
 	prefix := Prefix{Cidr: "12.0.0.0/16"}
-	p, err = m.CreatePrefix(prefix)
+	p, err = m.CreatePrefix(nil, prefix)
 	require.Nil(t, err)
 	require.NotNil(t, p)
 
-	p, err = m.ReadPrefix("12.0.0.0/16")
+	p, err = m.ReadPrefix(nil, "12.0.0.0/16")
 	require.Nil(t, err)
 	require.NotNil(t, p)
 	require.Equal(t, "12.0.0.0/16", p.Cidr)
@@ -31,13 +31,13 @@ func Test_UpdatePrefix(t *testing.T) {
 	m := NewMemory()
 
 	prefix := Prefix{}
-	p, err := m.UpdatePrefix(prefix)
+	p, err := m.UpdatePrefix(nil, prefix)
 	require.NotNil(t, err)
 	require.Empty(t, p)
-	require.Equal(t, "prefix not present:{  map[] 0 map[] 0}", err.Error())
+	require.Equal(t, "prefix not present:{  map[] 0 map[] 0 }", err.Error())
 
 	prefix.Cidr = "1.2.3.4/24"
-	p, err = m.UpdatePrefix(prefix)
+	p, err = m.UpdatePrefix(nil, prefix)
 	require.NotNil(t, err)
 	require.Empty(t, p)
 	require.Equal(t, "prefix not found:1.2.3.4/24", err.Error())
@@ -54,23 +54,23 @@ func Test_UpdatePrefix_Concurrent(t *testing.T) {
 			cidr := calcPrefix24(run) + "/24"
 			prefix.Cidr = cidr
 
-			p, err := m.CreatePrefix(prefix)
+			p, err := m.CreatePrefix(nil, prefix)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.ReadPrefix(cidr)
+			p, err = m.ReadPrefix(nil, cidr)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.UpdatePrefix(p)
+			p, err = m.UpdatePrefix(nil, p)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.ReadPrefix(cidr)
+			p, err = m.ReadPrefix(nil, cidr)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.DeletePrefix(p)
+			p, err = m.DeletePrefix(nil, p)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 		}(i)

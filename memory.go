@@ -2,6 +2,7 @@ package ipam
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -21,55 +22,62 @@ func NewMemory() *memory {
 	}
 }
 
-func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) CreatePrefix(namespace *string, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	_, ok := m.prefixes[prefix.Cidr]
+	key := namespacedKey(namespace, prefix)
+	_, ok := m.prefixes[key]
 	if ok {
 		return Prefix{}, fmt.Errorf("prefix already created:%v", prefix)
 	}
-	m.prefixes[prefix.Cidr] = *prefix.DeepCopy()
+	m.prefixes[key] = *prefix.DeepCopy()
 	return prefix, nil
 }
-func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
+func (m *memory) ReadPrefix(namespace *string, prefix string) (Prefix, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	result, ok := m.prefixes[prefix]
+	key := namespacePrefix(namespace) + prefix
+	result, ok := m.prefixes[key]
 	if !ok {
 		return Prefix{}, errors.Errorf("Prefix %s not found", prefix)
 	}
 	return *result.DeepCopy(), nil
 }
-func (m *memory) ReadAllPrefixes() ([]Prefix, error) {
+func (m *memory) ReadAllPrefixes(namespace *string) ([]Prefix, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	ps := make([]Prefix, 0, len(m.prefixes))
-	for _, v := range m.prefixes {
+	for k, v := range m.prefixes {
+		if namespace != nil && !strings.HasPrefix(k, namespacePrefix(namespace)) {
+			continue
+		}
 		ps = append(ps, *v.DeepCopy())
 	}
 	return ps, nil
 }
-func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) UpdatePrefix(namespace *string, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	if prefix.Cidr == "" {
 		return Prefix{}, fmt.Errorf("prefix not present:%v", prefix)
 	}
-	_, ok := m.prefixes[prefix.Cidr]
+
+	key := namespacedKey(namespace, prefix)
+	_, ok := m.prefixes[key]
 	if !ok {
 		return Prefix{}, fmt.Errorf("prefix not found:%s", prefix.Cidr)
 	}
-	m.prefixes[prefix.Cidr] = *prefix.DeepCopy()
+	m.prefixes[key] = *prefix.DeepCopy()
 	return prefix, nil
 }
-func (m *memory) DeletePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) DeletePrefix(namespace *string, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-
-	delete(m.prefixes, prefix.Cidr)
+	key := namespacedKey(namespace, prefix)
+	delete(m.prefixes, key)
 	return *prefix.DeepCopy(), nil
 }
