@@ -331,7 +331,9 @@ func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []st
 	return nil
 }
 
-func (i *ipamer) GetHostAddresses(prefix string) ([]string, error) {
+// getHostAddresses will return all possible ipadresses a host can get in the given prefix.
+// The IPs will be acquired by this method, so that the prefix has no free IPs afterwards.
+func (i *ipamer) getHostAddresses(prefix string) ([]string, error) {
 	hostAddresses := []string{}
 
 	p, err := i.NewPrefix(prefix)

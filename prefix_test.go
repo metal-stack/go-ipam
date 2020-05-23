@@ -617,7 +617,7 @@ func TestIpamerAcquireIP(t *testing.T) {
 func TestGetHostAddresses(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "4.1.0.0/24"
-		ips, err := ipam.GetHostAddresses(cidr)
+		ips, err := ipam.getHostAddresses(cidr)
 		if err != nil {
 			panic(err)
 		}
@@ -632,7 +632,7 @@ func TestGetHostAddresses(t *testing.T) {
 		require.Nil(t, ip)
 
 		cidr = "3.1.0.0/26"
-		ips, err = ipam.GetHostAddresses(cidr)
+		ips, err = ipam.getHostAddresses(cidr)
 		if err != nil {
 			panic(err)
 		}

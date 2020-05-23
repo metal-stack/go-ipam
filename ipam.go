@@ -28,9 +28,6 @@ type Ipamer interface {
 	// PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
 	// with one of existingPrefixes
 	PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error
-	// GetHostAddresses will return all possible ipadresses a host can get in the given prefix.
-	// The IPs will be acquired by this method, so that the prefix has no free IPs afterwards.
-	GetHostAddresses(prefix string) ([]string, error)
 }
 
 type ipamer struct {
