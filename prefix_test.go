@@ -671,6 +671,31 @@ func TestPrefixDeepCopy(t *testing.T) {
 	require.False(t, &(p1.ips) == &(p2.ips))
 }
 
+func TestIpamer_AcquireIPUniqueUUID(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("172.17.0.0/24")
+		require.Nil(t, err)
+		require.NotNil(t, prefix)
+
+		// first acquire a IP
+		ip, err := ipam.AcquireSpecificIP(prefix.Cidr, "172.17.0.4")
+		require.Nil(t, err)
+		require.Equal(t, "172.17.0.4", ip.IP.String())
+		require.NotEmpty(t, ip.UUID)
+
+		// release it
+		_, err = ipam.ReleaseIP(ip)
+		require.Nil(t, err)
+
+		// acquire it again, uuid must be different
+		ipagain, err := ipam.AcquireSpecificIP(prefix.Cidr, "172.17.0.4")
+		require.Nil(t, err)
+		require.Equal(t, "172.17.0.4", ipagain.IP.String())
+		require.NotEqual(t, ipagain.UUID, ip.UUID)
+	})
+
+}
+
 func NewPostgres() (*sql, error) {
 	return NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
 }
