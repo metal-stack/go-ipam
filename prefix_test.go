@@ -55,7 +55,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 	}
 	for _, tt := range tests {
 
-		testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 			p, err := ipam.NewPrefix(tt.fields.prefixCIDR)
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
@@ -85,7 +85,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 
 func TestIpamer_ReleaseIPFromPrefix(t *testing.T) {
 
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/24")
 		require.Nil(t, err)
 		require.NotNil(t, prefix)
@@ -105,7 +105,7 @@ func TestIpamer_ReleaseIPFromPrefix(t *testing.T) {
 }
 
 func TestIpamer_AcquireSpecificIP(t *testing.T) {
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.99.0/24")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(256))
@@ -160,7 +160,7 @@ func TestIpamer_AcquireSpecificIP(t *testing.T) {
 
 func TestIpamer_AcquireIPCounts(t *testing.T) {
 
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/24")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(256))
@@ -195,7 +195,7 @@ func TestIpamer_AcquireIPCounts(t *testing.T) {
 
 func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		allPrefixes, err := ipam.storage.ReadAllPrefixes()
 		require.Nil(t, err)
 		require.Equal(t, 0, len(allPrefixes))
@@ -292,7 +292,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 
 func TestIpamer_AcquireChildPrefix(t *testing.T) {
 
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/20")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availablePrefixes(), uint64(0))
@@ -363,7 +363,7 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 
 func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFull(t *testing.T) {
 
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/16")
 		require.Nil(t, err)
 		require.Equal(t, uint64(0), prefix.availablePrefixes())
@@ -481,7 +481,7 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 			for _, ep := range tt.existingPrefixes {
 				p, err := ipam.NewPrefix(ep)
 				if err != nil {
@@ -527,7 +527,7 @@ func TestIpamer_NewPrefix(t *testing.T) {
 	}
 	for _, tt := range tests {
 
-		testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 			got, err := ipam.NewPrefix(tt.cidr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ipamer.NewPrefix() error = %v, wantErr %v", err, tt.wantErr)
@@ -551,7 +551,7 @@ func TestIpamer_NewPrefix(t *testing.T) {
 
 func TestIpamer_DeletePrefix(t *testing.T) {
 
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/20")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availablePrefixes(), uint64(0))
@@ -570,7 +570,7 @@ func TestIpamer_DeletePrefix(t *testing.T) {
 
 func TestIpamer_PrefixFrom(t *testing.T) {
 
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix := ipam.PrefixFrom("192.168.0.0/20")
 		require.Nil(t, prefix)
 
@@ -585,7 +585,7 @@ func TestIpamer_PrefixFrom(t *testing.T) {
 
 func TestIpamerAcquireIP(t *testing.T) {
 
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "10.0.0.0/16"
 		p, err := ipam.NewPrefix(cidr)
 		if err != nil {
@@ -615,9 +615,9 @@ func TestIpamerAcquireIP(t *testing.T) {
 }
 
 func TestGetHostAddresses(t *testing.T) {
-	testWithBackends(t, func(t *testing.T, ipam *Ipamer) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "4.1.0.0/24"
-		ips, err := ipam.GetHostAddresses(cidr)
+		ips, err := ipam.getHostAddresses(cidr)
 		if err != nil {
 			panic(err)
 		}
@@ -632,7 +632,7 @@ func TestGetHostAddresses(t *testing.T) {
 		require.Nil(t, ip)
 
 		cidr = "3.1.0.0/26"
-		ips, err = ipam.GetHostAddresses(cidr)
+		ips, err = ipam.getHostAddresses(cidr)
 		if err != nil {
 			panic(err)
 		}

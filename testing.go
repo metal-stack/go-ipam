@@ -94,7 +94,7 @@ func (e *ExtendedSQL) cleanup() error {
 	return tx.Commit()
 }
 
-type testMethod func(t *testing.T, ipam *Ipamer)
+type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {
 	for _, storageProvider := range storageProviders() {
@@ -108,7 +108,7 @@ func testWithBackends(t *testing.T, fn testMethod) {
 			}
 		}
 
-		ipamer := NewWithStorage(storage)
+		ipamer := &ipamer{storage: storage}
 		testName := storageProvider.name
 
 		t.Run(testName, func(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func benchmarkNewPrefix(ipam *Ipamer, b *testing.B) {
+func benchmarkNewPrefix(ipam Ipamer, b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		p, err := ipam.NewPrefix("192.168.0.0/24")
 		if err != nil {
@@ -34,7 +34,7 @@ func BenchmarkNewPrefixPostgres(b *testing.B) {
 	benchmarkNewPrefix(ipam, b)
 }
 
-func benchmarkAcquireIP(ipam *Ipamer, cidr string, b *testing.B) {
+func benchmarkAcquireIP(ipam Ipamer, cidr string, b *testing.B) {
 	p, err := ipam.NewPrefix(cidr)
 	if err != nil {
 		panic(err)
