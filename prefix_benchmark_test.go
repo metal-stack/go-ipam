@@ -25,7 +25,7 @@ func BenchmarkNewPrefixMemory(b *testing.B) {
 	benchmarkNewPrefix(ipam, b)
 }
 func BenchmarkNewPrefixPostgres(b *testing.B) {
-	storage, err := NewPostgresStorage("localhost", "5433", "root", "", "defaultdb", SSLModeDisable)
+	_, storage, err := startPostgres()
 	if err != nil {
 		panic(err)
 	}
@@ -63,7 +63,7 @@ func BenchmarkAcquireIPMemory(b *testing.B) {
 	benchmarkAcquireIP(ipam, "11.0.0.0/24", b)
 }
 func BenchmarkAcquireIPPostgres(b *testing.B) {
-	storage, err := NewPostgresStorage("localhost", "5433", "root", "", "defaultdb", SSLModeDisable)
+	_, storage, err := startPostgres()
 	if err != nil {
 		panic(err)
 	}

@@ -3,6 +3,7 @@ package ipam
 import (
 	"context"
 	"sync"
+	"testing"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -13,7 +14,7 @@ var (
 	postgresC testcontainers.Container
 )
 
-func startDB() (container testcontainers.Container, dn *sql, err error) {
+func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 	ctx := context.Background()
 	once.Do(func() {
 		var err error
@@ -56,4 +57,91 @@ func startDB() (container testcontainers.Container, dn *sql, err error) {
 
 func cleanUp(s *sql) {
 	s.db.MustExec("DROP TABLE prefixes")
+}
+
+// Cleanable interface for impls that support cleaning before each testrun
+type Cleanable interface {
+	cleanup() error
+}
+
+// ExtendedSQL extended sql interface
+type ExtendedSQL struct {
+	*sql
+	c testcontainers.Container
+}
+
+func newPostgresWithCleanup() (*ExtendedSQL, error) {
+	c, s, err := startPostgres()
+	if err != nil {
+		return nil, err
+	}
+
+	ext := &ExtendedSQL{
+		sql: s,
+		c:   c,
+	}
+
+	return ext, nil
+}
+
+// cleanup database before test
+func (e *ExtendedSQL) cleanup() error {
+	tx := e.sql.db.MustBegin()
+	_, err := e.sql.db.Exec("TRUNCATE TABLE prefixes")
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+type testMethod func(t *testing.T, ipam *Ipamer)
+
+func testWithBackends(t *testing.T, fn testMethod) {
+	for _, storageProvider := range storageProviders() {
+
+		storage := storageProvider.provide()
+
+		if tp, ok := storage.(Cleanable); ok {
+			err := tp.cleanup()
+			if err != nil {
+				t.Errorf("error cleaning up, %v", err)
+			}
+		}
+
+		ipamer := NewWithStorage(storage)
+		testName := storageProvider.name
+
+		t.Run(testName, func(t *testing.T) {
+			fn(t, ipamer)
+		})
+	}
+}
+
+type provide func() Storage
+
+// StorageProvider provides differen storages
+type StorageProvider struct {
+	name    string
+	provide provide
+}
+
+func storageProviders() []StorageProvider {
+	return []StorageProvider{
+		{
+			name: "Memory",
+			provide: func() Storage {
+				return NewMemory()
+			},
+		},
+		{
+			name: "Postgres",
+			provide: func() Storage {
+				storage, err := newPostgresWithCleanup()
+				if err != nil {
+					panic("error getting postgres storage")
+				}
+				return storage
+			},
+		},
+	}
 }

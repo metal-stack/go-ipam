@@ -9,7 +9,7 @@ import (
 )
 
 func Test_sql_prefixExists(t *testing.T) {
-	_, db, err := startDB()
+	_, db, err := startPostgres()
 	defer cleanUp(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
@@ -39,7 +39,7 @@ func Test_sql_prefixExists(t *testing.T) {
 }
 
 func Test_sql_CreatePrefix(t *testing.T) {
-	_, db, err := startDB()
+	_, db, err := startPostgres()
 	defer cleanUp(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
@@ -70,7 +70,7 @@ func Test_sql_CreatePrefix(t *testing.T) {
 }
 
 func Test_sql_ReadPrefix(t *testing.T) {
-	_, db, err := startDB()
+	_, db, err := startPostgres()
 	defer cleanUp(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
@@ -93,7 +93,7 @@ func Test_sql_ReadPrefix(t *testing.T) {
 }
 
 func Test_sql_ReadAllPrefix(t *testing.T) {
-	_, db, err := startDB()
+	_, db, err := startPostgres()
 	defer cleanUp(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
@@ -124,7 +124,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 }
 
 func Test_sql_UpdatePrefix(t *testing.T) {
-	_, db, err := startDB()
+	_, db, err := startPostgres()
 	defer cleanUp(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
@@ -155,7 +155,7 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 }
 
 func Test_ConcurrentAcquirePrefix(t *testing.T) {
-	_, db, err := startDB()
+	_, db, err := startPostgres()
 	defer cleanUp(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
@@ -200,7 +200,7 @@ func acquirePrefix(t *testing.T, db *sql, cidr string, prefixes chan string) {
 }
 
 func Test_ConcurrentAcquireIP(t *testing.T) {
-	_, db, err := startDB()
+	_, db, err := startPostgres()
 	defer cleanUp(db)
 	require.Nil(t, err)
 	require.NotNil(t, db)
