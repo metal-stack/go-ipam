@@ -44,7 +44,7 @@ func startDB() (container testcontainers.Container, dn *sql, err error) {
 		return postgresC, nil, err
 	}
 	dbname := "postgres"
-	db, err := NewPostgresStorage(ip, port.Port(), "postgres", "password", dbname, "disable")
+	db, err := NewPostgresStorage(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
 
 	return postgresC, db, err
 }

@@ -25,7 +25,7 @@ func BenchmarkNewPrefixMemory(b *testing.B) {
 	benchmarkNewPrefix(ipam, b)
 }
 func BenchmarkNewPrefixPostgres(b *testing.B) {
-	storage, err := NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", "disable")
+	storage, err := NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", SSLModeDisable)
 	if err != nil {
 		panic(err)
 	}
