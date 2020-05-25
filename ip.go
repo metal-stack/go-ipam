@@ -10,6 +10,7 @@ import (
 type IP struct {
 	IP           net.IP
 	ParentPrefix string
+	UUID         string
 }
 
 func (i *IP) or(ip IP) IP {

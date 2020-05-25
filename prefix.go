@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -264,6 +265,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 			acquired = &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
+				UUID:         uuid.New().String(),
 			}
 			prefix.ips[ip.String()] = true
 			_, err := i.storage.UpdatePrefix(*prefix)

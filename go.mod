@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/avast/retry-go v2.6.0+incompatible
+	github.com/google/uuid v1.1.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/lib/pq v1.5.2
 	// sqlite v2.x is a unfortunate release
