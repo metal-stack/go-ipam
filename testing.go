@@ -94,9 +94,9 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 // 	return c.Terminate(ctx)
 // }
 
-func cleanUp(s *sql) {
-	s.db.MustExec("DROP TABLE prefixes")
-}
+// func cleanUp(s *sql) {
+// 	s.db.MustExec("DROP TABLE prefixes")
+// }
 
 // Cleanable interface for impls that support cleaning before each testrun
 type Cleanable interface {
