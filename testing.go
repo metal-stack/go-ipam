@@ -10,13 +10,15 @@ import (
 )
 
 var (
-	once      sync.Once
-	postgresC testcontainers.Container
+	pgOnce      sync.Once
+	crOnce      sync.Once
+	pgContainer testcontainers.Container
+	crContainer testcontainers.Container
 )
 
 func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 	ctx := context.Background()
-	once.Do(func() {
+	pgOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        "postgres:12-alpine",
@@ -28,7 +30,7 @@ func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 			),
 			Cmd: []string{"postgres", "-c", "max_connections=200"},
 		}
-		postgresC, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		pgContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
 		})
@@ -36,18 +38,55 @@ func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 			panic(err.Error())
 		}
 	})
-	ip, err := postgresC.Host(ctx)
+	ip, err := pgContainer.Host(ctx)
 	if err != nil {
-		return postgresC, nil, err
+		return pgContainer, nil, err
 	}
-	port, err := postgresC.MappedPort(ctx, "5432")
+	port, err := pgContainer.MappedPort(ctx, "5432")
 	if err != nil {
-		return postgresC, nil, err
+		return pgContainer, nil, err
 	}
 	dbname := "postgres"
 	db, err := NewPostgresStorage(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
 
-	return postgresC, db, err
+	return pgContainer, db, err
+}
+
+func startCockroach() (container testcontainers.Container, dn *sql, err error) {
+	ctx := context.Background()
+	crOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        "cockroachdb/cockroach:v20.1.0",
+			ExposedPorts: []string{"26257/tcp", "8080/tcp"},
+			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
+			WaitingFor: wait.ForAll(
+				wait.ForLog("initialized new cluster"),
+				wait.ForListeningPort("8080/tcp"),
+				wait.ForListeningPort("26257/tcp"),
+			),
+			Cmd: []string{"start-single-node", "--insecure", "--listen-addr=0.0.0.0"},
+		}
+		crContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := crContainer.Host(ctx)
+	if err != nil {
+		return crContainer, nil, err
+	}
+	port, err := crContainer.MappedPort(ctx, "26257")
+	if err != nil {
+		return crContainer, nil, err
+	}
+	dbname := "defaultdb"
+	db, err := NewPostgresStorage(ip, port.Port(), "root", "password", dbname, SSLModeDisable)
+
+	return crContainer, db, err
 }
 
 // func stopDB(c testcontainers.Container) error {
@@ -72,6 +111,19 @@ type ExtendedSQL struct {
 
 func newPostgresWithCleanup() (*ExtendedSQL, error) {
 	c, s, err := startPostgres()
+	if err != nil {
+		return nil, err
+	}
+
+	ext := &ExtendedSQL{
+		sql: s,
+		c:   c,
+	}
+
+	return ext, nil
+}
+func newCockroachWithCleanup() (*ExtendedSQL, error) {
+	c, s, err := startCockroach()
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +191,16 @@ func storageProviders() []StorageProvider {
 				storage, err := newPostgresWithCleanup()
 				if err != nil {
 					panic("error getting postgres storage")
+				}
+				return storage
+			},
+		},
+		{
+			name: "Cockroach",
+			provide: func() Storage {
+				storage, err := newCockroachWithCleanup()
+				if err != nil {
+					panic("error getting cockroach storage")
 				}
 				return storage
 			},
