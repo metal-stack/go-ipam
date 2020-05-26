@@ -146,6 +146,16 @@ func (e *ExtendedSQL) cleanup() error {
 	return tx.Commit()
 }
 
+// cleanup database before test
+func (sql *sql) cleanup() error {
+	tx := sql.db.MustBegin()
+	_, err := sql.db.Exec("TRUNCATE TABLE prefixes")
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {
@@ -169,12 +179,37 @@ func testWithBackends(t *testing.T, fn testMethod) {
 	}
 }
 
-type provide func() Storage
+type sqlTestMethod func(t *testing.T, sql *sql)
 
-// StorageProvider provides differen storages
+func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
+	for _, storageProvider := range storageProviders() {
+
+		sqlstorage := storageProvider.providesql()
+		if sqlstorage == nil {
+			continue
+		}
+
+		err := sqlstorage.cleanup()
+		if err != nil {
+			t.Errorf("error cleaning up, %v", err)
+		}
+
+		testName := storageProvider.name
+
+		t.Run(testName, func(t *testing.T) {
+			fn(t, sqlstorage)
+		})
+	}
+}
+
+type provide func() Storage
+type providesql func() *sql
+
+// StorageProvider provides different storages
 type StorageProvider struct {
-	name    string
-	provide provide
+	name       string
+	provide    provide
+	providesql providesql
 }
 
 func storageProviders() []StorageProvider {
@@ -183,6 +218,9 @@ func storageProviders() []StorageProvider {
 			name: "Memory",
 			provide: func() Storage {
 				return NewMemory()
+			},
+			providesql: func() *sql {
+				return nil
 			},
 		},
 		{
@@ -194,6 +232,13 @@ func storageProviders() []StorageProvider {
 				}
 				return storage
 			},
+			providesql: func() *sql {
+				storage, err := newPostgresWithCleanup()
+				if err != nil {
+					panic("error getting postgres storage")
+				}
+				return storage.sql
+			},
 		},
 		{
 			name: "Cockroach",
@@ -203,6 +248,13 @@ func storageProviders() []StorageProvider {
 					panic("error getting cockroach storage")
 				}
 				return storage
+			},
+			providesql: func() *sql {
+				storage, err := newCockroachWithCleanup()
+				if err != nil {
+					panic("error getting cockroach storage")
+				}
+				return storage.sql
 			},
 		},
 	}
