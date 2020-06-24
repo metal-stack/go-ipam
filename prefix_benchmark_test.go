@@ -25,7 +25,16 @@ func BenchmarkNewPrefixMemory(b *testing.B) {
 	benchmarkNewPrefix(ipam, b)
 }
 func BenchmarkNewPrefixPostgres(b *testing.B) {
-	storage, err := NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", SSLModeDisable)
+	_, storage, err := startPostgres()
+	if err != nil {
+		panic(err)
+	}
+	defer storage.db.Close()
+	ipam := NewWithStorage(storage)
+	benchmarkNewPrefix(ipam, b)
+}
+func BenchmarkNewPrefixCockroach(b *testing.B) {
+	_, storage, err := startCockroach()
 	if err != nil {
 		panic(err)
 	}
@@ -63,7 +72,17 @@ func BenchmarkAcquireIPMemory(b *testing.B) {
 	benchmarkAcquireIP(ipam, "11.0.0.0/24", b)
 }
 func BenchmarkAcquireIPPostgres(b *testing.B) {
-	storage, err := NewPostgresStorage("localhost", "5433", "postgres", "password", "postgres", SSLModeDisable)
+	_, storage, err := startPostgres()
+	if err != nil {
+		panic(err)
+	}
+	defer storage.db.Close()
+	ipam := NewWithStorage(storage)
+	benchmarkAcquireIP(ipam, "10.0.0.0/16", b)
+}
+
+func BenchmarkAcquireIPCockroach(b *testing.B) {
+	_, storage, err := startCockroach()
 	if err != nil {
 		panic(err)
 	}

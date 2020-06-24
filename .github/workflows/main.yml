@@ -24,7 +24,6 @@ jobs:
 
     - name: build and test
       run: |
-        make postgres-up
         make test
         make bench
     
