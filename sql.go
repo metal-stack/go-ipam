@@ -19,7 +19,7 @@ type prefixJSON struct {
 	Version                int64           // Version is used for optimistic locking
 }
 
-func (p prefixJSON) toPrefix() Prefix {
+func (p prefixJSON) ToPrefix() Prefix {
 	return Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
@@ -30,7 +30,7 @@ func (p prefixJSON) toPrefix() Prefix {
 	}
 }
 
-func (p Prefix) toPrefixJSON() prefixJSON {
+func (p Prefix) ToPrefixJSON() prefixJSON {
 	return prefixJSON{
 		Prefix: Prefix{
 			Cidr:       p.Cidr,
@@ -57,7 +57,7 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 		return *existingPrefix, nil
 	}
 	prefix.version = int64(0)
-	pj, err := json.Marshal(prefix.toPrefixJSON())
+	pj, err := json.Marshal(prefix.ToPrefixJSON())
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
 	}
@@ -81,7 +81,7 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%v", err)
 	}
 
-	return pre.toPrefix(), nil
+	return pre.ToPrefix(), nil
 }
 
 func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
@@ -98,7 +98,7 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to unmarshal prefix:%v", err)
 		}
-		result = append(result, pre.toPrefix())
+		result = append(result, pre.ToPrefix())
 	}
 	return result, nil
 }
@@ -108,7 +108,7 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
-	pn, err := json.Marshal(prefix.toPrefixJSON())
+	pn, err := json.Marshal(prefix.ToPrefixJSON())
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
 	}
