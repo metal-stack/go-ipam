@@ -21,7 +21,7 @@ func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 	pgOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "postgres:12-alpine",
+			Image:        "postgres:13-alpine",
 			ExposedPorts: []string{"5432/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
 			WaitingFor: wait.ForAll(
@@ -57,7 +57,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	crOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "cockroachdb/cockroach:v20.1.3",
+			Image:        "cockroachdb/cockroach:v20.1.8",
 			ExposedPorts: []string{"26257/tcp", "8080/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
 			WaitingFor: wait.ForAll(

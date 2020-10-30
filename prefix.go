@@ -515,7 +515,7 @@ func jitter(d time.Duration) time.Duration {
 }
 
 // JitterDelay is a DelayType which varies delay in each iterations
-func JitterDelay(_ uint, config *retry.Config) time.Duration {
+func JitterDelay(_ uint, err error, config *retry.Config) time.Duration {
 	// fields in config are private, so we hardcode the average delay duration
 	return jitter(100 * time.Millisecond)
 }
