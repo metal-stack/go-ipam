@@ -670,3 +670,19 @@ func TestPrefixDeepCopy(t *testing.T) {
 	require.False(t, &(p1.availableChildPrefixes) == &(p2.availableChildPrefixes))
 	require.False(t, &(p1.ips) == &(p2.ips))
 }
+
+func TestGob(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("192.168.0.0/24")
+		require.Nil(t, err)
+		require.NotNil(t, prefix)
+
+		data, err := prefix.GobEncode()
+		require.Nil(t, err)
+
+		newPrefix := &Prefix{}
+		err = newPrefix.GobDecode(data)
+		require.Nil(t, err)
+		require.Equal(t, prefix, newPrefix)
+	})
+}

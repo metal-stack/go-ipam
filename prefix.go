@@ -366,7 +366,7 @@ func (i *ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 	delete(prefix.ips, ip)
 	_, err := i.storage.UpdatePrefix(*prefix)
 	if err != nil {
-		return fmt.Errorf("unable to release ip %v:%v", ip, err)
+		return fmt.Errorf("unable to release ip %v:%w", ip, err)
 	}
 	return nil
 }
