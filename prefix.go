@@ -1,6 +1,8 @@
 package ipam
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"math"
 	"math/rand"
@@ -38,6 +40,64 @@ func (p Prefix) DeepCopy() *Prefix {
 		ips:                    copyMap(p.ips),
 		version:                p.version,
 	}
+}
+
+// GobEncode implements GobEncode for Prefix
+func (p *Prefix) GobEncode() ([]byte, error) {
+	w := new(bytes.Buffer)
+	encoder := gob.NewEncoder(w)
+	err := encoder.Encode(p.availableChildPrefixes)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(p.childPrefixLength)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(p.ips)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(p.version)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(p.Cidr)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(p.ParentCidr)
+	if err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
+}
+
+// GobDecode implements GobDecode for Prefix
+func (p *Prefix) GobDecode(buf []byte) error {
+	r := bytes.NewBuffer(buf)
+	decoder := gob.NewDecoder(r)
+	err := decoder.Decode(&p.availableChildPrefixes)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(&p.childPrefixLength)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(&p.ips)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(&p.version)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(&p.Cidr)
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(&p.ParentCidr)
 }
 
 func copyMap(m map[string]bool) map[string]bool {
@@ -306,7 +366,7 @@ func (i *ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 	delete(prefix.ips, ip)
 	_, err := i.storage.UpdatePrefix(*prefix)
 	if err != nil {
-		return fmt.Errorf("unable to release ip %v:%v", ip, err)
+		return fmt.Errorf("unable to release ip %v:%w", ip, err)
 	}
 	return nil
 }
