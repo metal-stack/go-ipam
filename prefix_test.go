@@ -1,15 +1,23 @@
 package ipam
 
 import (
-	"net"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"inet.af/netaddr"
 )
 
+func mustIP(s string) netaddr.IP {
+	ip, err := netaddr.ParseIP(s)
+	if err != nil {
+		panic(err)
+	}
+
+	return ip
+}
 func TestIpamer_AcquireIP(t *testing.T) {
 
 	type fields struct {
@@ -27,7 +35,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "192.168.1.0/24",
 				existingips: []string{},
 			},
-			want: &IP{IP: net.ParseIP("192.168.1.1")},
+			want: &IP{IP: mustIP("192.168.1.1")},
 		},
 		{
 			name: "Want next IP, network already occupied a little",
@@ -35,7 +43,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "192.168.2.0/30",
 				existingips: []string{"192.168.2.1"},
 			},
-			want: &IP{IP: net.ParseIP("192.168.2.2")},
+			want: &IP{IP: mustIP("192.168.2.2")},
 		},
 		{
 			name: "Want next IP, but network is full",
@@ -75,7 +83,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 					t.Errorf("Ipamer.AcquireIP() = %v, want %v", got, tt.want)
 				}
 			} else {
-				if !tt.want.IP.Equal(got.IP) {
+				if tt.want.IP.Compare(got.IP) != 0 {
 					t.Errorf("Ipamer.AcquireIP() = %v, want %v", got, tt.want)
 				}
 			}
@@ -301,7 +309,7 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 		// Same length
 		cp, err := ipam.AcquireChildPrefix(prefix.Cidr, 20)
 		require.NotNil(t, err)
-		require.Equal(t, "given length:20 is smaller or equal of prefix length:20", err.Error())
+		require.Equal(t, "given length:20 must be greater than prefix length:20", err.Error())
 		require.Nil(t, cp)
 
 		// working length
@@ -522,7 +530,7 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			name:        "invalid Prefix",
 			cidr:        "192.168.0.0/33",
 			wantErr:     true,
-			errorString: "unable to parse cidr:192.168.0.0/33 invalid CIDR address: 192.168.0.0/33",
+			errorString: "unable to parse cidr:192.168.0.0/33 netaddr.ParseIPPrefix(\"33\"): prefix length out of range",
 		},
 	}
 	for _, tt := range tests {
@@ -685,4 +693,37 @@ func TestGob(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, prefix, newPrefix)
 	})
+}
+
+func TestPrefix_availablePrefixes(t *testing.T) {
+	tests := []struct {
+		name              string
+		Cidr              string
+		childPrefixLength int
+		want              uint64
+	}{
+		{
+			name:              "simple",
+			Cidr:              "192.168.0.0/20",
+			childPrefixLength: 22,
+			want:              4,
+		},
+		{
+			name:              "simple",
+			Cidr:              "192.168.0.0/16",
+			childPrefixLength: 20,
+			want:              16,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &Prefix{
+				Cidr:              tt.Cidr,
+				childPrefixLength: tt.childPrefixLength,
+			}
+			if got := p.availablePrefixes(); got != tt.want {
+				t.Errorf("Prefix.availablePrefixes() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
