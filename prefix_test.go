@@ -38,6 +38,15 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			want: &IP{IP: mustIP("192.168.1.1")},
 		},
 		{
+			name: "Acquire next IPv6 regularly",
+			fields: fields{
+				prefixCIDR:  "2001:0db8:85a3::/124",
+				existingips: []string{},
+			},
+			want: &IP{IP: mustIP("2001:0db8:85a3::1")},
+		},
+
+		{
 			name: "Want next IP, network already occupied a little",
 			fields: fields{
 				prefixCIDR:  "192.168.2.0/30",
