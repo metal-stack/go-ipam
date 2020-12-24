@@ -12,12 +12,12 @@ func Test_extractPrefix(t *testing.T) {
 		name    string
 		prefix  netaddr.IPPrefix
 		length  uint8
-		want    *netaddr.IPPrefix
+		want    netaddr.IPPrefix
 		wantErr bool
 	}{
 		{
 			name:    "simple",
-			prefix:  *mustIPPrefix("192.168.0.0/16"),
+			prefix:  mustIPPrefix("192.168.0.0/16"),
 			length:  24,
 			want:    mustIPPrefix("192.168.254.0/24"),
 			wantErr: false,
@@ -43,17 +43,17 @@ func Test_extractPrefixFromSet(t *testing.T) {
 		seta, setb netaddr.IPSet
 	)
 	prefixa := mustIPPrefix("192.168.0.0/16")
-	seta.AddPrefix(*prefixa)
+	seta.AddPrefix(prefixa)
 
 	prefixb := mustIPPrefix("192.168.128.0/18")
-	setb.AddPrefix(*prefixa)
-	setb.RemovePrefix(*prefixb)
+	setb.AddPrefix(prefixa)
+	setb.RemovePrefix(prefixb)
 
 	tests := []struct {
 		name    string
 		set     netaddr.IPSet
 		length  uint8
-		want    *netaddr.IPPrefix
+		want    netaddr.IPPrefix
 		wantErr bool
 	}{
 		{
@@ -99,11 +99,11 @@ func Test_extractPrefixFromSet(t *testing.T) {
 	}
 }
 
-func mustIPPrefix(s string) *netaddr.IPPrefix {
+func mustIPPrefix(s string) netaddr.IPPrefix {
 	p, err := netaddr.ParseIPPrefix(s)
 	if err != nil {
 		panic(err)
 	}
 
-	return &p
+	return p
 }
