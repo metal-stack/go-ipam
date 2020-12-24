@@ -14,7 +14,7 @@ type sql struct {
 type prefixJSON struct {
 	Prefix
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
-	ChildPrefixLength      int             // the length of the child prefixes
+	ChildPrefixLength      uint8           // the length of the child prefixes
 	IPs                    map[string]bool // The ips contained in this prefix
 	Version                int64           // Version is used for optimistic locking
 }

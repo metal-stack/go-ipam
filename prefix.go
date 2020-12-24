@@ -26,7 +26,7 @@ type Prefix struct {
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
-	childPrefixLength      int             // the length of the child prefixes
+	childPrefixLength      uint8           // the length of the child prefixes
 	ips                    map[string]bool // The ips contained in this prefix
 	version                int64           // version is used for optimistic locking
 }
@@ -146,7 +146,7 @@ func (i *ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	return &prefix, nil
 }
 
-func (i *ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, error) {
+func (i *ipamer) AcquireChildPrefix(parentCidr string, length uint8) (*Prefix, error) {
 	var prefix *Prefix
 	return prefix, retryOnOptimisticLock(func() error {
 		var err error
@@ -157,7 +157,7 @@ func (i *ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, err
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
 // FIXME allow variable child prefix length
-func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Prefix, error) {
+func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*Prefix, error) {
 	prefix := i.PrefixFrom(parentCidr)
 	if prefix == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
@@ -169,7 +169,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 	if err != nil {
 		return nil, err
 	}
-	if ipprefix.Bits >= uint8(length) {
+	if ipprefix.Bits >= length {
 		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits)
 	}
 	if prefix.childPrefixLength != 0 && prefix.childPrefixLength != length {
@@ -191,7 +191,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Pre
 		ipset.RemovePrefix(ipprefix)
 	}
 
-	cp, err := extractPrefixFromSet(ipset, uint8(length))
+	cp, err := extractPrefixFromSet(ipset, length)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +472,7 @@ func (p *Prefix) availablePrefixes() uint64 {
 		if err != nil {
 			return 0
 		}
-		availableBits := p.childPrefixLength - int(ipprefix.Bits)
+		availableBits := p.childPrefixLength - ipprefix.Bits
 		return uint64(math.Pow(float64(2), float64(availableBits)))
 	}
 	return uint64(len(p.availableChildPrefixes))

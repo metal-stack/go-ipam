@@ -8,7 +8,7 @@ type Ipamer interface {
 	// If the Prefix is not found an NotFoundError is returned.
 	DeletePrefix(cidr string) (*Prefix, error)
 	// AcquireChildPrefix will return a Prefix with a smaller length from the given Prefix.
-	AcquireChildPrefix(parentCidr string, length int) (*Prefix, error)
+	AcquireChildPrefix(parentCidr string, length uint8) (*Prefix, error)
 	// ReleaseChildPrefix will mark this child Prefix as available again.
 	ReleaseChildPrefix(child *Prefix) error
 	// PrefixFrom will return a known Prefix.

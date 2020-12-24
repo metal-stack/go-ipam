@@ -671,7 +671,7 @@ func TestPrefixDeepCopy(t *testing.T) {
 		Cidr:                   "4.1.1.0/24",
 		ParentCidr:             "4.1.0.0/16",
 		availableChildPrefixes: map[string]bool{},
-		childPrefixLength:      256,
+		childPrefixLength:      255,
 		ips:                    map[string]bool{},
 		version:                2,
 	}
@@ -708,7 +708,7 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 	tests := []struct {
 		name              string
 		Cidr              string
-		childPrefixLength int
+		childPrefixLength uint8
 		want              uint64
 	}{
 		{
