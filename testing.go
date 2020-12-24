@@ -98,37 +98,37 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 // 	s.db.MustExec("DROP TABLE prefixes")
 // }
 
-// Cleanable interface for impls that support cleaning before each testrun
-type Cleanable interface {
+// cleanable interface for impls that support cleaning before each testrun
+type cleanable interface {
 	cleanup() error
 }
 
-// ExtendedSQL extended sql interface
-type ExtendedSQL struct {
+// extendedSQL extended sql interface
+type extendedSQL struct {
 	*sql
 	c testcontainers.Container
 }
 
-func newPostgresWithCleanup() (*ExtendedSQL, error) {
+func newPostgresWithCleanup() (*extendedSQL, error) {
 	c, s, err := startPostgres()
 	if err != nil {
 		return nil, err
 	}
 
-	ext := &ExtendedSQL{
+	ext := &extendedSQL{
 		sql: s,
 		c:   c,
 	}
 
 	return ext, nil
 }
-func newCockroachWithCleanup() (*ExtendedSQL, error) {
+func newCockroachWithCleanup() (*extendedSQL, error) {
 	c, s, err := startCockroach()
 	if err != nil {
 		return nil, err
 	}
 
-	ext := &ExtendedSQL{
+	ext := &extendedSQL{
 		sql: s,
 		c:   c,
 	}
@@ -137,7 +137,7 @@ func newCockroachWithCleanup() (*ExtendedSQL, error) {
 }
 
 // cleanup database before test
-func (e *ExtendedSQL) cleanup() error {
+func (e *extendedSQL) cleanup() error {
 	tx := e.sql.db.MustBegin()
 	_, err := e.sql.db.Exec("TRUNCATE TABLE prefixes")
 	if err != nil {
@@ -163,7 +163,7 @@ func testWithBackends(t *testing.T, fn testMethod) {
 
 		storage := storageProvider.provide()
 
-		if tp, ok := storage.(Cleanable); ok {
+		if tp, ok := storage.(cleanable); ok {
 			err := tp.cleanup()
 			if err != nil {
 				t.Errorf("error cleaning up, %v", err)

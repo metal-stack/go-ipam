@@ -528,7 +528,7 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 			return isOptimisticLock
 		}),
 		retry.Attempts(10),
-		retry.DelayType(JitterDelay),
+		retry.DelayType(jitterDelay),
 		retry.LastErrorOnly(true))
 }
 
@@ -539,8 +539,8 @@ func jitter(d time.Duration) time.Duration {
 	return time.Duration(jit * float64(d))
 }
 
-// JitterDelay is a DelayType which varies delay in each iterations
-func JitterDelay(_ uint, err error, config *retry.Config) time.Duration {
+// jitterDelay is a DelayType which varies delay in each iterations
+func jitterDelay(_ uint, err error, config *retry.Config) time.Duration {
 	// fields in config are private, so we hardcode the average delay duration
 	return jitter(100 * time.Millisecond)
 }
