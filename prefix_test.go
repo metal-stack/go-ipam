@@ -723,6 +723,12 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 			childPrefixLength: 20,
 			want:              16,
 		},
+		{
+			name:              "simple ipv6",
+			Cidr:              "2001:0db8:85a3::/120",
+			childPrefixLength: 124,
+			want:              16,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
