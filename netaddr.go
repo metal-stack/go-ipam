@@ -10,12 +10,13 @@ func extractPrefix(prefix netaddr.IPPrefix, length uint8) (*netaddr.IPPrefix, er
 	if length <= prefix.Bits {
 		return nil, fmt.Errorf("length must be greater than prefix.Bits")
 	}
-
-	subrange := netaddr.IPRange{From: prefix.Range().From, To: prefix.Range().To.Prior()}
-	if len(subrange.Prefixes()) < 2 {
+	r := prefix.Range()
+	subrange := netaddr.IPRange{From: r.From, To: r.To.Prior()}
+	srpfx := subrange.Prefixes()
+	if len(srpfx) < 2 {
 		return nil, fmt.Errorf("unable to create child prefix for length:%d", length)
 	}
-	for _, srp := range subrange.Prefixes() {
+	for _, srp := range srpfx {
 		if srp.Bits == length {
 			return &srp, nil
 		}
@@ -24,11 +25,12 @@ func extractPrefix(prefix netaddr.IPPrefix, length uint8) (*netaddr.IPPrefix, er
 }
 
 func extractPrefixFromSet(set netaddr.IPSet, length uint8) (*netaddr.IPPrefix, error) {
-	if len(set.Prefixes()) == 0 {
+	prefixes := set.Prefixes()
+	if len(prefixes) == 0 {
 		return nil, fmt.Errorf("no more child prefixes contained in prefix pool")
 	}
 	existingPrefixes := make(map[uint8]netaddr.IPPrefix)
-	for _, prefix := range set.Prefixes() {
+	for _, prefix := range prefixes {
 		existingPrefixes[prefix.Bits] = prefix
 	}
 	exactMatch, ok := existingPrefixes[length]
@@ -38,7 +40,10 @@ func extractPrefixFromSet(set netaddr.IPSet, length uint8) (*netaddr.IPPrefix, e
 
 	nextBiggerPrefix, ok := existingPrefixes[length-1]
 	if !ok {
-		extracted, err := extractPrefix(set.Prefixes()[0], length)
+		if len(prefixes) < 1 {
+			return nil, fmt.Errorf("no more prefixes left")
+		}
+		extracted, err := extractPrefix(prefixes[0], length)
 		if err != nil {
 			return nil, err
 		}

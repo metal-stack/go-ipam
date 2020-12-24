@@ -11,7 +11,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.6.1
 	github.com/testcontainers/testcontainers-go v0.9.0
-	golang.org/x/crypto v0.0.0-20201217014255-9d1352758620 // indirect
-	golang.org/x/net v0.0.0-20201216054612-986b41b23924 // indirect
-	inet.af/netaddr v0.0.0-20201218162718-658fec415e52
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
+	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
+	inet.af/netaddr v0.0.0-20201223185330-97d366981fac
 )
