@@ -19,7 +19,7 @@ func Test_extractPrefix(t *testing.T) {
 			name:    "simple",
 			prefix:  mustIPPrefix("192.168.0.0/16"),
 			length:  24,
-			want:    mustIPPrefix("192.168.254.0/24"),
+			want:    mustIPPrefix("192.168.0.0/24"),
 			wantErr: false,
 		},
 	}

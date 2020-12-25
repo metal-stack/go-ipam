@@ -10,18 +10,7 @@ func extractPrefix(prefix netaddr.IPPrefix, length uint8) (netaddr.IPPrefix, err
 	if length <= prefix.Bits {
 		return netaddr.IPPrefix{}, fmt.Errorf("length must be greater than prefix.Bits")
 	}
-	r := prefix.Range()
-	subrange := netaddr.IPRange{From: r.From, To: r.To.Prior()}
-	srpfx := subrange.Prefixes()
-	if len(srpfx) < 2 {
-		return netaddr.IPPrefix{}, fmt.Errorf("unable to create child prefix for length:%d", length)
-	}
-	for _, srp := range srpfx {
-		if srp.Bits == length {
-			return srp, nil
-		}
-	}
-	return netaddr.IPPrefix{}, fmt.Errorf("no prefix with length:%d found in %s", length, prefix)
+	return netaddr.IPPrefix{IP: prefix.IP, Bits: length}, nil
 }
 
 func extractPrefixFromSet(set netaddr.IPSet, length uint8) (netaddr.IPPrefix, error) {
