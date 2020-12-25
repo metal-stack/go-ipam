@@ -60,7 +60,7 @@ func Test_extractPrefixFromSet(t *testing.T) {
 			name:    "simple",
 			set:     seta,
 			length:  24,
-			want:    mustIPPrefix("192.168.254.0/24"),
+			want:    mustIPPrefix("192.168.0.0/24"),
 			wantErr: false,
 		},
 		{
@@ -74,7 +74,7 @@ func Test_extractPrefixFromSet(t *testing.T) {
 			name:    "smaller",
 			set:     seta,
 			length:  18,
-			want:    mustIPPrefix("192.168.128.0/18"),
+			want:    mustIPPrefix("192.168.0.0/18"),
 			wantErr: false,
 		},
 		{
