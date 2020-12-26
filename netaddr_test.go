@@ -8,6 +8,8 @@ import (
 )
 
 func Test_extractPrefix(t *testing.T) {
+	pfx := netaddr.MustParseIPPrefix
+
 	tests := []struct {
 		name    string
 		prefix  netaddr.IPPrefix
@@ -17,9 +19,9 @@ func Test_extractPrefix(t *testing.T) {
 	}{
 		{
 			name:    "simple",
-			prefix:  mustIPPrefix("192.168.0.0/16"),
+			prefix:  pfx("192.168.0.0/16"),
 			length:  24,
-			want:    mustIPPrefix("192.168.0.0/24"),
+			want:    pfx("192.168.0.0/24"),
 			wantErr: false,
 		},
 	}
@@ -38,14 +40,15 @@ func Test_extractPrefix(t *testing.T) {
 }
 
 func Test_extractPrefixFromSet(t *testing.T) {
-
 	var (
 		seta, setb netaddr.IPSet
 	)
-	prefixa := mustIPPrefix("192.168.0.0/16")
+	pfx := netaddr.MustParseIPPrefix
+
+	prefixa := pfx("192.168.0.0/16")
 	seta.AddPrefix(prefixa)
 
-	prefixb := mustIPPrefix("192.168.128.0/18")
+	prefixb := pfx("192.168.128.0/18")
 	setb.AddPrefix(prefixa)
 	setb.RemovePrefix(prefixb)
 
@@ -60,28 +63,28 @@ func Test_extractPrefixFromSet(t *testing.T) {
 			name:    "simple",
 			set:     seta,
 			length:  24,
-			want:    mustIPPrefix("192.168.0.0/24"),
+			want:    pfx("192.168.0.0/24"),
 			wantErr: false,
 		},
 		{
 			name:    "exact this",
 			set:     seta,
 			length:  16,
-			want:    mustIPPrefix("192.168.0.0/16"),
+			want:    pfx("192.168.0.0/16"),
 			wantErr: false,
 		},
 		{
 			name:    "smaller",
 			set:     seta,
 			length:  18,
-			want:    mustIPPrefix("192.168.0.0/18"),
+			want:    pfx("192.168.0.0/18"),
 			wantErr: false,
 		},
 		{
 			name:    "next",
 			set:     setb,
 			length:  18,
-			want:    mustIPPrefix("192.168.192.0/18"),
+			want:    pfx("192.168.192.0/18"),
 			wantErr: false,
 		},
 	}
@@ -97,13 +100,4 @@ func Test_extractPrefixFromSet(t *testing.T) {
 			}
 		})
 	}
-}
-
-func mustIPPrefix(s string) netaddr.IPPrefix {
-	p, err := netaddr.ParseIPPrefix(s)
-	if err != nil {
-		panic(err)
-	}
-
-	return p
 }

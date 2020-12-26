@@ -202,9 +202,6 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 	}
 
 	prefix.availableChildPrefixes[child.Cidr] = false
-	if child == nil {
-		return nil, fmt.Errorf("no more child prefixes contained in prefix pool")
-	}
 
 	_, err = i.storage.UpdatePrefix(*prefix)
 	if err != nil {

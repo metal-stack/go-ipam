@@ -201,3 +201,7 @@ inet.af/netaddr v0.0.0-20201223055712-48cf580e974f h1:v+onkrrABfkbXSqUwhGHa3nKuf
 inet.af/netaddr v0.0.0-20201223055712-48cf580e974f/go.mod h1:9NdhtHLglxJliAZB6aC5ws3mfnUArdAzHG/iJq7cB/o=
 inet.af/netaddr v0.0.0-20201223185330-97d366981fac h1:aqMW8vft7VmOIhtQhsTWhAuZzOBGYBv+Otyvwj+VGSU=
 inet.af/netaddr v0.0.0-20201223185330-97d366981fac/go.mod h1:9NdhtHLglxJliAZB6aC5ws3mfnUArdAzHG/iJq7cB/o=
+inet.af/netaddr v0.0.0-20201225015930-1fa1b5efbb14 h1:wlq0A/up8Vs9Zi4PmIfUY0VARJjxHGZ/cSuZF7QQw+w=
+inet.af/netaddr v0.0.0-20201225015930-1fa1b5efbb14/go.mod h1:9NdhtHLglxJliAZB6aC5ws3mfnUArdAzHG/iJq7cB/o=
+inet.af/netaddr v0.0.0-20201226025800-4eb479db13f8 h1:+wiof+a79Qugd8epw1EBNZh2NZRC5YzhjsreY7omEv8=
+inet.af/netaddr v0.0.0-20201226025800-4eb479db13f8/go.mod h1:9NdhtHLglxJliAZB6aC5ws3mfnUArdAzHG/iJq7cB/o=
