@@ -1,22 +1,13 @@
 package ipam
 
 import (
-	"fmt"
-
 	"inet.af/netaddr"
 )
 
-func extractPrefix(prefix netaddr.IPPrefix, length uint8) (netaddr.IPPrefix, error) {
-	if length <= prefix.Bits {
-		return netaddr.IPPrefix{}, fmt.Errorf("length must be greater than prefix.Bits")
-	}
-	return netaddr.IPPrefix{IP: prefix.IP, Bits: length}, nil
-}
-
-func extractPrefixFromSet(set netaddr.IPSet, length uint8) (netaddr.IPPrefix, error) {
+func extractPrefixFromSet(set netaddr.IPSet, length uint8) (netaddr.IPPrefix, bool) {
 	prefixes := set.Prefixes()
 	if len(prefixes) == 0 {
-		return netaddr.IPPrefix{}, fmt.Errorf("no more child prefixes contained in prefix pool")
+		return netaddr.IPPrefix{}, false
 	}
 	existingPrefixes := make(map[uint8]netaddr.IPPrefix)
 	for _, prefix := range prefixes {
@@ -24,24 +15,16 @@ func extractPrefixFromSet(set netaddr.IPSet, length uint8) (netaddr.IPPrefix, er
 	}
 	exactMatch, ok := existingPrefixes[length]
 	if ok {
-		return exactMatch, nil
+		return exactMatch, true
 	}
 
 	nextBiggerPrefix, ok := existingPrefixes[length-1]
 	if !ok {
 		if len(prefixes) < 1 {
-			return netaddr.IPPrefix{}, fmt.Errorf("no more prefixes left")
+			return netaddr.IPPrefix{}, false
 		}
-		extracted, err := extractPrefix(prefixes[0], length)
-		if err != nil {
-			return netaddr.IPPrefix{}, err
-		}
-		return extracted, nil
+		return netaddr.IPPrefix{IP: prefixes[0].IP, Bits: length}, true
 	}
 
-	extracted, err := extractPrefix(nextBiggerPrefix, length)
-	if err != nil {
-		return netaddr.IPPrefix{}, err
-	}
-	return extracted, nil
+	return netaddr.IPPrefix{IP: nextBiggerPrefix.IP, Bits: length}, true
 }

@@ -191,9 +191,9 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 		ipset.RemovePrefix(ipprefix)
 	}
 
-	cp, err := extractPrefixFromSet(ipset, length)
-	if err != nil {
-		return nil, err
+	cp, ok := extractPrefixFromSet(ipset, length)
+	if !ok {
+		return nil, fmt.Errorf("no prefix found in %s with length:%d", parentCidr, length)
 	}
 
 	child := &Prefix{

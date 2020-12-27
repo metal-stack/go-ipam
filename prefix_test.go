@@ -341,7 +341,7 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 		require.NotNil(t, cp)
 		cp, err = ipam.AcquireChildPrefix(prefix.Cidr, 21)
 		require.NotNil(t, err)
-		require.Equal(t, "no more child prefixes contained in prefix pool", err.Error())
+		require.Equal(t, "no prefix found in 192.168.0.0/20 with length:21", err.Error())
 		require.Nil(t, cp)
 
 		// Prefix has ips

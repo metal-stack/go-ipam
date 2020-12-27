@@ -7,38 +7,6 @@ import (
 	"inet.af/netaddr"
 )
 
-func Test_extractPrefix(t *testing.T) {
-	pfx := netaddr.MustParseIPPrefix
-
-	tests := []struct {
-		name    string
-		prefix  netaddr.IPPrefix
-		length  uint8
-		want    netaddr.IPPrefix
-		wantErr bool
-	}{
-		{
-			name:    "simple",
-			prefix:  pfx("192.168.0.0/16"),
-			length:  24,
-			want:    pfx("192.168.0.0/24"),
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := extractPrefix(tt.prefix, tt.length)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("extractPrefix() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("extractPrefix() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_extractPrefixFromSet(t *testing.T) {
 	var (
 		seta, setb netaddr.IPSet
@@ -53,46 +21,46 @@ func Test_extractPrefixFromSet(t *testing.T) {
 	setb.RemovePrefix(prefixb)
 
 	tests := []struct {
-		name    string
-		set     netaddr.IPSet
-		length  uint8
-		want    netaddr.IPPrefix
-		wantErr bool
+		name   string
+		set    netaddr.IPSet
+		length uint8
+		want   netaddr.IPPrefix
+		wantOK bool
 	}{
 		{
-			name:    "simple",
-			set:     seta,
-			length:  24,
-			want:    pfx("192.168.0.0/24"),
-			wantErr: false,
+			name:   "simple",
+			set:    seta,
+			length: 24,
+			want:   pfx("192.168.0.0/24"),
+			wantOK: true,
 		},
 		{
-			name:    "exact this",
-			set:     seta,
-			length:  16,
-			want:    pfx("192.168.0.0/16"),
-			wantErr: false,
+			name:   "exact this",
+			set:    seta,
+			length: 16,
+			want:   pfx("192.168.0.0/16"),
+			wantOK: true,
 		},
 		{
-			name:    "smaller",
-			set:     seta,
-			length:  18,
-			want:    pfx("192.168.0.0/18"),
-			wantErr: false,
+			name:   "smaller",
+			set:    seta,
+			length: 18,
+			want:   pfx("192.168.0.0/18"),
+			wantOK: true,
 		},
 		{
-			name:    "next",
-			set:     setb,
-			length:  18,
-			want:    pfx("192.168.192.0/18"),
-			wantErr: false,
+			name:   "next",
+			set:    setb,
+			length: 18,
+			want:   pfx("192.168.192.0/18"),
+			wantOK: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := extractPrefixFromSet(tt.set, tt.length)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("extractPrefixFromSet() error = %v, wantErr %v", err, tt.wantErr)
+			got, ok := extractPrefixFromSet(tt.set, tt.length)
+			if ok != tt.wantOK {
+				t.Errorf("extractPrefixFromSet() ok = %t, wantOK %t", ok, tt.wantOK)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
