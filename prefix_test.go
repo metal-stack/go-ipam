@@ -330,12 +330,6 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 		require.True(t, strings.HasSuffix(cp.Cidr, "/21"))
 		require.Equal(t, prefix.Cidr, cp.ParentCidr)
 
-		// different length
-		cp, err = ipam.AcquireChildPrefix(prefix.Cidr, 22)
-		require.NotNil(t, err)
-		require.Equal(t, "given length:22 is not equal to existing child prefix length:21", err.Error())
-		require.Nil(t, cp)
-
 		// No more ChildPrefixes
 		cp, err = ipam.AcquireChildPrefix(prefix.Cidr, 21)
 		require.Nil(t, err)
@@ -672,7 +666,7 @@ func TestPrefixDeepCopy(t *testing.T) {
 		Cidr:                   "4.1.1.0/24",
 		ParentCidr:             "4.1.0.0/16",
 		availableChildPrefixes: map[string]bool{},
-		childPrefixLength:      255,
+		isParent:               true,
 		ips:                    map[string]bool{},
 		version:                2,
 	}

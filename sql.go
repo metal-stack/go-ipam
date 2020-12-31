@@ -14,9 +14,10 @@ type sql struct {
 type prefixJSON struct {
 	Prefix
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
-	ChildPrefixLength      uint8           // the length of the child prefixes
-	IPs                    map[string]bool // The ips contained in this prefix
-	Version                int64           // Version is used for optimistic locking
+	// FIXME howto cope with existing prefixes with childprefixlength set ?
+	IsParent bool            // set to true if there are child prefixes
+	IPs      map[string]bool // The ips contained in this prefix
+	Version  int64           // Version is used for optimistic locking
 }
 
 func (p prefixJSON) toPrefix() Prefix {
@@ -24,7 +25,7 @@ func (p prefixJSON) toPrefix() Prefix {
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
 		availableChildPrefixes: p.AvailableChildPrefixes,
-		childPrefixLength:      p.ChildPrefixLength,
+		isParent:               p.isParent,
 		ips:                    p.IPs,
 		version:                p.Version,
 	}
@@ -37,7 +38,7 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 			ParentCidr: p.ParentCidr,
 		},
 		AvailableChildPrefixes: p.availableChildPrefixes,
-		ChildPrefixLength:      p.childPrefixLength,
+		IsParent:               p.isParent,
 		IPs:                    p.ips,
 		Version:                p.version,
 	}

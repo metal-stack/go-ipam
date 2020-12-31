@@ -27,8 +27,8 @@ var (
 type Prefix struct {
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
+	isParent               bool            // if this Prefix has child prefixes, this is set to true
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
-	childPrefixLength      uint8           // the length of the child prefixes
 	ips                    map[string]bool // The ips contained in this prefix
 	version                int64           // version is used for optimistic locking
 }
@@ -38,8 +38,8 @@ func (p Prefix) DeepCopy() *Prefix {
 	return &Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
+		isParent:               p.isParent,
 		availableChildPrefixes: copyMap(p.availableChildPrefixes),
-		childPrefixLength:      p.childPrefixLength,
 		ips:                    copyMap(p.ips),
 		version:                p.version,
 	}
@@ -53,7 +53,7 @@ func (p *Prefix) GobEncode() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = encoder.Encode(p.childPrefixLength)
+	err = encoder.Encode(p.isParent)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (p *Prefix) GobDecode(buf []byte) error {
 	if err != nil {
 		return err
 	}
-	err = decoder.Decode(&p.childPrefixLength)
+	err = decoder.Decode(&p.isParent)
 	if err != nil {
 		return err
 	}
@@ -184,11 +184,6 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 	if ipprefix.Bits >= length {
 		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits)
 	}
-	if prefix.childPrefixLength != 0 && prefix.childPrefixLength != length {
-		return nil, fmt.Errorf("given length:%d is not equal to existing child prefix length:%d", length, prefix.childPrefixLength)
-	}
-
-	prefix.childPrefixLength = length
 
 	var ipset netaddr.IPSet
 	ipset.AddPrefix(ipprefix)
@@ -214,6 +209,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 	}
 
 	prefix.availableChildPrefixes[child.Cidr] = false
+	prefix.isParent = true
 
 	_, err = i.storage.UpdatePrefix(*prefix)
 	if err != nil {
@@ -287,7 +283,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 	if prefix == nil {
 		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
 	}
-	if prefix.childPrefixLength > 0 {
+	if prefix.isParent {
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
 	}
 	var acquired *IP
