@@ -7,6 +7,8 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go"
@@ -113,8 +115,18 @@ func copyMap(m map[string]bool) map[string]bool {
 type Usage struct {
 	AvailableIPs      uint64
 	AcquiredIPs       uint64
-	AvailablePrefixes uint64
+	AvailablePrefixes []AvailablePrefix
 	AcquiredPrefixes  uint64
+}
+
+func (a AvailablePrefix) String() string {
+	return fmt.Sprintf("/%d:%d", a.PrefixLength, a.Count)
+}
+
+// AvailablePrefix count by length
+type AvailablePrefix struct {
+	PrefixLength uint8
+	Count        uint32
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
@@ -417,10 +429,14 @@ func (p *Prefix) String() string {
 }
 
 func (u *Usage) String() string {
-	if u.AvailablePrefixes == uint64(0) {
+	if u.AcquiredPrefixes == 0 {
 		return fmt.Sprintf("ip:%d/%d", u.AcquiredIPs, u.AvailableIPs)
 	}
-	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, u.AvailablePrefixes)
+	avpfxs := []string{}
+	for _, a := range u.AvailablePrefixes {
+		avpfxs = append(avpfxs, a.String())
+	}
+	return fmt.Sprintf("ip:%d/%d prefixes alloc:%d avail:%s", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, strings.Join(avpfxs, ","))
 }
 
 // IPPrefix return the netaddr.IPPrefix part of the Prefix
@@ -463,16 +479,49 @@ func (p *Prefix) acquiredips() uint64 {
 }
 
 // availablePrefixes return the amount of possible prefixes of this prefix if this is a parent prefix
-func (p *Prefix) availablePrefixes() uint64 {
-	if p.childPrefixLength != 0 {
-		ipprefix, err := p.IPPrefix()
-		if err != nil {
-			return 0
-		}
-		availableBits := p.childPrefixLength - ipprefix.Bits
-		return uint64(math.Pow(float64(2), float64(availableBits)))
+func (p *Prefix) availablePrefixes() []AvailablePrefix {
+
+	prefix, err := netaddr.ParseIPPrefix(p.Cidr)
+	if err != nil {
+		// TODO howto handle errors here
+		return nil
 	}
-	return uint64(len(p.availableChildPrefixes))
+	var ipset netaddr.IPSet
+	ipset.AddPrefix(prefix)
+	for cp, available := range p.availableChildPrefixes {
+		if available {
+			continue
+		}
+		ipprefix, err := netaddr.ParseIPPrefix(cp)
+		if err != nil {
+			// TODO howto handle errors here
+			return nil
+		}
+		ipset.RemovePrefix(ipprefix)
+	}
+
+	pfxs := ipset.Prefixes()
+	apfxs := make(map[uint8]uint32)
+	for _, pfx := range pfxs {
+		count, ok := apfxs[pfx.Bits]
+		if !ok {
+			apfxs[pfx.Bits] = 1
+			continue
+		}
+		apfxs[pfx.Bits] = count + 1
+	}
+	availablePrefixes := []AvailablePrefix{}
+	for bits, count := range apfxs {
+		availablePrefix := AvailablePrefix{
+			PrefixLength: bits,
+			Count:        count,
+		}
+		availablePrefixes = append(availablePrefixes, availablePrefix)
+	}
+	sort.Slice(availablePrefixes, func(i, j int) bool {
+		return availablePrefixes[i].PrefixLength > availablePrefixes[j].PrefixLength
+	})
+	return availablePrefixes
 }
 
 // acquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
