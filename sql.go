@@ -21,11 +21,13 @@ type prefixJSON struct {
 }
 
 func (p prefixJSON) toPrefix() Prefix {
+	// FIXME only on reading from database, convert to isParent.
+	// if childprefixlength > 0 isParent = true
 	return Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
 		availableChildPrefixes: p.AvailableChildPrefixes,
-		isParent:               p.isParent,
+		isParent:               p.IsParent,
 		ips:                    p.IPs,
 		version:                p.Version,
 	}
@@ -81,7 +83,6 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%v", err)
 	}
-
 	return pre.toPrefix(), nil
 }
 
