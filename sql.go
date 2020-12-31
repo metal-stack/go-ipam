@@ -14,15 +14,19 @@ type sql struct {
 type prefixJSON struct {
 	Prefix
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
-	// FIXME howto cope with existing prefixes with childprefixlength set ?
-	IsParent bool            // set to true if there are child prefixes
-	IPs      map[string]bool // The ips contained in this prefix
-	Version  int64           // Version is used for optimistic locking
+	// TODO remove this in the next release
+	ChildPrefixLength int             // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
+	IsParent          bool            // set to true if there are child prefixes
+	IPs               map[string]bool // The ips contained in this prefix
+	Version           int64           // Version is used for optimistic locking
 }
 
 func (p prefixJSON) toPrefix() Prefix {
-	// FIXME only on reading from database, convert to isParent.
-	// if childprefixlength > 0 isParent = true
+	// Legacy support only on reading from database, convert to isParent.
+	// TODO remove this in the next release
+	if p.ChildPrefixLength > 0 {
+		p.IsParent = true
+	}
 	return Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
