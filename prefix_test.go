@@ -699,7 +699,7 @@ func TestPrefixDeepCopy(t *testing.T) {
 	p1.ips["4.1.1.1"] = true
 	p1.ips["4.1.1.2"] = true
 
-	p2 := p1.DeepCopy()
+	p2 := p1.deepCopy()
 
 	require.False(t, p1 == p2)
 	require.Equal(t, p1, p2)
