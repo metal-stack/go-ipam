@@ -19,6 +19,30 @@ func mustIP(s string) netaddr.IP {
 
 	return ip
 }
+
+// getHostAddresses will return all possible ipadresses a host can get in the given prefix.
+// The IPs will be acquired by this method, so that the prefix has no free IPs afterwards.
+func (i *ipamer) getHostAddresses(prefix string) ([]string, error) {
+	hostAddresses := []string{}
+
+	p, err := i.NewPrefix(prefix)
+	if err != nil {
+		return hostAddresses, err
+	}
+
+	// loop till AcquireIP signals that it has no ips left
+	for {
+		ip, err := i.AcquireIP(p.Cidr)
+		if errors.Is(err, ErrNoIPAvailable) {
+			return hostAddresses, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		hostAddresses = append(hostAddresses, ip.IP.String())
+	}
+}
+
 func TestIpamer_AcquireIP(t *testing.T) {
 
 	type fields struct {

@@ -168,7 +168,6 @@ func (i *ipamer) AcquireChildPrefix(parentCidr string, length uint8) (*Prefix, e
 }
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
-// FIXME allow variable child prefix length
 func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*Prefix, error) {
 	prefix := i.PrefixFrom(parentCidr)
 	if prefix == nil {
@@ -177,7 +176,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 	if len(prefix.ips) > 2 {
 		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
 	}
-	ipprefix, err := prefix.IPPrefix()
+	ipprefix, err := netaddr.ParseIPPrefix(prefix.Cidr)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +286,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
 	}
 	var acquired *IP
-	ipnet, err := prefix.IPPrefix()
+	ipnet, err := netaddr.ParseIPPrefix(prefix.Cidr)
 	if err != nil {
 		return nil, err
 	}
@@ -378,29 +377,6 @@ func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []st
 	return nil
 }
 
-// getHostAddresses will return all possible ipadresses a host can get in the given prefix.
-// The IPs will be acquired by this method, so that the prefix has no free IPs afterwards.
-func (i *ipamer) getHostAddresses(prefix string) ([]string, error) {
-	hostAddresses := []string{}
-
-	p, err := i.NewPrefix(prefix)
-	if err != nil {
-		return hostAddresses, err
-	}
-
-	// loop till AcquireIP signals that it has no ips left
-	for {
-		ip, err := i.AcquireIP(p.Cidr)
-		if errors.Is(err, ErrNoIPAvailable) {
-			return hostAddresses, nil
-		}
-		if err != nil {
-			return nil, err
-		}
-		hostAddresses = append(hostAddresses, ip.IP.String())
-	}
-}
-
 // newPrefix create a new Prefix from a string notation.
 func (i *ipamer) newPrefix(cidr string) (*Prefix, error) {
 	ipnet, err := netaddr.ParseIPPrefix(cidr)
@@ -413,9 +389,13 @@ func (i *ipamer) newPrefix(cidr string) (*Prefix, error) {
 		availableChildPrefixes: make(map[string]bool),
 	}
 
-	// First IP in the prefix and Broadcast is blocked.
+	// FIXME: should this be done by the user ?
+	// First ip in the prefix and broadcast is blocked.
 	p.ips[ipnet.Range().From.String()] = true
-	p.ips[ipnet.Range().To.String()] = true
+	if ipnet.IP.Is4() {
+		// broadcast is ipv4 only
+		p.ips[ipnet.Range().To.String()] = true
+	}
 
 	return p, nil
 }
@@ -435,38 +415,29 @@ func (u *Usage) String() string {
 	return fmt.Sprintf("ip:%d/%d prefixes alloc:%d avail:%s", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, strings.Join(avpfxs, ","))
 }
 
-// IPPrefix return the netaddr.IPPrefix part of the Prefix
-func (p *Prefix) IPPrefix() (netaddr.IPPrefix, error) {
-	ipnet, err := netaddr.ParseIPPrefix(p.Cidr)
-	return ipnet, err
-}
-
 // Network return the net.IP part of the Prefix
 func (p *Prefix) Network() (net.IP, error) {
-	ip, ipnet, err := net.ParseCIDR(p.Cidr)
+	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
 	if err != nil {
 		return nil, err
 	}
-	return ip.Mask(ipnet.Mask), nil
+	return ipprefix.IPNet().IP, nil
 }
 
 // availableips return the number of ips available in this Prefix
 func (p *Prefix) availableips() uint64 {
-	_, ipnet, err := net.ParseCIDR(p.Cidr)
+	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
 	if err != nil {
 		return 0
 	}
-	var bits int
-	if len(ipnet.IP) == net.IPv4len {
+	var bits uint8
+	if ipprefix.IP.Is4() {
 		bits = 32
-	} else if len(ipnet.IP) == net.IPv6len {
+	}
+	if ipprefix.IP.Is6() {
 		bits = 128
 	}
-
-	ones, _ := ipnet.Mask.Size()
-	// FIXME use big.Int
-	count := uint64(math.Pow(float64(2), float64(bits-ones)))
-	return count
+	return uint64(math.Pow(float64(2), float64(bits-ipprefix.Bits)))
 }
 
 // acquiredips return the number of ips acquired in this Prefix
@@ -476,7 +447,7 @@ func (p *Prefix) acquiredips() uint64 {
 
 // availablePrefixes return the amount of possible prefixes of this prefix if this is a parent prefix
 func (p *Prefix) availablePrefixes() []AvailablePrefix {
-
+	// TODO much too complex implementation
 	prefix, err := netaddr.ParseIPPrefix(p.Cidr)
 	if err != nil {
 		// TODO howto handle errors here
