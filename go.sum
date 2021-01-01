@@ -124,8 +124,12 @@ github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVM
 github.com/ugorji/go/codec v1.1.7/go.mod h1:Ax+UKWsSmolVDwsd+7N3ZtXu+yMGCf907BLYF3GoBXY=
 go4.org/intern v0.0.0-20201223054237-ef8cbcb8edd7 h1:yeDrXaQ3VRXbTN7lHj70DxW4LdPow83MVwPPRjpP70U=
 go4.org/intern v0.0.0-20201223054237-ef8cbcb8edd7/go.mod h1:vLqJ+12kCw61iCWsPto0EOHhBS+o4rO5VIucbc9g2Cc=
+go4.org/intern v0.0.0-20210101010959-7cab76ca296a h1:28p852HIWWaOS019DYK/A3yTmpm1HJaUce63pvll4C8=
+go4.org/intern v0.0.0-20210101010959-7cab76ca296a/go.mod h1:vLqJ+12kCw61iCWsPto0EOHhBS+o4rO5VIucbc9g2Cc=
 go4.org/unsafe/assume-no-moving-gc v0.0.0-20201222175341-b30ae309168e h1:ExUmGi0ZsQmiVo9giDQqXkr7vreeXPMkOGIusfsfbzI=
 go4.org/unsafe/assume-no-moving-gc v0.0.0-20201222175341-b30ae309168e/go.mod h1:FftLjUGFEDu5k8lt0ddY+HcrH/qU/0qk+H8j9/nTl3E=
+go4.org/unsafe/assume-no-moving-gc v0.0.0-20201222180813-1025295fd063 h1:1tk03FUNpulq2cuWpXZWj649rwJpk0d20rxWiopKRmc=
+go4.org/unsafe/assume-no-moving-gc v0.0.0-20201222180813-1025295fd063/go.mod h1:FftLjUGFEDu5k8lt0ddY+HcrH/qU/0qk+H8j9/nTl3E=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793 h1:u+LnwYTOOW7Ukr/fppxEb1Nwz0AtPflrblfvUudpo+I=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
@@ -216,3 +220,5 @@ inet.af/netaddr v0.0.0-20201230105654-4ef2ea6bb076 h1:lAx99KFl2M68fgNtUNpJ0jxRPQ
 inet.af/netaddr v0.0.0-20201230105654-4ef2ea6bb076/go.mod h1:lbePDLSB5c45kkUmF7ETNE5X9z/yuQvWJIv1hhb5rFI=
 inet.af/netaddr v0.0.0-20201231045418-bf0e22f9f32f h1:JWUQvzPI8vrWWOUSJ1fpd9QrhIKv6olSenALMY1jsfU=
 inet.af/netaddr v0.0.0-20201231045418-bf0e22f9f32f/go.mod h1:lbePDLSB5c45kkUmF7ETNE5X9z/yuQvWJIv1hhb5rFI=
+inet.af/netaddr v0.0.0-20210101043548-c5e71b4f334a h1:fjPw2PKOtFH/RclBkpF7Owv7fUO0+PKZvhAW7q4waJs=
+inet.af/netaddr v0.0.0-20210101043548-c5e71b4f334a/go.mod h1:jPZo7Jy4nke2cCgISa4fKJKa5T7+EO8k5fWwWghzneg=
