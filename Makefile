@@ -7,7 +7,7 @@ all: test bench
 
 .PHONY: bench
 bench:
-	CGO_ENABLED=1 $(GO) test -bench . -benchmem
+	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem
 
 .PHONY: test
 test:
