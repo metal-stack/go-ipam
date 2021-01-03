@@ -2,6 +2,8 @@ package ipam
 
 import (
 	"context"
+	"io/ioutil"
+	"log"
 	"sync"
 	"testing"
 
@@ -15,6 +17,11 @@ var (
 	pgContainer testcontainers.Container
 	crContainer testcontainers.Container
 )
+
+func init() {
+	// prevent testcontainer logging mangle test and benchmark output
+	log.SetOutput(ioutil.Discard)
+}
 
 func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 	ctx := context.Background()
