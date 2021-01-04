@@ -60,7 +60,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "192.168.1.0/24",
 				existingips: []string{},
 			},
-			want: &IP{IP: mustIP("192.168.1.1")},
+			want: &IP{IP: mustIP("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
 		},
 		{
 			name: "Acquire next IPv6 regularly",
@@ -68,16 +68,23 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "2001:0db8:85a3::/124",
 				existingips: []string{},
 			},
-			want: &IP{IP: mustIP("2001:0db8:85a3::1")},
+			want: &IP{IP: mustIP("2001:0db8:85a3::1"), ParentPrefix: "2001:0db8:85a3::/124"},
 		},
-
 		{
 			name: "Want next IP, network already occupied a little",
 			fields: fields{
 				prefixCIDR:  "192.168.2.0/30",
 				existingips: []string{"192.168.2.1"},
 			},
-			want: &IP{IP: mustIP("192.168.2.2")},
+			want: &IP{IP: mustIP("192.168.2.2"), ParentPrefix: "192.168.2.0/30"},
+		},
+		{
+			name: "Want next IPv6, network already occupied a little",
+			fields: fields{
+				prefixCIDR:  "2001:0db8:85a3::/124",
+				existingips: []string{"2001:db8:85a3::1"},
+			},
+			want: &IP{IP: mustIP("2001:db8:85a3::2"), ParentPrefix: "2001:0db8:85a3::/124"},
 		},
 		{
 			name: "Want next IP, but network is full",
@@ -91,6 +98,21 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			name: "Want next IP, but network is full",
 			fields: fields{
 				prefixCIDR: "192.168.4.0/32",
+			},
+			want: nil,
+		},
+		{
+			name: "Want next IPv6, but network is full",
+			fields: fields{
+				prefixCIDR:  "2001:0db8:85a3::/126",
+				existingips: []string{"2001:db8:85a3::1", "2001:db8:85a3::2", "2001:db8:85a3::3"},
+			},
+			want: nil,
+		},
+		{
+			name: "Want next IPv6, but network is full",
+			fields: fields{
+				prefixCIDR: "2001:0db8:85a3::/128",
 			},
 			want: nil,
 		},
@@ -114,18 +136,18 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			got, _ := ipam.AcquireIP(updatedPrefix.Cidr)
 			if tt.want == nil || got == nil {
 				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("Ipamer.AcquireIP() = %v, want %v", got, tt.want)
+					t.Errorf("Ipamer.AcquireIP() want or got is nil, got %v, want %v", got, tt.want)
 				}
 			} else {
 				if tt.want.IP.Compare(got.IP) != 0 {
-					t.Errorf("Ipamer.AcquireIP() = %v, want %v", got, tt.want)
+					t.Errorf("Ipamer.AcquireIP() got %v, want %v", got, tt.want)
 				}
 			}
 		})
 	}
 }
 
-func TestIpamer_ReleaseIPFromPrefix(t *testing.T) {
+func TestIpamer_ReleaseIPFromPrefixIPv4(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/24")
@@ -146,8 +168,35 @@ func TestIpamer_ReleaseIPFromPrefix(t *testing.T) {
 	})
 }
 
+func TestIpamer_ReleaseIPFromPrefixIPv6(t *testing.T) {
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("2001:0db8:85a3::/120")
+		require.Nil(t, err)
+		require.NotNil(t, prefix)
+
+		err = ipam.ReleaseIPFromPrefix(prefix.Cidr, "1.2.3.4")
+		require.NotNil(t, err)
+		require.True(t, errors.As(err, &NotFoundError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNotFound), "error must be NotFound")
+		require.Equal(t, "NotFound: unable to release ip:1.2.3.4 because it is not allocated in prefix:2001:0db8:85a3::/120", err.Error())
+
+		err = ipam.ReleaseIPFromPrefix(prefix.Cidr, "1001:0db8:85a3::1")
+		require.NotNil(t, err)
+		require.True(t, errors.As(err, &NotFoundError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNotFound), "error must be NotFound")
+		require.Equal(t, "NotFound: unable to release ip:1001:0db8:85a3::1 because it is not allocated in prefix:2001:0db8:85a3::/120", err.Error())
+
+		err = ipam.ReleaseIPFromPrefix("1001:0db8:85a3::/120", "1.2.3.4")
+		require.NotNil(t, err)
+		require.True(t, errors.As(err, &NotFoundError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNotFound), "error must be NotFound")
+		require.Equal(t, "NotFound: unable to find prefix for cidr:1001:0db8:85a3::/120", err.Error())
+	})
+}
 func TestIpamer_AcquireSpecificIP(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		// IPv4
 		prefix, err := ipam.NewPrefix("192.168.99.0/24")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(256))
@@ -197,10 +246,55 @@ func TestIpamer_AcquireSpecificIP(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(256))
 		require.Equal(t, prefix.acquiredips(), uint64(2))
+
+		// IPv6
+		prefix, err = ipam.NewPrefix("2001:0db8:85a3::/120")
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		// network is blocked
+		require.Equal(t, prefix.acquiredips(), uint64(1))
+		ip1, err = ipam.AcquireSpecificIP(prefix.Cidr, "2001:db8:85a3::1")
+		require.Nil(t, err)
+		require.NotNil(t, ip1)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(2))
+		ip2, err = ipam.AcquireSpecificIP(prefix.Cidr, "2001:0db8:85a3::2")
+		require.Nil(t, err)
+		require.NotEqual(t, ip1, ip2)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(3))
+		require.Equal(t, "2001:db8:85a3::1", ip1.IP.String())
+		require.Equal(t, "2001:db8:85a3::2", ip2.IP.String())
+
+		// Wish IP out of prefix
+		ip3, err = ipam.AcquireSpecificIP(prefix.Cidr, "2001:0db8:85a4::1")
+		require.Nil(t, ip3)
+		require.NotNil(t, err)
+		require.Equal(t, "given ip:2001:0db8:85a4::1 is not in 2001:0db8:85a3::/120", err.Error())
+
+		// Cidr is invalid
+		ip5, err = ipam.AcquireSpecificIP("2001:0db8:95a3::/120", "2001:0db8:95a3::invalid")
+		require.Nil(t, ip5)
+		require.NotNil(t, err)
+		require.True(t, errors.As(err, &NotFoundError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNotFound), "error must be NotFound")
+		require.Equal(t, "NotFound: unable to find prefix for cidr:2001:0db8:95a3::/120", err.Error())
+
+		prefix, err = ipam.ReleaseIP(ip1)
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(2))
+
+		prefix, err = ipam.ReleaseIP(ip2)
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(1))
 	})
 }
 
-func TestIpamer_AcquireIPCounts(t *testing.T) {
+func TestIpamer_AcquireIPCountsIPv4(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/24")
@@ -232,6 +326,41 @@ func TestIpamer_AcquireIPCounts(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(256))
 		require.Equal(t, prefix.acquiredips(), uint64(2))
+	})
+}
+
+func TestIpamer_AcquireIPCountsIPv6(t *testing.T) {
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("2001:0db8:85a3::/120")
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		// network is blocked
+		require.Equal(t, prefix.acquiredips(), uint64(1))
+		ip1, err := ipam.AcquireIP(prefix.Cidr)
+		require.Nil(t, err)
+		require.NotNil(t, ip1)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(2))
+		ip2, err := ipam.AcquireIP(prefix.Cidr)
+		require.Nil(t, err)
+		require.NotEqual(t, ip1, ip2)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(3))
+		require.True(t, strings.HasPrefix(ip1.IP.String(), "2001:db8:85a3::"))
+		require.True(t, strings.HasPrefix(ip2.IP.String(), "2001:db8:85a3::"))
+
+		prefix, err = ipam.ReleaseIP(ip1)
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(2))
+
+		prefix, err = ipam.ReleaseIP(ip2)
+		require.Nil(t, err)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(1))
 	})
 }
 
@@ -332,7 +461,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	})
 }
 
-func TestIpamer_AcquireChildPrefix(t *testing.T) {
+func TestIpamer_AcquireChildPrefixIPv4(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/20")
@@ -397,7 +526,99 @@ func TestIpamer_AcquireChildPrefix(t *testing.T) {
 	})
 }
 
-func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFull(t *testing.T) {
+func TestIpamer_AcquireChildPrefixIPv6(t *testing.T) {
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("2001:0db8:85a3::/116")
+		require.Nil(t, err)
+		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 116, Count: 1}})
+		require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
+
+		// Same length
+		cp, err := ipam.AcquireChildPrefix(prefix.Cidr, 116)
+		require.NotNil(t, err)
+		require.Equal(t, "given length:116 must be greater than prefix length:116", err.Error())
+		require.Nil(t, cp)
+
+		// working length
+		cp, err = ipam.AcquireChildPrefix(prefix.Cidr, 117)
+		require.Nil(t, err)
+		require.NotNil(t, cp)
+		require.True(t, strings.HasPrefix(cp.Cidr, "2001:db8:85a3:"))
+		require.True(t, strings.HasSuffix(cp.Cidr, "/117"))
+		require.Equal(t, prefix.Cidr, cp.ParentCidr)
+
+		// No more ChildPrefixes
+		cp, err = ipam.AcquireChildPrefix(prefix.Cidr, 117)
+		require.Nil(t, err)
+		require.NotNil(t, cp)
+		cp, err = ipam.AcquireChildPrefix(prefix.Cidr, 117)
+		require.NotNil(t, err)
+		require.Equal(t, "no prefix found in 2001:0db8:85a3::/116 with length:117", err.Error())
+		require.Nil(t, cp)
+
+		// Prefix has ips
+		p2, err := ipam.NewPrefix("2001:0db8:95a3::/120")
+		require.Nil(t, err)
+		require.Equal(t, p2.availablePrefixes(), []AvailablePrefix{{PrefixLength: 120, Count: 1}})
+		require.Equal(t, p2.acquiredPrefixes(), uint64(0))
+		ip, err := ipam.AcquireIP(p2.Cidr)
+		require.Nil(t, err)
+		require.NotNil(t, ip)
+		cp2, err := ipam.AcquireChildPrefix(p2.Cidr, 121)
+		require.NotNil(t, err)
+		require.Equal(t, "prefix 2001:0db8:95a3::/120 has ips, acquire child prefix not possible", err.Error())
+		require.Nil(t, cp2)
+
+		// Prefix has Childs, AcquireIP wont work
+		p3, err := ipam.NewPrefix("2001:0db8:75a3::/120")
+		require.Nil(t, err)
+		require.Equal(t, p3.availablePrefixes(), []AvailablePrefix{{PrefixLength: 120, Count: 1}})
+		require.Equal(t, p3.acquiredPrefixes(), uint64(0))
+		cp3, err := ipam.AcquireChildPrefix(p3.Cidr, 121)
+		require.Nil(t, err)
+		require.NotNil(t, cp3)
+		p3 = ipam.PrefixFrom(p3.Cidr)
+		ip, err = ipam.AcquireIP(p3.Cidr)
+		require.NotNil(t, err)
+		require.Equal(t, "prefix 2001:0db8:75a3::/120 has childprefixes, acquire ip not possible", err.Error())
+		require.Nil(t, ip)
+
+		// Release Parent Prefix must not work
+		err = ipam.ReleaseChildPrefix(p3)
+		require.NotNil(t, err)
+		require.Equal(t, "prefix 2001:0db8:75a3::/120 is no child prefix", err.Error())
+	})
+}
+
+func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv6(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("2001:0db8:85a3::/112")
+		require.Nil(t, err)
+		require.Equal(t, []AvailablePrefix{{PrefixLength: 112, Count: 1}}, prefix.availablePrefixes())
+		require.Equal(t, uint64(0), prefix.acquiredPrefixes())
+
+		uniquePrefixes := make(map[string]bool)
+		// acquire all /120 prefixes (2^8 = 256)
+		for i := 0; i < 256; i++ {
+			cp, err := ipam.AcquireChildPrefix(prefix.Cidr, 120)
+			require.Nil(t, err)
+			require.NotNil(t, cp)
+			require.True(t, strings.HasPrefix(cp.Cidr, "2001:db8:85a3:"))
+			require.True(t, strings.HasSuffix(cp.Cidr, "/120"))
+			require.Equal(t, prefix.Cidr, cp.ParentCidr)
+			_, ok := uniquePrefixes[cp.String()]
+			require.False(t, ok)
+			uniquePrefixes[cp.String()] = true
+		}
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, 256, len(uniquePrefixes))
+		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{})
+		require.Equal(t, prefix.acquiredPrefixes(), uint64(256))
+
+	})
+}
+func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv4(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/16")
@@ -453,11 +674,16 @@ func TestPrefix_Availableips(t *testing.T) {
 			Cidr: "192.168.0.0/30",
 			want: 4,
 		},
-		// {
-		// 	name: "small IPv6",
-		// 	Cidr: "2001:16b8:2d6a:6900:48d2:14a3:80ae:e797/64",
-		// 	want: 4,
-		// },
+		{
+			name: "smaller IPv6",
+			Cidr: "2001:0db8:85a3::/126",
+			want: 4,
+		},
+		{
+			name: "large IPv6",
+			Cidr: "2001:0db8:85a3::/116",
+			want: 4096,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -486,6 +712,20 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 			newPrefixes:      []string{"192.168.1.0/24"},
 			wantErr:          false,
 			errorString:      "",
+		},
+		{
+			name:             "simple IPv6",
+			existingPrefixes: []string{"2001:0db8:85a3::/126"},
+			newPrefixes:      []string{"2001:0db8:85a4::/126"},
+			wantErr:          false,
+			errorString:      "",
+		},
+		{
+			name:             "one overlap IPv6",
+			existingPrefixes: []string{"2001:0db8:85a3::/126", "2001:0db8:85a4::/126"},
+			newPrefixes:      []string{"2001:0db8:85a4::/126"},
+			wantErr:          true,
+			errorString:      "2001:0db8:85a4::/126 overlaps 2001:0db8:85a4::/126",
 		},
 		{
 			name:             "one overlap",
@@ -559,6 +799,23 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			cidr:        "192.168.0.0/33",
 			wantErr:     true,
 			errorString: "unable to parse cidr:192.168.0.0/33 netaddr.ParseIPPrefix(\"33\"): prefix length out of range",
+		},
+		{
+			name:    "valid IPv6 Prefix",
+			cidr:    "2001:0db8:85a3::/120",
+			wantErr: false,
+		},
+		{
+			name:        "invalid IPv6 Prefix length",
+			cidr:        "2001:0db8:85a3::/129",
+			wantErr:     true,
+			errorString: "unable to parse cidr:2001:0db8:85a3::/129 netaddr.ParseIPPrefix(\"129\"): prefix length out of range",
+		},
+		{
+			name:        "invalid IPv6 Prefix length",
+			cidr:        "2001:0db8:85a3:::/120",
+			wantErr:     true,
+			errorString: "unable to parse cidr:2001:0db8:85a3:::/120 netaddr.ParseIPPrefix(\"2001:0db8:85a3:::/120\"): ParseIP(\"2001:0db8:85a3:::\"): each colon-separated field must have at least one digit (at \":\")",
 		},
 	}
 	for _, tt := range tests {
@@ -671,6 +928,37 @@ func TestIpamerAcquireIP(t *testing.T) {
 	})
 }
 
+func TestIpamerAcquireIPv6(t *testing.T) {
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		cidr := "2001:0db8:85a3::/120"
+		p, err := ipam.NewPrefix(cidr)
+		if err != nil {
+			panic(err)
+		}
+		for n := 0; n < 10; n++ {
+			if len(p.ips) != 1 {
+				t.Fatalf("expected 1 ips in prefix, got %d", len(p.ips))
+			}
+			ip, err := ipam.AcquireIP(p.Cidr)
+			if err != nil {
+				panic(err)
+			}
+			if ip == nil {
+				panic("IP nil")
+			}
+			p, err = ipam.ReleaseIP(ip)
+			if err != nil {
+				panic(err)
+			}
+		}
+		_, err = ipam.DeletePrefix(cidr)
+		if err != nil {
+			t.Errorf("error deleting prefix:%v", err)
+		}
+	})
+}
+
 func TestGetHostAddresses(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "4.1.0.0/24"
@@ -705,6 +993,39 @@ func TestGetHostAddresses(t *testing.T) {
 	})
 }
 
+func TestGetHostAddressesIPv6(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		cidr := "2001:0db8:85a3::/120"
+		ips, err := ipam.getHostAddresses(cidr)
+		if err != nil {
+			panic(err)
+		}
+		require.NotNil(t, ips)
+		require.Equal(t, 255, len(ips))
+
+		ip, err := ipam.AcquireIP(cidr)
+		require.Error(t, err)
+		require.True(t, errors.As(err, &NoIPAvailableError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNoIPAvailable), "error must be NoIPAvailable")
+		require.Equal(t, "NoIPAvailableError: no more ips in prefix: 2001:0db8:85a3::/120 left, length of prefix.ips: 256", err.Error())
+		require.Nil(t, ip)
+
+		cidr = "2001:0db8:95a3::/122"
+		ips, err = ipam.getHostAddresses(cidr)
+		if err != nil {
+			panic(err)
+		}
+		require.NotNil(t, ips)
+		require.Equal(t, 63, len(ips))
+
+		ip, err = ipam.AcquireIP(cidr)
+		require.Error(t, err)
+		require.True(t, errors.As(err, &NoIPAvailableError{}), "error must be of correct type")
+		require.True(t, errors.Is(err, ErrNoIPAvailable), "error must be NoIPAvailable")
+		require.Equal(t, "NoIPAvailableError: no more ips in prefix: 2001:0db8:95a3::/122 left, length of prefix.ips: 64", err.Error())
+		require.Nil(t, ip)
+	})
+}
 func TestPrefixDeepCopy(t *testing.T) {
 
 	p1 := &Prefix{

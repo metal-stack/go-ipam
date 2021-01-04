@@ -178,15 +178,18 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 	if prefix == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
 	}
-	if len(prefix.ips) > 2 {
-		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
-	}
 	ipprefix, err := netaddr.ParseIPPrefix(prefix.Cidr)
 	if err != nil {
 		return nil, err
 	}
 	if ipprefix.Bits >= length {
 		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits)
+	}
+	if ipprefix.IP.Is4() && len(prefix.ips) > 2 {
+		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
+	}
+	if ipprefix.IP.Is6() && len(prefix.ips) > 1 {
+		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
 	}
 
 	var ipset netaddr.IPSet
@@ -296,8 +299,9 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		return nil, err
 	}
 
+	var specificIPnet netaddr.IP
 	if specificIP != "" {
-		specificIPnet, err := netaddr.ParseIP(specificIP)
+		specificIPnet, err = netaddr.ParseIP(specificIP)
 		if err != nil {
 			return nil, fmt.Errorf("given ip:%s in not valid", specificIP)
 		}
@@ -311,7 +315,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		if ok {
 			continue
 		}
-		if specificIP == "" || specificIP == ip.String() {
+		if specificIP == "" || specificIPnet.Compare(ip) == 0 {
 			acquired = &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
