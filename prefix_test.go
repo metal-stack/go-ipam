@@ -588,6 +588,7 @@ func TestIpamer_NewPrefix(t *testing.T) {
 func TestIpamer_DeletePrefix(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		// IPv4
 		prefix, err := ipam.NewPrefix("192.168.0.0/20")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 20, Count: 1}})
@@ -601,6 +602,26 @@ func TestIpamer_DeletePrefix(t *testing.T) {
 		_, err = ipam.DeletePrefix(prefix.Cidr)
 		require.NotNil(t, err)
 		require.Equal(t, "prefix 192.168.0.0/20 has ips, delete prefix not possible", err.Error())
+
+		// IPv6
+		prefix, err = ipam.NewPrefix("2001:0db8:85a3::/120")
+		require.Nil(t, err)
+		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 120, Count: 1}})
+		require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
+		require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
+
+		ip, err = ipam.AcquireIP(prefix.Cidr)
+		require.Nil(t, err)
+		require.NotNil(t, ip)
+
+		_, err = ipam.DeletePrefix(prefix.Cidr)
+		require.NotNil(t, err)
+		require.Equal(t, "prefix 2001:0db8:85a3::/120 has ips, delete prefix not possible", err.Error())
+
+		_, err = ipam.ReleaseIP(ip)
+		require.Nil(t, err)
+		_, err = ipam.DeletePrefix(prefix.Cidr)
+		require.Nil(t, err)
 	})
 }
 

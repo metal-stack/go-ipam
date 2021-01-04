@@ -64,7 +64,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	crOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "cockroachdb/cockroach:v20.1.8",
+			Image:        "cockroachdb/cockroach:v20.2.3",
 			ExposedPorts: []string{"26257/tcp", "8080/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
 			WaitingFor: wait.ForAll(

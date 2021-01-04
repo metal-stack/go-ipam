@@ -5,11 +5,9 @@ import (
 	"encoding/gob"
 	"fmt"
 	"math"
-	"math/rand"
 	"net"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/avast/retry-go"
 	"github.com/pkg/errors"
@@ -147,7 +145,14 @@ func (i *ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	if p == nil {
 		return nil, fmt.Errorf("%w: delete prefix:%s", ErrNotFound, cidr)
 	}
-	if len(p.ips) > 2 {
+	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
+	if err != nil {
+		return nil, err
+	}
+	if ipprefix.IP.Is4() && len(p.ips) > 2 {
+		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
+	}
+	if ipprefix.IP.Is6() && len(p.ips) > 1 {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
 	}
 	prefix, err := i.storage.DeletePrefix(*p)
@@ -541,19 +546,6 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 			return isOptimisticLock
 		}),
 		retry.Attempts(10),
-		retry.DelayType(jitterDelay),
+		retry.DelayType(retry.CombineDelay(retry.BackOffDelay, retry.RandomDelay)),
 		retry.LastErrorOnly(true))
-}
-
-// jitter will add jitter to a time.Duration.
-func jitter(d time.Duration) time.Duration {
-	const jitter = 0.50
-	jit := 1 + jitter*(rand.Float64()*2-1)
-	return time.Duration(jit * float64(d))
-}
-
-// jitterDelay is a DelayType which varies delay in each iterations
-func jitterDelay(_ uint, err error, config *retry.Config) time.Duration {
-	// fields in config are private, so we hardcode the average delay duration
-	return jitter(100 * time.Millisecond)
 }
