@@ -368,21 +368,20 @@ func (i *ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 
 func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error {
 	for _, ep := range existingPrefixes {
-		eip, eipnet, err := net.ParseCIDR(ep)
+		eip, err := netaddr.ParseIPPrefix(ep)
 		if err != nil {
 			return fmt.Errorf("parsing prefix %s failed:%v", ep, err)
 		}
 		for _, np := range newPrefixes {
-			nip, nipnet, err := net.ParseCIDR(np)
+			nip, err := netaddr.ParseIPPrefix(np)
 			if err != nil {
 				return fmt.Errorf("parsing prefix %s failed:%v", np, err)
 			}
-			if eipnet.Contains(nip) || nipnet.Contains(eip) {
+			if eip.Overlaps(nip) || nip.Overlaps(eip) {
 				return fmt.Errorf("%s overlaps %s", np, ep)
 			}
 		}
 	}
-
 	return nil
 }
 
