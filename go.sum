@@ -222,3 +222,5 @@ inet.af/netaddr v0.0.0-20201231045418-bf0e22f9f32f h1:JWUQvzPI8vrWWOUSJ1fpd9QrhI
 inet.af/netaddr v0.0.0-20201231045418-bf0e22f9f32f/go.mod h1:lbePDLSB5c45kkUmF7ETNE5X9z/yuQvWJIv1hhb5rFI=
 inet.af/netaddr v0.0.0-20210101043548-c5e71b4f334a h1:fjPw2PKOtFH/RclBkpF7Owv7fUO0+PKZvhAW7q4waJs=
 inet.af/netaddr v0.0.0-20210101043548-c5e71b4f334a/go.mod h1:jPZo7Jy4nke2cCgISa4fKJKa5T7+EO8k5fWwWghzneg=
+inet.af/netaddr v0.0.0-20210104203119-8ab52b189e79 h1:CMXm7E02lwwUy36vxH+hNiQWBpvCcL8+5TVj+ZMqNuQ=
+inet.af/netaddr v0.0.0-20210104203119-8ab52b189e79/go.mod h1:jPZo7Jy4nke2cCgISa4fKJKa5T7+EO8k5fWwWghzneg=

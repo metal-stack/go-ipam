@@ -14,5 +14,5 @@ require (
 	github.com/testcontainers/testcontainers-go v0.9.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
-	inet.af/netaddr v0.0.0-20210101043548-c5e71b4f334a
+	inet.af/netaddr v0.0.0-20210104203119-8ab52b189e79
 )
