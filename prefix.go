@@ -118,16 +118,6 @@ type Usage struct {
 	AcquiredPrefixes uint64
 }
 
-func (a AvailablePrefix) String() string {
-	return fmt.Sprintf("/%d:%d", a.PrefixLength, a.Count)
-}
-
-// AvailablePrefix count by length
-type AvailablePrefix struct {
-	PrefixLength uint8
-	Count        uint32
-}
-
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	p, err := i.newPrefix(cidr)
 	if err != nil {
@@ -146,14 +136,7 @@ func (i *ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	if p == nil {
 		return nil, fmt.Errorf("%w: delete prefix:%s", ErrNotFound, cidr)
 	}
-	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
-	if err != nil {
-		return nil, err
-	}
-	if ipprefix.IP.Is4() && len(p.ips) > 2 {
-		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
-	}
-	if ipprefix.IP.Is6() && len(p.ips) > 1 {
+	if p.hasIPs() {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
 	}
 	prefix, err := i.storage.DeletePrefix(*p)
@@ -186,10 +169,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 	if ipprefix.Bits >= length {
 		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits)
 	}
-	if ipprefix.IP.Is4() && len(prefix.ips) > 2 {
-		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
-	}
-	if ipprefix.IP.Is6() && len(prefix.ips) > 1 {
+	if prefix.hasIPs() {
 		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
 	}
 
@@ -429,20 +409,28 @@ func (p *Prefix) Network() (net.IP, error) {
 	return ipprefix.IPNet().IP, nil
 }
 
+// hasIPs will return true if there are allocated IPs
+func (p *Prefix) hasIPs() bool {
+	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
+	if err != nil {
+		return false
+	}
+	if ipprefix.IP.Is4() && len(p.ips) > 2 {
+		return true
+	}
+	if ipprefix.IP.Is6() && len(p.ips) > 1 {
+		return true
+	}
+	return false
+}
+
 // availableips return the number of ips available in this Prefix
 func (p *Prefix) availableips() uint64 {
 	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
 	if err != nil {
 		return 0
 	}
-	var bits uint8
-	if ipprefix.IP.Is4() {
-		bits = 32
-	}
-	if ipprefix.IP.Is6() {
-		bits = 128
-	}
-	return 1 << (bits - ipprefix.Bits)
+	return 1 << (ipprefix.IP.BitLen() - ipprefix.Bits)
 }
 
 // acquiredips return the number of ips acquired in this Prefix
