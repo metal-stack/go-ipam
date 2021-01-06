@@ -373,7 +373,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 
 		prefix, err := ipam.NewPrefix("192.168.0.0/20")
 		require.Nil(t, err)
-		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 20, Count: 1}})
+		require.Equal(t, prefix.availableSmallestPrefixes(), uint64(1024))
 		require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
 		require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
 
@@ -388,12 +388,12 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		require.Nil(t, err)
 		require.NotNil(t, c1)
 		prefix = ipam.PrefixFrom(prefix.Cidr)
-		require.Equal(t, []AvailablePrefix{{PrefixLength: 22, Count: 1}, {PrefixLength: 21, Count: 1}}, prefix.availablePrefixes())
+		require.Equal(t, uint64(768), prefix.availableSmallestPrefixes())
 		require.Equal(t, uint64(1), prefix.acquiredPrefixes())
 		require.Equal(t, uint64(1), prefix.Usage().AcquiredPrefixes)
 
 		usage = prefix.Usage()
-		require.Equal(t, "ip:2/4096 prefixes alloc:1 avail:/22:1,/21:1", usage.String())
+		require.Equal(t, "ip:2/4096 prefixes alloc:1 avail:768", usage.String())
 
 		allPrefixes, err = ipam.storage.ReadAllPrefixes()
 		require.Nil(t, err)
@@ -403,7 +403,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		require.Nil(t, err)
 		require.NotNil(t, c2)
 		prefix = ipam.PrefixFrom(prefix.Cidr)
-		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 21, Count: 1}})
+		require.Equal(t, uint64(512), prefix.availableSmallestPrefixes())
 		require.Equal(t, prefix.acquiredPrefixes(), uint64(2))
 		require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(2))
 		require.True(t, strings.HasSuffix(c1.Cidr, "/22"))
@@ -418,7 +418,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		prefix = ipam.PrefixFrom(prefix.Cidr)
 
 		require.Nil(t, err)
-		require.Equal(t, []AvailablePrefix{{PrefixLength: 22, Count: 1}, {PrefixLength: 21, Count: 1}}, prefix.availablePrefixes())
+		require.Equal(t, uint64(768), prefix.availableSmallestPrefixes())
 		require.Equal(t, uint64(1), prefix.acquiredPrefixes())
 		allPrefixes, err = ipam.storage.ReadAllPrefixes()
 		require.Nil(t, err)
@@ -428,7 +428,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		prefix = ipam.PrefixFrom(prefix.Cidr)
 
 		require.Nil(t, err)
-		require.Equal(t, []AvailablePrefix{{PrefixLength: 20, Count: 1}}, prefix.availablePrefixes())
+		require.Equal(t, uint64(1024), prefix.availableSmallestPrefixes())
 		require.Equal(t, uint64(0), prefix.acquiredPrefixes())
 		require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
 		allPrefixes, err = ipam.storage.ReadAllPrefixes()
@@ -466,7 +466,7 @@ func TestIpamer_AcquireChildPrefixIPv4(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/20")
 		require.Nil(t, err)
-		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 20, Count: 1}})
+		require.Equal(t, uint64(1024), prefix.availableSmallestPrefixes())
 		require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
 
 		// Same length
@@ -495,7 +495,7 @@ func TestIpamer_AcquireChildPrefixIPv4(t *testing.T) {
 		// Prefix has ips
 		p2, err := ipam.NewPrefix("10.0.0.0/24")
 		require.Nil(t, err)
-		require.Equal(t, p2.availablePrefixes(), []AvailablePrefix{{PrefixLength: 24, Count: 1}})
+		require.Equal(t, uint64(64), p2.availableSmallestPrefixes())
 		require.Equal(t, p2.acquiredPrefixes(), uint64(0))
 		ip, err := ipam.AcquireIP(p2.Cidr)
 		require.Nil(t, err)
@@ -508,7 +508,7 @@ func TestIpamer_AcquireChildPrefixIPv4(t *testing.T) {
 		// Prefix has Childs, AcquireIP wont work
 		p3, err := ipam.NewPrefix("172.17.0.0/24")
 		require.Nil(t, err)
-		require.Equal(t, p3.availablePrefixes(), []AvailablePrefix{{PrefixLength: 24, Count: 1}})
+		require.Equal(t, uint64(64), p3.availableSmallestPrefixes())
 		require.Equal(t, p3.acquiredPrefixes(), uint64(0))
 		cp3, err := ipam.AcquireChildPrefix(p3.Cidr, 25)
 		require.Nil(t, err)
@@ -531,7 +531,7 @@ func TestIpamer_AcquireChildPrefixIPv6(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("2001:0db8:85a3::/116")
 		require.Nil(t, err)
-		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 116, Count: 1}})
+		require.Equal(t, uint64(1024), prefix.availableSmallestPrefixes())
 		require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
 
 		// Same length
@@ -560,7 +560,7 @@ func TestIpamer_AcquireChildPrefixIPv6(t *testing.T) {
 		// Prefix has ips
 		p2, err := ipam.NewPrefix("2001:0db8:95a3::/120")
 		require.Nil(t, err)
-		require.Equal(t, p2.availablePrefixes(), []AvailablePrefix{{PrefixLength: 120, Count: 1}})
+		require.Equal(t, uint64(64), p2.availableSmallestPrefixes())
 		require.Equal(t, p2.acquiredPrefixes(), uint64(0))
 		ip, err := ipam.AcquireIP(p2.Cidr)
 		require.Nil(t, err)
@@ -573,7 +573,7 @@ func TestIpamer_AcquireChildPrefixIPv6(t *testing.T) {
 		// Prefix has Childs, AcquireIP wont work
 		p3, err := ipam.NewPrefix("2001:0db8:75a3::/120")
 		require.Nil(t, err)
-		require.Equal(t, p3.availablePrefixes(), []AvailablePrefix{{PrefixLength: 120, Count: 1}})
+		require.Equal(t, uint64(64), p3.availableSmallestPrefixes())
 		require.Equal(t, p3.acquiredPrefixes(), uint64(0))
 		cp3, err := ipam.AcquireChildPrefix(p3.Cidr, 121)
 		require.Nil(t, err)
@@ -595,7 +595,7 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv6(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("2001:0db8:85a3::/112")
 		require.Nil(t, err)
-		require.Equal(t, []AvailablePrefix{{PrefixLength: 112, Count: 1}}, prefix.availablePrefixes())
+		require.Equal(t, uint64(16384), prefix.availableSmallestPrefixes())
 		require.Equal(t, uint64(0), prefix.acquiredPrefixes())
 
 		uniquePrefixes := make(map[string]bool)
@@ -613,7 +613,7 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv6(t *testing.T) {
 		}
 		prefix = ipam.PrefixFrom(prefix.Cidr)
 		require.Equal(t, 256, len(uniquePrefixes))
-		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{})
+		require.Equal(t, uint64(0), prefix.availableSmallestPrefixes())
 		require.Equal(t, prefix.acquiredPrefixes(), uint64(256))
 
 	})
@@ -623,7 +623,7 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv4(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/16")
 		require.Nil(t, err)
-		require.Equal(t, []AvailablePrefix{{PrefixLength: 16, Count: 1}}, prefix.availablePrefixes())
+		require.Equal(t, uint64(16384), prefix.availableSmallestPrefixes())
 		require.Equal(t, uint64(0), prefix.acquiredPrefixes())
 
 		uniquePrefixes := make(map[string]bool)
@@ -641,7 +641,7 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv4(t *testing.T) {
 		}
 		prefix = ipam.PrefixFrom(prefix.Cidr)
 		require.Equal(t, 256, len(uniquePrefixes))
-		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{})
+		require.Equal(t, uint64(0), prefix.availableSmallestPrefixes())
 		require.Equal(t, prefix.acquiredPrefixes(), uint64(256))
 
 	})
@@ -848,7 +848,7 @@ func TestIpamer_DeletePrefix(t *testing.T) {
 		// IPv4
 		prefix, err := ipam.NewPrefix("192.168.0.0/20")
 		require.Nil(t, err)
-		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 20, Count: 1}})
+		require.Equal(t, uint64(1024), prefix.availableSmallestPrefixes())
 		require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
 		require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
 
@@ -863,7 +863,7 @@ func TestIpamer_DeletePrefix(t *testing.T) {
 		// IPv6
 		prefix, err = ipam.NewPrefix("2001:0db8:85a3::/120")
 		require.Nil(t, err)
-		require.Equal(t, prefix.availablePrefixes(), []AvailablePrefix{{PrefixLength: 120, Count: 1}})
+		require.Equal(t, uint64(64), prefix.availableSmallestPrefixes())
 		require.Equal(t, prefix.acquiredPrefixes(), uint64(0))
 		require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
 
@@ -1071,59 +1071,36 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 		name                   string
 		cidr                   string
 		availableChildPrefixes map[string]bool
-		want                   []AvailablePrefix
+		want                   uint64
 	}{
 		{
 			name:                   "one child prefix",
 			cidr:                   "192.168.0.0/20",
 			availableChildPrefixes: map[string]bool{"192.168.0.0/22": false},
-			want: []AvailablePrefix{
-				{PrefixLength: 22, Count: 1},
-				{PrefixLength: 21, Count: 1},
-			},
+			want:                   512 + 256,
 		},
 		{
 			name:                   "two child prefixes",
 			cidr:                   "192.168.0.0/16",
 			availableChildPrefixes: map[string]bool{"192.168.0.0/22": false, "192.168.0.0/26": false},
-			want: []AvailablePrefix{
-				{PrefixLength: 22, Count: 1},
-				{PrefixLength: 21, Count: 1},
-				{PrefixLength: 20, Count: 1},
-				{PrefixLength: 19, Count: 1},
-				{PrefixLength: 18, Count: 1},
-				{PrefixLength: 17, Count: 1},
-			},
+			want:                   8192 + 4096 + 2048 + 1024 + 512 + 256,
 		},
 		{
 			name:                   "four child prefixes",
 			cidr:                   "192.168.0.0/16",
 			availableChildPrefixes: map[string]bool{"192.168.0.0/22": false, "192.168.0.0/26": false, "192.168.128.0/26": false, "192.168.196.0/26": false},
-			want: []AvailablePrefix{
-				{PrefixLength: 26, Count: 2},
-				{PrefixLength: 25, Count: 2},
-				{PrefixLength: 24, Count: 2},
-				{PrefixLength: 23, Count: 2},
-				{PrefixLength: 22, Count: 3},
-				{PrefixLength: 21, Count: 3},
-				{PrefixLength: 20, Count: 3},
-				{PrefixLength: 19, Count: 3},
-				{PrefixLength: 18, Count: 1},
-			},
+			want:                   4096 + 3*2048 + 3*1024 + 3*512 + 3*256 + 2*128 + 2*64 + 2*32 + 2*16,
 		},
 		{
 			name: "simple ipv6",
 			cidr: "2001:0db8:85a3::/120",
-			want: []AvailablePrefix{{PrefixLength: 120, Count: 1}},
+			want: 64,
 		},
 		{
 			name:                   "one child prefix ipv6",
 			cidr:                   "2001:0db8:85a3::/120",
 			availableChildPrefixes: map[string]bool{"2001:0db8:85a3::/122": false},
-			want: []AvailablePrefix{
-				{PrefixLength: 122, Count: 1},
-				{PrefixLength: 121, Count: 1},
-			},
+			want:                   32 + 16,
 		},
 	}
 	for _, tt := range tests {
@@ -1132,10 +1109,10 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 				Cidr:                   tt.cidr,
 				availableChildPrefixes: tt.availableChildPrefixes,
 			}
-			got := p.availablePrefixes()
+			got := p.availableSmallestPrefixes()
 
 			if diff := deep.Equal(tt.want, got); diff != nil {
-				t.Errorf("Prefix.availablePrefixes() = %v, want %v", got, tt.want)
+				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got, tt.want)
 			}
 		})
 	}

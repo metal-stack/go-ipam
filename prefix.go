@@ -4,10 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"math"
 	"net"
-	"sort"
-	"strings"
 
 	"github.com/avast/retry-go"
 	"github.com/pkg/errors"
@@ -111,10 +108,14 @@ func copyMap(m map[string]bool) map[string]bool {
 
 // Usage of ips and child Prefixes of a Prefix
 type Usage struct {
-	AvailableIPs      uint64
-	AcquiredIPs       uint64
-	AvailablePrefixes []AvailablePrefix
-	AcquiredPrefixes  uint64
+	// AvailableIPs the number of available IPs if this is not a parent prefix
+	AvailableIPs uint64
+	// AcquiredIPs the number of acquire IPs if this is not a parent prefix
+	AcquiredIPs uint64
+	// AvailableSmallestPrefixes is the count of available Prefixes with 2 countable Bits
+	AvailableSmallestPrefixes uint64
+	// AcquiredPrefixes the number of acquired prefixes if this is a parent prefix
+	AcquiredPrefixes uint64
 }
 
 func (a AvailablePrefix) String() string {
@@ -416,11 +417,7 @@ func (u *Usage) String() string {
 	if u.AcquiredPrefixes == 0 {
 		return fmt.Sprintf("ip:%d/%d", u.AcquiredIPs, u.AvailableIPs)
 	}
-	avpfxs := []string{}
-	for _, a := range u.AvailablePrefixes {
-		avpfxs = append(avpfxs, a.String())
-	}
-	return fmt.Sprintf("ip:%d/%d prefixes alloc:%d avail:%s", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, strings.Join(avpfxs, ","))
+	return fmt.Sprintf("ip:%d/%d prefixes alloc:%d avail:%d", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, u.AvailableSmallestPrefixes)
 }
 
 // Network return the net.IP part of the Prefix
@@ -445,7 +442,7 @@ func (p *Prefix) availableips() uint64 {
 	if ipprefix.IP.Is6() {
 		bits = 128
 	}
-	return uint64(math.Pow(float64(2), float64(bits-ipprefix.Bits)))
+	return 1 << (bits - ipprefix.Bits)
 }
 
 // acquiredips return the number of ips acquired in this Prefix
@@ -453,13 +450,11 @@ func (p *Prefix) acquiredips() uint64 {
 	return uint64(len(p.ips))
 }
 
-// availablePrefixes return the amount of possible prefixes of this prefix if this is a parent prefix
-func (p *Prefix) availablePrefixes() []AvailablePrefix {
-	// TODO much too complex implementation
+// availableSmallestPrefixes will return the amount of prefixes allocatable which are only 2 Bits
+func (p *Prefix) availableSmallestPrefixes() uint64 {
 	prefix, err := netaddr.ParseIPPrefix(p.Cidr)
 	if err != nil {
-		// TODO howto handle errors here
-		return nil
+		return 0
 	}
 	var ipset netaddr.IPSet
 	ipset.AddPrefix(prefix)
@@ -469,34 +464,19 @@ func (p *Prefix) availablePrefixes() []AvailablePrefix {
 		}
 		ipprefix, err := netaddr.ParseIPPrefix(cp)
 		if err != nil {
-			// TODO howto handle errors here
-			return nil
+			continue
 		}
 		ipset.RemovePrefix(ipprefix)
 	}
-
+	// Only 2 Bit Prefixes are usable, set max bits available 2 less than max in family
+	maxBits := prefix.IP.BitLen() - 2
 	pfxs := ipset.Prefixes()
-	apfxs := make(map[uint8]uint32)
+	totalAvailable := uint64(0)
 	for _, pfx := range pfxs {
-		count, ok := apfxs[pfx.Bits]
-		if !ok {
-			apfxs[pfx.Bits] = 1
-			continue
-		}
-		apfxs[pfx.Bits] = count + 1
+		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
+		totalAvailable += 1 << (maxBits - pfx.Bits)
 	}
-	availablePrefixes := []AvailablePrefix{}
-	for bits, count := range apfxs {
-		availablePrefix := AvailablePrefix{
-			PrefixLength: bits,
-			Count:        count,
-		}
-		availablePrefixes = append(availablePrefixes, availablePrefix)
-	}
-	sort.Slice(availablePrefixes, func(i, j int) bool {
-		return availablePrefixes[i].PrefixLength > availablePrefixes[j].PrefixLength
-	})
-	return availablePrefixes
+	return totalAvailable
 }
 
 // acquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
@@ -513,10 +493,10 @@ func (p *Prefix) acquiredPrefixes() uint64 {
 // Usage report Prefix usage.
 func (p *Prefix) Usage() Usage {
 	return Usage{
-		AvailableIPs:      p.availableips(),
-		AcquiredIPs:       p.acquiredips(),
-		AvailablePrefixes: p.availablePrefixes(),
-		AcquiredPrefixes:  p.acquiredPrefixes(),
+		AvailableIPs:              p.availableips(),
+		AcquiredIPs:               p.acquiredips(),
+		AvailableSmallestPrefixes: p.availableSmallestPrefixes(),
+		AcquiredPrefixes:          p.acquiredPrefixes(),
 	}
 }
 
