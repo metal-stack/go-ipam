@@ -441,7 +441,6 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		c3, err := ipam.AcquireChildPrefix(prefix.Cidr, 22)
 		require.Nil(t, err)
 		require.NotNil(t, c2)
-
 		ip1, err := ipam.AcquireIP(c3.Cidr)
 		require.Nil(t, err)
 		require.NotNil(t, ip1)

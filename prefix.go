@@ -119,7 +119,7 @@ type Usage struct {
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
-	p, err := i.newPrefix(cidr)
+	p, err := i.newPrefix(cidr, "")
 	if err != nil {
 		return nil, err
 	}
@@ -158,32 +158,32 @@ func (i *ipamer) AcquireChildPrefix(parentCidr string, length uint8) (*Prefix, e
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
 func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*Prefix, error) {
-	prefix := i.PrefixFrom(parentCidr)
-	if prefix == nil {
+	parent := i.PrefixFrom(parentCidr)
+	if parent == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
 	}
-	ipprefix, err := netaddr.ParseIPPrefix(prefix.Cidr)
+	ipprefix, err := netaddr.ParseIPPrefix(parent.Cidr)
 	if err != nil {
 		return nil, err
 	}
 	if ipprefix.Bits >= length {
 		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits)
 	}
-	if prefix.hasIPs() {
-		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
+	if parent.hasIPs() {
+		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", parent.Cidr)
 	}
 
 	var ipset netaddr.IPSet
 	ipset.AddPrefix(ipprefix)
-	for cp, available := range prefix.availableChildPrefixes {
+	for cp, available := range parent.availableChildPrefixes {
 		if available {
 			continue
 		}
-		ipprefix, err := netaddr.ParseIPPrefix(cp)
+		cpipprefix, err := netaddr.ParseIPPrefix(cp)
 		if err != nil {
 			return nil, err
 		}
-		ipset.RemovePrefix(ipprefix)
+		ipset.RemovePrefix(cpipprefix)
 	}
 
 	cp, ok := ipset.RemoveFreePrefix(length)
@@ -196,19 +196,18 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 		ParentCidr: parentCidr,
 	}
 
-	prefix.availableChildPrefixes[child.Cidr] = false
-	prefix.isParent = true
+	parent.availableChildPrefixes[child.Cidr] = false
+	parent.isParent = true
 
-	_, err = i.storage.UpdatePrefix(*prefix)
+	_, err = i.storage.UpdatePrefix(*parent)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", prefix)
+		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", parent)
 	}
-	child, err = i.NewPrefix(child.Cidr)
+	child, err = i.newPrefix(child.Cidr, parentCidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
-	child.ParentCidr = prefix.Cidr
-	_, err = i.storage.UpdatePrefix(*child)
+	_, err = i.storage.CreatePrefix(*child)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", child)
 	}
@@ -274,7 +273,6 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 	if prefix.isParent {
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
 	}
-	var acquired *IP
 	ipnet, err := netaddr.ParseIPPrefix(prefix.Cidr)
 	if err != nil {
 		return nil, err
@@ -292,16 +290,17 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 	}
 
 	for ip := ipnet.Range().From; ipnet.Contains(ip); ip = ip.Next() {
-		_, ok := prefix.ips[ip.String()]
+		ipstring := ip.String()
+		_, ok := prefix.ips[ipstring]
 		if ok {
 			continue
 		}
 		if specificIP == "" || specificIPnet.Compare(ip) == 0 {
-			acquired = &IP{
+			acquired := &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
 			}
-			prefix.ips[ip.String()] = true
+			prefix.ips[ipstring] = true
 			_, err := i.storage.UpdatePrefix(*prefix)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
@@ -367,15 +366,17 @@ func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []st
 }
 
 // newPrefix create a new Prefix from a string notation.
-func (i *ipamer) newPrefix(cidr string) (*Prefix, error) {
+func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 	ipnet, err := netaddr.ParseIPPrefix(cidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse cidr:%s %v", cidr, err)
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
+		ParentCidr:             parentCidr,
 		ips:                    make(map[string]bool),
 		availableChildPrefixes: make(map[string]bool),
+		isParent:               false,
 	}
 
 	// FIXME: should this be done by the user ?
