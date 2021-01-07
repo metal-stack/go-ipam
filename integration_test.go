@@ -72,6 +72,7 @@ func TestIntegration(t *testing.T) {
 
 	// Read all child prefixes
 	pfxs, err := storage.ReadAllPrefixes()
+	require.NoError(t, err)
 	childPrefixCount := 0
 	for _, pfx := range pfxs {
 		if pfx.ParentCidr != "" {
