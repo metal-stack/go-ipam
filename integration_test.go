@@ -40,6 +40,15 @@ func TestIntegration(t *testing.T) {
 	// reread prefix
 	publicInternet = ipam.PrefixFrom("1.2.3.0/27")
 	require.Equal(t, uint64(25), publicInternet.Usage().AcquiredIPs)
+	// release acquired ip
+	err = ipam.ReleaseIPFromPrefix("1.2.3.0/27", "1.2.3.1")
+	require.NoError(t, err)
+	// reread prefix
+	publicInternet = ipam.PrefixFrom("1.2.3.0/27")
+	require.Equal(t, uint64(24), publicInternet.Usage().AcquiredIPs)
+	// release unacquired ip
+	err = ipam.ReleaseIPFromPrefix("1.2.3.0/27", "1.2.3.24")
+	require.EqualError(t, err, "NotFound: unable to release ip:1.2.3.24 because it is not allocated in prefix:1.2.3.0/27")
 
 	// Tenant super network
 	tenantSuper := ipam.PrefixFrom("10.128.0.0/14")
@@ -66,10 +75,26 @@ func TestIntegration(t *testing.T) {
 	// reread
 	tenantSuper = ipam.PrefixFrom("10.128.0.0/14")
 	require.NotNil(t, tenantSuper)
-	require.Equal(t, uint64(18), tenantSuper.Usage().AcquiredPrefixes)
+	require.Equal(t, 18, int(tenantSuper.Usage().AcquiredPrefixes))
 
 	_, err = ipam.AcquireIP("10.128.0.0/14")
 	require.EqualError(t, err, "prefix 10.128.0.0/14 has childprefixes, acquire ip not possible")
+
+	// Release existing child prefix
+	existingChild := ipam.PrefixFrom("10.129.28.0/22")
+	require.NotNil(t, existingChild)
+	err = ipam.ReleaseChildPrefix(existingChild)
+	require.NoError(t, err)
+	// reread
+	tenantSuper = ipam.PrefixFrom("10.128.0.0/14")
+	require.NotNil(t, tenantSuper)
+	require.Equal(t, 17, int(tenantSuper.Usage().AcquiredPrefixes))
+
+	// Release existing child prefix with ips
+	existingChildWithIPs := ipam.PrefixFrom("10.130.36.0/22")
+	require.NotNil(t, existingChildWithIPs)
+	err = ipam.ReleaseChildPrefix(existingChildWithIPs)
+	require.EqualError(t, err, "prefix 10.130.36.0/22 has ips, deletion not possible")
 
 	// Read all child prefixes
 	pfxs, err := storage.ReadAllPrefixes()
