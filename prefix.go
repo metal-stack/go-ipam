@@ -114,6 +114,8 @@ type Usage struct {
 	AcquiredIPs uint64
 	// AvailableSmallestPrefixes is the count of available Prefixes with 2 countable Bits
 	AvailableSmallestPrefixes uint64
+	// AvailablePrefixes is a list of prefixes which are available
+	AvailablePrefixes []string
 	// AcquiredPrefixes the number of acquired prefixes if this is a parent prefix
 	AcquiredPrefixes uint64
 }
@@ -439,11 +441,11 @@ func (p *Prefix) acquiredips() uint64 {
 	return uint64(len(p.ips))
 }
 
-// availableSmallestPrefixes will return the amount of prefixes allocatable which are only 2 Bits
-func (p *Prefix) availableSmallestPrefixes() uint64 {
+// availablePrefixes will return the amount of prefixes allocatable and the amount of smallest 2 bit prefixes
+func (p *Prefix) availablePrefixes() (uint64, []string) {
 	prefix, err := netaddr.ParseIPPrefix(p.Cidr)
 	if err != nil {
-		return 0
+		return 0, nil
 	}
 	var ipset netaddr.IPSet
 	ipset.AddPrefix(prefix)
@@ -461,11 +463,13 @@ func (p *Prefix) availableSmallestPrefixes() uint64 {
 	maxBits := prefix.IP.BitLen() - 2
 	pfxs := ipset.Prefixes()
 	totalAvailable := uint64(0)
+	availablePrefixes := []string{}
 	for _, pfx := range pfxs {
 		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
 		totalAvailable += 1 << (maxBits - pfx.Bits)
+		availablePrefixes = append(availablePrefixes, pfx.String())
 	}
-	return totalAvailable
+	return totalAvailable, availablePrefixes
 }
 
 // acquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
@@ -481,11 +485,13 @@ func (p *Prefix) acquiredPrefixes() uint64 {
 
 // Usage report Prefix usage.
 func (p *Prefix) Usage() Usage {
+	sp, ap := p.availablePrefixes()
 	return Usage{
 		AvailableIPs:              p.availableips(),
 		AcquiredIPs:               p.acquiredips(),
-		AvailableSmallestPrefixes: p.availableSmallestPrefixes(),
 		AcquiredPrefixes:          p.acquiredPrefixes(),
+		AvailableSmallestPrefixes: sp,
+		AvailablePrefixes:         ap,
 	}
 }
 
