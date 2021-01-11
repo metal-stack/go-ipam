@@ -1064,6 +1064,22 @@ func TestGob(t *testing.T) {
 	})
 }
 
+func TestJSON(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("192.168.0.0/24")
+		require.Nil(t, err)
+		require.NotNil(t, prefix)
+
+		data, err := prefix.JSONEncode()
+		require.Nil(t, err)
+
+		newPrefix := &Prefix{}
+		err = newPrefix.JSONDecode(data)
+		require.Nil(t, err)
+		require.Equal(t, prefix, newPrefix)
+	})
+}
+
 func TestPrefix_availablePrefixes(t *testing.T) {
 	// FIXME validate results
 	tests := []struct {

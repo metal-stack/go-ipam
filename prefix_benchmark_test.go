@@ -134,3 +134,41 @@ func BenchmarkPrefixOverlapping(b *testing.B) {
 		}
 	}
 }
+func BenchmarkPrefixJSONEncoding(b *testing.B) {
+	prefix := &Prefix{
+		Cidr:                   "192.168.0.0/24",
+		availableChildPrefixes: map[string]bool{"192.168.128.0/25": true, "192.168.0.0/25": true},
+		ips:                    map[string]bool{"192.168.128.1": true, "192.168.0.2": true},
+		isParent:               true,
+		ParentCidr:             "",
+	}
+	for n := 0; n < b.N; n++ {
+		_, err := prefix.JSONEncode()
+		if err != nil {
+			b.Errorf("encoding error:%w", err)
+		}
+	}
+}
+func BenchmarkPrefixJSONDencoding(b *testing.B) {
+	prefix := &Prefix{
+		Cidr:                   "192.168.0.0/24",
+		availableChildPrefixes: map[string]bool{"192.168.128.0/25": true, "192.168.0.0/25": true},
+		ips:                    map[string]bool{"192.168.128.1": true, "192.168.0.2": true},
+		isParent:               true,
+		ParentCidr:             "",
+	}
+	data, err := prefix.JSONEncode()
+	if err != nil {
+		b.Errorf("encoding error:%w", err)
+	}
+	for n := 0; n < b.N; n++ {
+		newPrefix := &Prefix{}
+		err = newPrefix.JSONDecode(data)
+		if err != nil {
+			b.Errorf("decoding error:%w", err)
+		}
+		if prefix.Cidr != newPrefix.Cidr {
+			b.Errorf("%v != %v", prefix, newPrefix)
+		}
+	}
+}
