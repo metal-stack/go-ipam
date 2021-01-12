@@ -11,7 +11,7 @@ bench:
 
 .PHONY: test
 test:
-	CGO_ENABLED=1 $(GO) test -v ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
+	CGO_ENABLED=1 $(GO) test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
 
 .PHONY: golangcicheck
 golangcicheck:
