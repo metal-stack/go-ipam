@@ -364,6 +364,74 @@ func TestIpamer_AcquireIPCountsIPv6(t *testing.T) {
 	})
 }
 
+func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		allPrefixes, err := ipam.storage.ReadAllPrefixes()
+		require.NoError(t, err)
+		require.Equal(t, 0, len(allPrefixes))
+
+		// Create Prefix with /20
+		prefix, err := ipam.NewPrefix("192.168.0.0/20")
+		require.NoError(t, err)
+		s, _ := prefix.availablePrefixes()
+		require.Equal(t, 1024, int(s))
+		require.Equal(t, 0, int(prefix.acquiredPrefixes()))
+		require.Equal(t, 0, int(prefix.Usage().AcquiredPrefixes))
+
+		// Acquire first half
+		c1, err := ipam.AcquireChildPrefix(prefix.Cidr, 21)
+		require.NoError(t, err)
+		require.NotNil(t, c1)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		s, _ = prefix.availablePrefixes()
+		require.Equal(t, 512, int(s))
+		require.Equal(t, 1, int(prefix.acquiredPrefixes()))
+		require.Equal(t, 1, int(prefix.Usage().AcquiredPrefixes))
+
+		// acquire 1/4the of the rest
+		c2, err := ipam.AcquireChildPrefix(prefix.Cidr, 22)
+		require.NoError(t, err)
+		require.NotNil(t, c2)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		s, a := prefix.availablePrefixes()
+		// FIXME why 12.0/22 ??
+		require.Equal(t, []string{"192.168.12.0/22"}, a)
+		require.Equal(t, 256, int(s))
+		require.Equal(t, 2, int(prefix.acquiredPrefixes()))
+		require.Equal(t, 2, int(prefix.Usage().AcquiredPrefixes))
+
+		// acquire impossible size
+		_, err = ipam.AcquireChildPrefix(prefix.Cidr, 21)
+		require.EqualError(t, err, "no prefix found in 192.168.0.0/20 with length:21, but 192.168.12.0/22 is available")
+
+		// Release small, first half acquired
+		err = ipam.ReleaseChildPrefix(c2)
+		require.NoError(t, err)
+
+		// acquire /28
+		c3, err := ipam.AcquireChildPrefix(prefix.Cidr, 28)
+		require.NoError(t, err)
+		require.NotNil(t, c3)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		s, a = prefix.availablePrefixes()
+		require.Equal(t, []string{"192.168.8.16/28", "192.168.8.32/27", "192.168.8.64/26", "192.168.8.128/25", "192.168.9.0/24", "192.168.10.0/23", "192.168.12.0/22"}, a)
+		require.Equal(t, 508, int(s))
+		require.Equal(t, 2, int(prefix.acquiredPrefixes()))
+		require.Equal(t, 2, int(prefix.Usage().AcquiredPrefixes))
+
+		// acquire impossible size
+		_, err = ipam.AcquireChildPrefix(prefix.Cidr, 21)
+		require.EqualError(t, err, "no prefix found in 192.168.0.0/20 with length:21, but 192.168.8.16/28,192.168.8.32/27,192.168.8.64/26,192.168.8.128/25,192.168.9.0/24,192.168.10.0/23,192.168.12.0/22 are available")
+
+		// acquire a /22 which must be possible
+		c4, err := ipam.AcquireChildPrefix(prefix.Cidr, 22)
+		require.NoError(t, err)
+		require.NotNil(t, c4)
+		require.Equal(t, c4.String(), "192.168.12.0/22")
+
+	})
+}
+
 func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {

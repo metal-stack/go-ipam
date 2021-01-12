@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/avast/retry-go"
 	"github.com/pkg/errors"
@@ -190,7 +191,21 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 
 	cp, ok := ipset.RemoveFreePrefix(length)
 	if !ok {
-		return nil, fmt.Errorf("no prefix found in %s with length:%d", parentCidr, length)
+		pfxs := ipset.Prefixes()
+		if len(pfxs) == 0 {
+			return nil, fmt.Errorf("no prefix found in %s with length:%d", parentCidr, length)
+		}
+
+		var availablePrefixes []string
+		for _, p := range pfxs {
+			availablePrefixes = append(availablePrefixes, p.String())
+		}
+		adj := "are"
+		if len(availablePrefixes) == 1 {
+			adj = "is"
+		}
+
+		return nil, fmt.Errorf("no prefix found in %s with length:%d, but %s %s available", parentCidr, length, strings.Join(availablePrefixes, ","), adj)
 	}
 
 	child := &Prefix{
