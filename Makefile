@@ -9,6 +9,14 @@ all: test bench
 bench:
 	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem
 
+.PHONY: benchstat
+benchstat:
+	git stash
+	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem > old.txt
+	git stash pop
+	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem > new.txt
+	benchstat old.txt new.txt
+
 .PHONY: test
 test:
 	CGO_ENABLED=1 $(GO) test -v ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
