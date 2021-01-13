@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-test/deep"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"inet.af/netaddr"
@@ -1201,7 +1200,7 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 				t.Logf("available prefix:%s smallest left:%d", pfx, smallest)
 			}
 
-			if diff := deep.Equal(tt.want, got); diff != nil {
+			if tt.want != got {
 				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got, tt.want)
 			}
 		})

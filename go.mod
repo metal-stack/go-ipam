@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/go-test/deep v1.0.7
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/lib/pq v1.9.0
 	// sqlite v2.x is a unfortunate release
