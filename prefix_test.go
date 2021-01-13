@@ -378,7 +378,7 @@ func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 		require.Equal(t, 0, int(prefix.acquiredPrefixes()))
 		require.Equal(t, 0, int(prefix.Usage().AcquiredPrefixes))
 
-		// Acquire first half
+		// Acquire first half 192.168.0.0/21 = 192.168.0.0 - 192.168.7.254
 		c1, err := ipam.AcquireChildPrefix(prefix.Cidr, 21)
 		require.NoError(t, err)
 		require.NotNil(t, c1)
@@ -388,13 +388,13 @@ func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 		require.Equal(t, 1, int(prefix.acquiredPrefixes()))
 		require.Equal(t, 1, int(prefix.Usage().AcquiredPrefixes))
 
-		// acquire 1/4the of the rest
+		// acquire 1/4the of the rest 192.168.8.0/22 = 192.168.8.0 - 192.168.11.254
 		c2, err := ipam.AcquireChildPrefix(prefix.Cidr, 22)
 		require.NoError(t, err)
 		require.NotNil(t, c2)
 		prefix = ipam.PrefixFrom(prefix.Cidr)
 		s, a := prefix.availablePrefixes()
-		// FIXME why 12.0/22 ??
+		// Next free must be 192.168.12.0/22
 		require.Equal(t, []string{"192.168.12.0/22"}, a)
 		require.Equal(t, 256, int(s))
 		require.Equal(t, 2, int(prefix.acquiredPrefixes()))
@@ -1150,7 +1150,6 @@ func TestGob(t *testing.T) {
 }
 
 func TestPrefix_availablePrefixes(t *testing.T) {
-	// FIXME validate results
 	tests := []struct {
 		name                   string
 		cidr                   string
@@ -1196,7 +1195,10 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 			got, avpfxs := p.availablePrefixes()
 			for _, pfx := range avpfxs {
 				// Only logs if fails
-				t.Logf("available prefix:%s", pfx)
+				ipprefix, err := netaddr.ParseIPPrefix(pfx)
+				require.NoError(t, err)
+				smallest := 1 << (ipprefix.IP.BitLen() - 2 - ipprefix.Bits)
+				t.Logf("available prefix:%s smallest left:%d", pfx, smallest)
 			}
 
 			if diff := deep.Equal(tt.want, got); diff != nil {

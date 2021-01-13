@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"inet.af/netaddr"
 )
 
 func TestIntegration(t *testing.T) {
@@ -54,7 +55,15 @@ func TestIntegration(t *testing.T) {
 	tenantSuper := ipam.PrefixFrom("10.128.0.0/14")
 	require.NotNil(t, tenantSuper)
 	require.Equal(t, uint64(2), tenantSuper.Usage().AcquiredIPs)
-	// FIXME validate why 60928
+	sum := 0
+	for _, pfx := range tenantSuper.Usage().AvailablePrefixes {
+		// Only logs if fails
+		ipprefix, err := netaddr.ParseIPPrefix(pfx)
+		require.NoError(t, err)
+		smallest := 1 << (ipprefix.IP.BitLen() - 2 - ipprefix.Bits)
+		sum += smallest
+		t.Logf("available prefix:%s smallest left:%d sum:%d", pfx, smallest, sum)
+	}
 	require.Equal(t, 60928, int(tenantSuper.Usage().AvailableSmallestPrefixes))
 	// FIXME This Super Prefix has leaked child prefixes !
 	require.Equal(t, 18, int(tenantSuper.Usage().AcquiredPrefixes))
