@@ -34,7 +34,7 @@ func Test_UpdatePrefix(t *testing.T) {
 	p, err := m.UpdatePrefix(prefix)
 	require.NotNil(t, err)
 	require.Empty(t, p)
-	require.Equal(t, "prefix not present:{  false map[] map[] 0}", err.Error())
+	require.Equal(t, "prefix not present:{  false map[] 0 map[] 0}", err.Error())
 
 	prefix.Cidr = "1.2.3.4/24"
 	p, err = m.UpdatePrefix(prefix)

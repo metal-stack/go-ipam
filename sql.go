@@ -31,6 +31,7 @@ func (p prefixJSON) toPrefix() Prefix {
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
 		availableChildPrefixes: p.AvailableChildPrefixes,
+		childPrefixLength:      p.ChildPrefixLength,
 		isParent:               p.IsParent,
 		ips:                    p.IPs,
 		version:                p.Version,
@@ -45,8 +46,10 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 		},
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		IsParent:               p.isParent,
-		IPs:                    p.ips,
-		Version:                p.version,
+		// TODO remove this in the next release
+		ChildPrefixLength: p.childPrefixLength,
+		IPs:               p.ips,
+		Version:           p.version,
 	}
 }
 

@@ -25,8 +25,10 @@ type Prefix struct {
 	ParentCidr             string          // if this prefix is a child this is a pointer back
 	isParent               bool            // if this Prefix has child prefixes, this is set to true
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
-	ips                    map[string]bool // The ips contained in this prefix
-	version                int64           // version is used for optimistic locking
+	// TODO remove this in the next release
+	childPrefixLength int             // the length of the child prefixes
+	ips               map[string]bool // The ips contained in this prefix
+	version           int64           // version is used for optimistic locking
 }
 
 // deepCopy to a new Prefix
