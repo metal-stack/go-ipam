@@ -13,22 +13,21 @@ type sql struct {
 
 // prefixJSON is the on disk representation in a sql database
 type prefixJSON struct {
-	Prefix
-	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
+	Cidr                   string          `json:"Cidr"`                   // The Cidr of this prefix
+	ParentCidr             string          `json:"ParentCidr"`             // if this prefix is a child this is a pointer back
+	AvailableChildPrefixes map[string]bool `json:"AvailableChildPrefixes"` // available child prefixes of this prefix
 	// TODO remove this in the next release
-	ChildPrefixLength int             // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
-	IsParent          bool            // set to true if there are child prefixes
-	IPs               map[string]bool // The ips contained in this prefix
-	Version           int64           // Version is used for optimistic locking
+	ChildPrefixLength int             `json:"ChildPrefixLength"` // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
+	IsParent          bool            `json:"IsParent"`          // set to true if there are child prefixes
+	IPs               map[string]bool `json:"IPs"`               // The ips contained in this prefix
+	Version           int64           `json:"Version"`           // Version is used for optimistic locking
 }
 
 // JSONEncode a prefix into json
 func (p *Prefix) JSONEncode() ([]byte, error) {
 	pfxj := prefixJSON{
-		Prefix: Prefix{
-			Cidr:       p.Cidr,
-			ParentCidr: p.ParentCidr,
-		},
+		Cidr:                   p.Cidr,
+		ParentCidr:             p.ParentCidr,
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		IsParent:               p.isParent,
 		IPs:                    p.ips,
