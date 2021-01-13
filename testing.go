@@ -54,7 +54,7 @@ func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 		return pgContainer, nil, err
 	}
 	dbname := "postgres"
-	db, err := NewPostgresStorage(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
+	db, err := newPostgres(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
 
 	return pgContainer, db, err
 }
@@ -91,7 +91,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 		return crContainer, nil, err
 	}
 	dbname := "defaultdb"
-	db, err := NewPostgresStorage(ip, port.Port(), "root", "password", dbname, SSLModeDisable)
+	db, err := newPostgres(ip, port.Port(), "root", "password", dbname, SSLModeDisable)
 
 	return crContainer, db, err
 }
@@ -212,15 +212,15 @@ func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
 type provide func() Storage
 type providesql func() *sql
 
-// StorageProvider provides different storages
-type StorageProvider struct {
+// storageProvider provides different storages
+type storageProvider struct {
 	name       string
 	provide    provide
 	providesql providesql
 }
 
-func storageProviders() []StorageProvider {
-	return []StorageProvider{
+func storageProviders() []storageProvider {
+	return []storageProvider{
 		{
 			name: "Memory",
 			provide: func() Storage {

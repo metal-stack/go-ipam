@@ -13,7 +13,7 @@ type memory struct {
 }
 
 // NewMemory create a memory storage for ipam
-func NewMemory() *memory {
+func NewMemory() Storage {
 	prefixes := make(map[string]Prefix)
 	return &memory{
 		prefixes: prefixes,
