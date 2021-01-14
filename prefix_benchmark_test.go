@@ -52,12 +52,12 @@ func BenchmarkAcquireIP(b *testing.B) {
 	}
 	defer pg.db.Close()
 	pgipam := NewWithStorage(pg)
-	_, cock, err := startCockroach()
+	_, cr, err := startCockroach()
 	if err != nil {
 		panic(err)
 	}
-	defer cock.db.Close()
-	cockipam := NewWithStorage(cock)
+	defer cr.db.Close()
+	cockipam := NewWithStorage(cr)
 	benchmarks := []struct {
 		name string
 		ipam Ipamer
