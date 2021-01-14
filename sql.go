@@ -12,7 +12,8 @@ type sql struct {
 }
 
 type prefixJSON struct {
-	Prefix
+	Cidr                   string          // The Cidr of this prefix
+	ParentCidr             string          // if this prefix is a child this is a pointer back
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
 	// TODO remove this in the next release
 	ChildPrefixLength int             // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
@@ -21,36 +22,43 @@ type prefixJSON struct {
 	Version           int64           // Version is used for optimistic locking
 }
 
-func (p prefixJSON) toPrefix() Prefix {
-	// Legacy support only on reading from database, convert to isParent.
-	// TODO remove this in the next release
-	if p.ChildPrefixLength > 0 {
-		p.IsParent = true
-	}
-	return Prefix{
+// JSONEncode a prefix into json
+func (p *Prefix) JSONEncode() ([]byte, error) {
+	pfxj := prefixJSON{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
-		availableChildPrefixes: p.AvailableChildPrefixes,
-		childPrefixLength:      p.ChildPrefixLength,
-		isParent:               p.IsParent,
-		ips:                    p.IPs,
-		version:                p.Version,
+		AvailableChildPrefixes: p.availableChildPrefixes,
+		ChildPrefixLength:      p.childPrefixLength,
+		IsParent:               p.isParent,
+		IPs:                    p.ips,
+		Version:                p.version,
 	}
+	pj, err := json.Marshal(pfxj)
+	if err != nil {
+		return nil, fmt.Errorf("unable to encode prefix:%v", err)
+	}
+	return pj, nil
 }
 
-func (p Prefix) toPrefixJSON() prefixJSON {
-	return prefixJSON{
-		Prefix: Prefix{
-			Cidr:       p.Cidr,
-			ParentCidr: p.ParentCidr,
-		},
-		AvailableChildPrefixes: p.availableChildPrefixes,
-		IsParent:               p.isParent,
-		// TODO remove this in the next release
-		ChildPrefixLength: p.childPrefixLength,
-		IPs:               p.ips,
-		Version:           p.version,
+// JSONDecode new Prefix from json given as byte slice
+func (p *Prefix) JSONDecode(buf []byte) error {
+	var pre prefixJSON
+	err := json.Unmarshal(buf, &pre)
+	if err != nil {
+		return fmt.Errorf("unable to decode prefix:%v", err)
 	}
+	// TODO remove this in the next release
+	if pre.ChildPrefixLength > 0 {
+		pre.IsParent = true
+	}
+	p.Cidr = pre.Cidr
+	p.ParentCidr = pre.ParentCidr
+	p.availableChildPrefixes = pre.AvailableChildPrefixes
+	p.childPrefixLength = pre.ChildPrefixLength
+	p.isParent = pre.IsParent
+	p.ips = pre.IPs
+	p.version = pre.Version
+	return nil
 }
 
 func (s *sql) prefixExists(prefix Prefix) (*Prefix, bool) {
@@ -67,9 +75,9 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 		return *existingPrefix, nil
 	}
 	prefix.version = int64(0)
-	pj, err := json.Marshal(prefix.toPrefixJSON())
+	pj, err := prefix.JSONEncode()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
+		return Prefix{}, err
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -85,12 +93,12 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read prefix:%v", err)
 	}
-	var pre prefixJSON
-	err = json.Unmarshal(result, &pre)
+	var p Prefix
+	err = p.JSONDecode(result)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%v", err)
+		return Prefix{}, err
 	}
-	return pre.toPrefix(), nil
+	return p, nil
 }
 
 func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
@@ -102,12 +110,12 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 
 	result := []Prefix{}
 	for _, v := range prefixes {
-		var pre prefixJSON
-		err = json.Unmarshal(v, &pre)
+		var p Prefix
+		err = p.JSONDecode(v)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal prefix:%v", err)
+			return nil, err
 		}
-		result = append(result, pre.toPrefix())
+		result = append(result, p)
 	}
 	return result, nil
 }
@@ -117,9 +125,9 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
-	pn, err := json.Marshal(prefix.toPrefixJSON())
+	pn, err := prefix.JSONEncode()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
+		return Prefix{}, err
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
