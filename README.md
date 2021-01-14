@@ -72,21 +72,21 @@ func main() {
 ## Performance
 
 ```bash
-BenchmarkNewPrefixMemory-4                484093              2436 ns/op            1536 B/op         20 allocs/op
-BenchmarkNewPrefixPostgres-4                 116          10917631 ns/op            5869 B/op        128 allocs/op
-BenchmarkNewPrefixCockroach-4                 15          79193457 ns/op            7325 B/op        145 allocs/op
-BenchmarkAcquireIPMemory-4                306850              4429 ns/op            2360 B/op         42 allocs/op
-BenchmarkAcquireIPPostgres-4                  81          14142993 ns/op           11007 B/op        260 allocs/op
-BenchmarkAcquireIPCockroach-4                 13          87037384 ns/op           12970 B/op        286 allocs/op
-BenchmarkAcquireChildPrefix1-4            123308              8749 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix2-4            154058              7707 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix3-4            156578              8435 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix4-4            141354              8225 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix5-4            156516              8087 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix6-4            138122              8020 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix7-4            155088              8748 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix8-4            154384              9105 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix9-4            141003              8469 ns/op            4496 B/op         69 allocs/op
-BenchmarkAcquireChildPrefix10-4           125125              8292 ns/op            4496 B/op         69 allocs/op
-BenchmarkPrefixOverlapping-4             3290104               359 ns/op               0 B/op          0 allocs/op
+BenchmarkNewPrefix/Memory-4             422596       2712 ns/op     1536 B/op    20 allocs/op
+BenchmarkNewPrefix/Postgres-4              127    8257821 ns/op     5587 B/op   126 allocs/op
+BenchmarkNewPrefix/Cockroach-4              18   78498926 ns/op     5869 B/op   128 allocs/op
+BenchmarkAcquireIP/Memory-4             299738       3941 ns/op     2360 B/op    42 allocs/op
+BenchmarkAcquireIP/Postgres-4               88   13501419 ns/op    10740 B/op   257 allocs/op
+BenchmarkAcquireIP/Cockroach-4              14   79709070 ns/op    11253 B/op   265 allocs/op
+BenchmarkAcquireChildPrefix/8/14-4      153535       7995 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/8/16-4      151178       8000 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/8/20-4      152636       7760 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/8/22-4      154134       7793 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/8/24-4      153325       7759 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/16/18-4     147488       8186 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/16/20-4     154622       7802 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/16/22-4     154148       8034 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/16/24-4     138088       8748 ns/op     4496 B/op    69 allocs/op
+BenchmarkAcquireChildPrefix/16/26-4     125978       8104 ns/op     4496 B/op    69 allocs/op
+BenchmarkPrefixOverlapping-4           3400266        342 ns/op        0 B/op     0 allocs/op
 ```

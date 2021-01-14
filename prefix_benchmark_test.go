@@ -5,123 +5,136 @@ import (
 	"testing"
 )
 
-func benchmarkNewPrefix(ipam Ipamer, b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		p, err := ipam.NewPrefix("192.168.0.0/24")
-		if err != nil {
-			panic(err)
-		}
-		if p == nil {
-			panic("Prefix nil")
-		}
-		_, err = ipam.DeletePrefix(p.Cidr)
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-func BenchmarkNewPrefixMemory(b *testing.B) {
-	ipam := New()
-	benchmarkNewPrefix(ipam, b)
-}
-func BenchmarkNewPrefixPostgres(b *testing.B) {
-	_, storage, err := startPostgres()
+func BenchmarkNewPrefix(b *testing.B) {
+	_, pg, err := startPostgres()
 	if err != nil {
 		panic(err)
 	}
-	defer storage.db.Close()
-	ipam := NewWithStorage(storage)
-	benchmarkNewPrefix(ipam, b)
-}
-func BenchmarkNewPrefixCockroach(b *testing.B) {
-	_, storage, err := startCockroach()
+	defer pg.db.Close()
+	pgipam := NewWithStorage(pg)
+	_, cock, err := startCockroach()
 	if err != nil {
 		panic(err)
 	}
-	defer storage.db.Close()
-	ipam := NewWithStorage(storage)
-	benchmarkNewPrefix(ipam, b)
-}
-
-func benchmarkAcquireIP(ipam Ipamer, cidr string, b *testing.B) {
-	p, err := ipam.NewPrefix(cidr)
-	if err != nil {
-		panic(err)
+	defer cock.db.Close()
+	cockipam := NewWithStorage(cock)
+	benchmarks := []struct {
+		name string
+		ipam Ipamer
+	}{
+		{name: "Memory", ipam: New()},
+		{name: "Postgres", ipam: pgipam},
+		{name: "Cockroach", ipam: cockipam},
 	}
-	for n := 0; n < b.N; n++ {
-		ip, err := ipam.AcquireIP(p.Cidr)
-		if err != nil {
-			panic(err)
-		}
-		if ip == nil {
-			panic("IP nil")
-		}
-		p, err = ipam.ReleaseIP(ip)
-		if err != nil {
-			panic(err)
-		}
-	}
-	_, err = ipam.DeletePrefix(cidr)
-	if err != nil {
-		b.Fatalf("error deleting prefix:%v", err)
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				p, err := bm.ipam.NewPrefix("192.168.0.0/24")
+				if err != nil {
+					panic(err)
+				}
+				if p == nil {
+					panic("Prefix nil")
+				}
+				_, err = bm.ipam.DeletePrefix(p.Cidr)
+				if err != nil {
+					panic(err)
+				}
+			}
+		})
 	}
 }
 
-func BenchmarkAcquireIPMemory(b *testing.B) {
-	ipam := New()
-	benchmarkAcquireIP(ipam, "11.0.0.0/24", b)
-}
-func BenchmarkAcquireIPPostgres(b *testing.B) {
-	_, storage, err := startPostgres()
+func BenchmarkAcquireIP(b *testing.B) {
+	_, pg, err := startPostgres()
 	if err != nil {
 		panic(err)
 	}
-	defer storage.db.Close()
-	ipam := NewWithStorage(storage)
-	benchmarkAcquireIP(ipam, "10.0.0.0/16", b)
+	defer pg.db.Close()
+	pgipam := NewWithStorage(pg)
+	_, cock, err := startCockroach()
+	if err != nil {
+		panic(err)
+	}
+	defer cock.db.Close()
+	cockipam := NewWithStorage(cock)
+	benchmarks := []struct {
+		name string
+		ipam Ipamer
+		cidr string
+	}{
+		{name: "Memory", ipam: New(), cidr: "11.0.0.0/24"},
+		{name: "Postgres", ipam: pgipam, cidr: "10.0.0.0/16"},
+		{name: "Cockroach", ipam: cockipam, cidr: "10.0.0.0/16"},
+	}
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			p, err := bm.ipam.NewPrefix(bm.cidr)
+			if err != nil {
+				panic(err)
+			}
+			for n := 0; n < b.N; n++ {
+				ip, err := bm.ipam.AcquireIP(p.Cidr)
+				if err != nil {
+					panic(err)
+				}
+				if ip == nil {
+					panic("IP nil")
+				}
+				p, err = bm.ipam.ReleaseIP(ip)
+				if err != nil {
+					panic(err)
+				}
+			}
+			_, err = bm.ipam.DeletePrefix(bm.cidr)
+			if err != nil {
+				b.Fatalf("error deleting prefix:%v", err)
+			}
+		})
+	}
 }
 
-func BenchmarkAcquireIPCockroach(b *testing.B) {
-	_, storage, err := startCockroach()
-	if err != nil {
-		panic(err)
+func BenchmarkAcquireChildPrefix(b *testing.B) {
+	benchmarks := []struct {
+		name         string
+		parentLength uint8
+		childLength  uint8
+	}{
+		{name: "8/14", parentLength: 8, childLength: 14},
+		{name: "8/16", parentLength: 8, childLength: 16},
+		{name: "8/20", parentLength: 8, childLength: 20},
+		{name: "8/22", parentLength: 8, childLength: 22},
+		{name: "8/24", parentLength: 8, childLength: 24},
+		{name: "16/18", parentLength: 16, childLength: 18},
+		{name: "16/20", parentLength: 16, childLength: 20},
+		{name: "16/22", parentLength: 16, childLength: 22},
+		{name: "16/24", parentLength: 16, childLength: 24},
+		{name: "16/26", parentLength: 16, childLength: 26},
 	}
-	defer storage.db.Close()
-	ipam := NewWithStorage(storage)
-	benchmarkAcquireIP(ipam, "10.0.0.0/16", b)
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			ipam := New()
+			p, err := ipam.NewPrefix(fmt.Sprintf("192.168.0.0/%d", bm.parentLength))
+			if err != nil {
+				panic(err)
+			}
+			for n := 0; n < b.N; n++ {
+				p, err := ipam.AcquireChildPrefix(p.Cidr, bm.childLength)
+				if err != nil {
+					panic(err)
+				}
+				err = ipam.ReleaseChildPrefix(p)
+				if err != nil {
+					panic(err)
+				}
+			}
+			_, err = ipam.DeletePrefix(p.Cidr)
+			if err != nil {
+				b.Fatalf("error deleting prefix:%v", err)
+			}
+		})
+	}
 }
-
-func benchmarkAcquireChildPrefix(parentLength, childLength uint8, b *testing.B) {
-	ipam := New()
-	p, err := ipam.NewPrefix(fmt.Sprintf("192.168.0.0/%d", parentLength))
-	if err != nil {
-		panic(err)
-	}
-	for n := 0; n < b.N; n++ {
-		p, err := ipam.AcquireChildPrefix(p.Cidr, childLength)
-		if err != nil {
-			panic(err)
-		}
-		err = ipam.ReleaseChildPrefix(p)
-		if err != nil {
-			panic(err)
-		}
-	}
-	_, err = ipam.DeletePrefix(p.Cidr)
-	if err != nil {
-		b.Fatalf("error deleting prefix:%v", err)
-	}
-}
-func BenchmarkAcquireChildPrefix1(b *testing.B)  { benchmarkAcquireChildPrefix(8, 14, b) }
-func BenchmarkAcquireChildPrefix2(b *testing.B)  { benchmarkAcquireChildPrefix(8, 16, b) }
-func BenchmarkAcquireChildPrefix3(b *testing.B)  { benchmarkAcquireChildPrefix(8, 20, b) }
-func BenchmarkAcquireChildPrefix4(b *testing.B)  { benchmarkAcquireChildPrefix(8, 22, b) }
-func BenchmarkAcquireChildPrefix5(b *testing.B)  { benchmarkAcquireChildPrefix(8, 24, b) }
-func BenchmarkAcquireChildPrefix6(b *testing.B)  { benchmarkAcquireChildPrefix(16, 18, b) }
-func BenchmarkAcquireChildPrefix7(b *testing.B)  { benchmarkAcquireChildPrefix(16, 20, b) }
-func BenchmarkAcquireChildPrefix8(b *testing.B)  { benchmarkAcquireChildPrefix(16, 22, b) }
-func BenchmarkAcquireChildPrefix9(b *testing.B)  { benchmarkAcquireChildPrefix(16, 24, b) }
-func BenchmarkAcquireChildPrefix10(b *testing.B) { benchmarkAcquireChildPrefix(16, 26, b) }
 
 func BenchmarkPrefixOverlapping(b *testing.B) {
 	ipam := New()
