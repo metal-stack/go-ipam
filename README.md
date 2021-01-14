@@ -48,6 +48,24 @@ func main() {
         panic(err)
     }
     fmt.Printf("IP: %s released.", ip.IP)
+
+    // Now a IPv6 Super Prefix with Child Prefixes
+    prefix, err := ipamer.NewPrefix("2001:aabb::/48")
+    if err != nil {
+        panic(err)
+    }
+    cp1, err := ipamer.AcquireChildPrefix(prefix.Cidr, 64)
+    if err != nil {
+        panic(err)
+    }
+    cp2, err := ipamer.AcquireChildPrefix(prefix.Cidr, 72)
+    if err != nil {
+        panic(err)
+    }
+    ip21, err := ipamer.AcquireIP(cp2.Cidr)
+    if err != nil {
+        panic(err)
+    }
 }
 ```
 
