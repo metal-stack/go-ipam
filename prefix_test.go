@@ -1212,6 +1212,10 @@ func TestJSON(t *testing.T) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/24")
 		require.Nil(t, err)
 		require.NotNil(t, prefix)
+		_, err = ipam.AcquireChildPrefix("192.168.0.0/24", 26)
+		require.Nil(t, err)
+		// reread
+		prefix = ipam.PrefixFrom("192.168.0.0/24")
 
 		data, err := prefix.JSONEncode()
 		require.Nil(t, err)
