@@ -13,7 +13,7 @@ type memory struct {
 }
 
 // NewMemory create a memory storage for ipam
-func NewMemory() *memory {
+func NewMemory() Storage {
 	prefixes := make(map[string]Prefix)
 	return &memory{
 		prefixes: prefixes,
@@ -29,7 +29,7 @@ func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
 	if ok {
 		return Prefix{}, fmt.Errorf("prefix already created:%v", prefix)
 	}
-	m.prefixes[prefix.Cidr] = *prefix.DeepCopy()
+	m.prefixes[prefix.Cidr] = *prefix.deepCopy()
 	return prefix, nil
 }
 func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
@@ -40,7 +40,7 @@ func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
 	if !ok {
 		return Prefix{}, errors.Errorf("Prefix %s not found", prefix)
 	}
-	return *result.DeepCopy(), nil
+	return *result.deepCopy(), nil
 }
 func (m *memory) ReadAllPrefixes() ([]Prefix, error) {
 	m.lock.RLock()
@@ -48,7 +48,7 @@ func (m *memory) ReadAllPrefixes() ([]Prefix, error) {
 
 	ps := make([]Prefix, 0, len(m.prefixes))
 	for _, v := range m.prefixes {
-		ps = append(ps, *v.DeepCopy())
+		ps = append(ps, *v.deepCopy())
 	}
 	return ps, nil
 }
@@ -63,7 +63,7 @@ func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	if !ok {
 		return Prefix{}, fmt.Errorf("prefix not found:%s", prefix.Cidr)
 	}
-	m.prefixes[prefix.Cidr] = *prefix.DeepCopy()
+	m.prefixes[prefix.Cidr] = *prefix.deepCopy()
 	return prefix, nil
 }
 func (m *memory) DeletePrefix(prefix Prefix) (Prefix, error) {
@@ -71,5 +71,5 @@ func (m *memory) DeletePrefix(prefix Prefix) (Prefix, error) {
 	defer m.lock.Unlock()
 
 	delete(m.prefixes, prefix.Cidr)
-	return *prefix.DeepCopy(), nil
+	return *prefix.deepCopy(), nil
 }

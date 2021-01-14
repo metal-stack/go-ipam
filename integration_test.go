@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"inet.af/netaddr"
 )
 
 func TestIntegration(t *testing.T) {
@@ -53,8 +54,17 @@ func TestIntegration(t *testing.T) {
 	// Tenant super network
 	tenantSuper := ipam.PrefixFrom("10.128.0.0/14")
 	require.NotNil(t, tenantSuper)
-	require.Equal(t, 2, int(tenantSuper.Usage().AcquiredIPs))
-	require.Equal(t, 256, int(tenantSuper.Usage().AvailablePrefixes))
+	require.Equal(t, uint64(2), tenantSuper.Usage().AcquiredIPs)
+	sum := 0
+	for _, pfx := range tenantSuper.Usage().AvailablePrefixes {
+		// Only logs if fails
+		ipprefix, err := netaddr.ParseIPPrefix(pfx)
+		require.NoError(t, err)
+		smallest := 1 << (ipprefix.IP.BitLen() - 2 - ipprefix.Bits)
+		sum += smallest
+		t.Logf("available prefix:%s smallest left:%d sum:%d", pfx, smallest, sum)
+	}
+	require.Equal(t, 60928, int(tenantSuper.Usage().AvailableSmallestPrefixes))
 	// FIXME This Super Prefix has leaked child prefixes !
 	require.Equal(t, 18, int(tenantSuper.Usage().AcquiredPrefixes))
 
@@ -122,7 +132,7 @@ func TestIntegrationP(t *testing.T) {
 	tenantSuper1 := ipam.PrefixFrom("10.64.0.0/14")
 	require.NotNil(t, tenantSuper1)
 	require.Equal(t, 2, int(tenantSuper1.Usage().AcquiredIPs))
-	require.Equal(t, 256, int(tenantSuper1.Usage().AvailablePrefixes))
+	require.Equal(t, 56320, int(tenantSuper1.Usage().AvailableSmallestPrefixes))
 	require.Equal(t, 36, int(tenantSuper1.Usage().AcquiredPrefixes))
 
 	cp, err := ipam.AcquireChildPrefix("10.64.0.0/14", 22)
@@ -166,7 +176,7 @@ func TestIntegrationP(t *testing.T) {
 	tenantSuper2 := ipam.PrefixFrom("10.76.0.0/14")
 	require.NotNil(t, tenantSuper2)
 	require.Equal(t, 2, int(tenantSuper2.Usage().AcquiredIPs))
-	require.Equal(t, 256, int(tenantSuper2.Usage().AvailablePrefixes))
+	require.Equal(t, 58368, int(tenantSuper2.Usage().AvailableSmallestPrefixes))
 	require.Equal(t, 28, int(tenantSuper2.Usage().AcquiredPrefixes))
 
 	cp, err = ipam.AcquireChildPrefix("10.76.0.0/14", 22)

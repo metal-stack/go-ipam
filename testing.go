@@ -2,6 +2,8 @@ package ipam
 
 import (
 	"context"
+	"io/ioutil"
+	"log"
 	"sync"
 	"testing"
 
@@ -15,6 +17,11 @@ var (
 	pgContainer testcontainers.Container
 	crContainer testcontainers.Container
 )
+
+func init() {
+	// prevent testcontainer logging mangle test and benchmark output
+	log.SetOutput(ioutil.Discard)
+}
 
 func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 	ctx := context.Background()
@@ -47,7 +54,7 @@ func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 		return pgContainer, nil, err
 	}
 	dbname := "postgres"
-	db, err := NewPostgresStorage(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
+	db, err := newPostgres(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
 
 	return pgContainer, db, err
 }
@@ -57,7 +64,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	crOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "cockroachdb/cockroach:v20.1.8",
+			Image:        "cockroachdb/cockroach:v20.2.3",
 			ExposedPorts: []string{"26257/tcp", "8080/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
 			WaitingFor: wait.ForAll(
@@ -84,7 +91,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 		return crContainer, nil, err
 	}
 	dbname := "defaultdb"
-	db, err := NewPostgresStorage(ip, port.Port(), "root", "password", dbname, SSLModeDisable)
+	db, err := newPostgres(ip, port.Port(), "root", "password", dbname, SSLModeDisable)
 
 	return crContainer, db, err
 }
@@ -98,37 +105,37 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 // 	s.db.MustExec("DROP TABLE prefixes")
 // }
 
-// Cleanable interface for impls that support cleaning before each testrun
-type Cleanable interface {
+// cleanable interface for impls that support cleaning before each testrun
+type cleanable interface {
 	cleanup() error
 }
 
-// ExtendedSQL extended sql interface
-type ExtendedSQL struct {
+// extendedSQL extended sql interface
+type extendedSQL struct {
 	*sql
 	c testcontainers.Container
 }
 
-func newPostgresWithCleanup() (*ExtendedSQL, error) {
+func newPostgresWithCleanup() (*extendedSQL, error) {
 	c, s, err := startPostgres()
 	if err != nil {
 		return nil, err
 	}
 
-	ext := &ExtendedSQL{
+	ext := &extendedSQL{
 		sql: s,
 		c:   c,
 	}
 
 	return ext, nil
 }
-func newCockroachWithCleanup() (*ExtendedSQL, error) {
+func newCockroachWithCleanup() (*extendedSQL, error) {
 	c, s, err := startCockroach()
 	if err != nil {
 		return nil, err
 	}
 
-	ext := &ExtendedSQL{
+	ext := &extendedSQL{
 		sql: s,
 		c:   c,
 	}
@@ -137,7 +144,7 @@ func newCockroachWithCleanup() (*ExtendedSQL, error) {
 }
 
 // cleanup database before test
-func (e *ExtendedSQL) cleanup() error {
+func (e *extendedSQL) cleanup() error {
 	tx := e.sql.db.MustBegin()
 	_, err := e.sql.db.Exec("TRUNCATE TABLE prefixes")
 	if err != nil {
@@ -163,7 +170,7 @@ func testWithBackends(t *testing.T, fn testMethod) {
 
 		storage := storageProvider.provide()
 
-		if tp, ok := storage.(Cleanable); ok {
+		if tp, ok := storage.(cleanable); ok {
 			err := tp.cleanup()
 			if err != nil {
 				t.Errorf("error cleaning up, %v", err)
@@ -205,15 +212,15 @@ func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
 type provide func() Storage
 type providesql func() *sql
 
-// StorageProvider provides different storages
-type StorageProvider struct {
+// storageProvider provides different storages
+type storageProvider struct {
 	name       string
 	provide    provide
 	providesql providesql
 }
 
-func storageProviders() []StorageProvider {
-	return []StorageProvider{
+func storageProviders() []storageProvider {
+	return []storageProvider{
 		{
 			name: "Memory",
 			provide: func() Storage {

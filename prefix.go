@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"math"
-	"math/rand"
 	"net"
-	"time"
+	"strings"
 
 	"github.com/avast/retry-go"
 	"github.com/pkg/errors"
+	"inet.af/netaddr"
 )
 
 var (
@@ -24,19 +23,22 @@ var (
 type Prefix struct {
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
+	isParent               bool            // if this Prefix has child prefixes, this is set to true
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
-	childPrefixLength      int             // the length of the child prefixes
-	ips                    map[string]bool // The ips contained in this prefix
-	version                int64           // version is used for optimistic locking
+	// TODO remove this in the next release
+	childPrefixLength int             // the length of the child prefixes
+	ips               map[string]bool // The ips contained in this prefix
+	version           int64           // version is used for optimistic locking
 }
 
-// DeepCopy to a new Prefix
-func (p Prefix) DeepCopy() *Prefix {
+// deepCopy to a new Prefix
+func (p Prefix) deepCopy() *Prefix {
 	return &Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
-		availableChildPrefixes: copyMap(p.availableChildPrefixes),
+		isParent:               p.isParent,
 		childPrefixLength:      p.childPrefixLength,
+		availableChildPrefixes: copyMap(p.availableChildPrefixes),
 		ips:                    copyMap(p.ips),
 		version:                p.version,
 	}
@@ -51,6 +53,10 @@ func (p *Prefix) GobEncode() ([]byte, error) {
 		return nil, err
 	}
 	err = encoder.Encode(p.childPrefixLength)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(p.isParent)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +91,10 @@ func (p *Prefix) GobDecode(buf []byte) error {
 	if err != nil {
 		return err
 	}
+	err = decoder.Decode(&p.isParent)
+	if err != nil {
+		return err
+	}
 	err = decoder.Decode(&p.ips)
 	if err != nil {
 		return err
@@ -110,14 +120,20 @@ func copyMap(m map[string]bool) map[string]bool {
 
 // Usage of ips and child Prefixes of a Prefix
 type Usage struct {
-	AvailableIPs      uint64
-	AcquiredIPs       uint64
-	AvailablePrefixes uint64
-	AcquiredPrefixes  uint64
+	// AvailableIPs the number of available IPs if this is not a parent prefix
+	AvailableIPs uint64
+	// AcquiredIPs the number of acquire IPs if this is not a parent prefix
+	AcquiredIPs uint64
+	// AvailableSmallestPrefixes is the count of available Prefixes with 2 countable Bits
+	AvailableSmallestPrefixes uint64
+	// AvailablePrefixes is a list of prefixes which are available
+	AvailablePrefixes []string
+	// AcquiredPrefixes the number of acquired prefixes if this is a parent prefix
+	AcquiredPrefixes uint64
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
-	p, err := i.newPrefix(cidr)
+	p, err := i.newPrefix(cidr, "")
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +150,7 @@ func (i *ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	if p == nil {
 		return nil, fmt.Errorf("%w: delete prefix:%s", ErrNotFound, cidr)
 	}
-	if len(p.ips) > 2 {
+	if p.hasIPs() {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
 	}
 	prefix, err := i.storage.DeletePrefix(*p)
@@ -145,7 +161,7 @@ func (i *ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	return &prefix, nil
 }
 
-func (i *ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, error) {
+func (i *ipamer) AcquireChildPrefix(parentCidr string, length uint8) (*Prefix, error) {
 	var prefix *Prefix
 	return prefix, retryOnOptimisticLock(func() error {
 		var err error
@@ -155,81 +171,71 @@ func (i *ipamer) AcquireChildPrefix(parentCidr string, length int) (*Prefix, err
 }
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
-// FIXME allow variable child prefix length
-func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length int) (*Prefix, error) {
-	prefix := i.PrefixFrom(parentCidr)
-	if prefix == nil {
+func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*Prefix, error) {
+	parent := i.PrefixFrom(parentCidr)
+	if parent == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
 	}
-	if len(prefix.ips) > 2 {
-		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", prefix.Cidr)
-	}
-	ipnet, err := prefix.IPNet()
+	ipprefix, err := netaddr.ParseIPPrefix(parent.Cidr)
 	if err != nil {
 		return nil, err
 	}
-	ones, size := ipnet.Mask.Size()
-	if ones >= length {
-		return nil, fmt.Errorf("given length:%d is smaller or equal of prefix length:%d", length, ones)
+	if ipprefix.Bits >= length {
+		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits)
+	}
+	if parent.hasIPs() {
+		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", parent.Cidr)
 	}
 
-	// If this is the first call, create a pool of available child prefixes with given length upfront
-	if prefix.childPrefixLength == 0 {
-		ip := ipnet.IP
-		// FIXME use big.Int
-		// power of 2 :-(
-		// subnetCount := 1 << (uint(length - ones))
-		subnetCount := int(math.Pow(float64(2), float64(length-ones)))
-		for s := 0; s < subnetCount; s++ {
-			ipPart, err := insertNumIntoIP(ip, s, length)
-			if err != nil {
-				return nil, err
-			}
-			newIP := &net.IPNet{
-				IP:   *ipPart,
-				Mask: net.CIDRMask(length, size),
-			}
-			newCidr := newIP.String()
-			child, err := i.newPrefix(newCidr)
-			if err != nil {
-				return nil, err
-			}
-			prefix.availableChildPrefixes[child.Cidr] = true
-
-		}
-		prefix.childPrefixLength = length
-	}
-	if prefix.childPrefixLength != length {
-		return nil, fmt.Errorf("given length:%d is not equal to existing child prefix length:%d", length, prefix.childPrefixLength)
-	}
-
-	var child *Prefix
-	for c, available := range prefix.availableChildPrefixes {
-		if !available {
+	var ipset netaddr.IPSet
+	ipset.AddPrefix(ipprefix)
+	for cp, available := range parent.availableChildPrefixes {
+		if available {
 			continue
 		}
-		child, err = i.newPrefix(c)
+		cpipprefix, err := netaddr.ParseIPPrefix(cp)
 		if err != nil {
-			continue
+			return nil, err
 		}
-		break
-	}
-	if child == nil {
-		return nil, fmt.Errorf("no more child prefixes contained in prefix pool")
+		ipset.RemovePrefix(cpipprefix)
 	}
 
-	prefix.availableChildPrefixes[child.Cidr] = false
+	cp, ok := ipset.RemoveFreePrefix(length)
+	if !ok {
+		pfxs := ipset.Prefixes()
+		if len(pfxs) == 0 {
+			return nil, fmt.Errorf("no prefix found in %s with length:%d", parentCidr, length)
+		}
 
-	_, err = i.storage.UpdatePrefix(*prefix)
+		var availablePrefixes []string
+		for _, p := range pfxs {
+			availablePrefixes = append(availablePrefixes, p.String())
+		}
+		adj := "are"
+		if len(availablePrefixes) == 1 {
+			adj = "is"
+		}
+
+		return nil, fmt.Errorf("no prefix found in %s with length:%d, but %s %s available", parentCidr, length, strings.Join(availablePrefixes, ","), adj)
+	}
+
+	child := &Prefix{
+		Cidr:       cp.String(),
+		ParentCidr: parentCidr,
+	}
+
+	parent.availableChildPrefixes[child.Cidr] = false
+	parent.isParent = true
+
+	_, err = i.storage.UpdatePrefix(*parent)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", prefix)
+		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", parent)
 	}
-	child, err = i.NewPrefix(child.Cidr)
+	child, err = i.newPrefix(child.Cidr, parentCidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to persist created child:%v", err)
 	}
-	child.ParentCidr = prefix.Cidr
-	_, err = i.storage.UpdatePrefix(*child)
+	_, err = i.storage.CreatePrefix(*child)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", child)
 	}
@@ -292,22 +298,18 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 	if prefix == nil {
 		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
 	}
-	if prefix.childPrefixLength > 0 {
+	if prefix.isParent {
 		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
 	}
-	var acquired *IP
-	ipnet, err := prefix.IPNet()
-	if err != nil {
-		return nil, err
-	}
-	network, err := prefix.Network()
+	ipnet, err := netaddr.ParseIPPrefix(prefix.Cidr)
 	if err != nil {
 		return nil, err
 	}
 
+	var specificIPnet netaddr.IP
 	if specificIP != "" {
-		specificIPnet := net.ParseIP(specificIP)
-		if specificIPnet == nil {
+		specificIPnet, err = netaddr.ParseIP(specificIP)
+		if err != nil {
 			return nil, fmt.Errorf("given ip:%s in not valid", specificIP)
 		}
 		if !ipnet.Contains(specificIPnet) {
@@ -315,17 +317,18 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		}
 	}
 
-	for ip := network.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
-		_, ok := prefix.ips[ip.String()]
+	for ip := ipnet.Range().From; ipnet.Contains(ip); ip = ip.Next() {
+		ipstring := ip.String()
+		_, ok := prefix.ips[ipstring]
 		if ok {
 			continue
 		}
-		if specificIP == "" || specificIP == ip.String() {
-			acquired = &IP{
+		if specificIP == "" || specificIPnet.Compare(ip) == 0 {
+			acquired := &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
 			}
-			prefix.ips[ip.String()] = true
+			prefix.ips[ipstring] = true
 			_, err := i.storage.UpdatePrefix(*prefix)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
@@ -373,89 +376,46 @@ func (i *ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
 
 func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error {
 	for _, ep := range existingPrefixes {
-		eip, eipnet, err := net.ParseCIDR(ep)
+		eip, err := netaddr.ParseIPPrefix(ep)
 		if err != nil {
 			return fmt.Errorf("parsing prefix %s failed:%v", ep, err)
 		}
 		for _, np := range newPrefixes {
-			nip, nipnet, err := net.ParseCIDR(np)
+			nip, err := netaddr.ParseIPPrefix(np)
 			if err != nil {
 				return fmt.Errorf("parsing prefix %s failed:%v", np, err)
 			}
-			if eipnet.Contains(nip) || nipnet.Contains(eip) {
+			if eip.Overlaps(nip) || nip.Overlaps(eip) {
 				return fmt.Errorf("%s overlaps %s", np, ep)
 			}
 		}
 	}
-
 	return nil
 }
 
-// getHostAddresses will return all possible ipadresses a host can get in the given prefix.
-// The IPs will be acquired by this method, so that the prefix has no free IPs afterwards.
-func (i *ipamer) getHostAddresses(prefix string) ([]string, error) {
-	hostAddresses := []string{}
-
-	p, err := i.NewPrefix(prefix)
-	if err != nil {
-		return hostAddresses, err
-	}
-
-	// loop till AcquireIP signals that it has no ips left
-	for {
-		ip, err := i.AcquireIP(p.Cidr)
-		if errors.Is(err, ErrNoIPAvailable) {
-			return hostAddresses, nil
-		}
-		if err != nil {
-			return nil, err
-		}
-		hostAddresses = append(hostAddresses, ip.IP.String())
-	}
-}
-
 // newPrefix create a new Prefix from a string notation.
-func (i *ipamer) newPrefix(cidr string) (*Prefix, error) {
-	_, _, err := net.ParseCIDR(cidr)
+func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
+	ipnet, err := netaddr.ParseIPPrefix(cidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse cidr:%s %v", cidr, err)
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
+		ParentCidr:             parentCidr,
 		ips:                    make(map[string]bool),
 		availableChildPrefixes: make(map[string]bool),
+		isParent:               false,
 	}
 
-	broadcast, err := p.broadcast()
-	if err != nil {
-		return nil, err
+	// FIXME: should this be done by the user ?
+	// First ip in the prefix and broadcast is blocked.
+	p.ips[ipnet.Range().From.String()] = true
+	if ipnet.IP.Is4() {
+		// broadcast is ipv4 only
+		p.ips[ipnet.Range().To.String()] = true
 	}
-	// First IP in the prefix and Broadcast is blocked.
-	network, err := p.Network()
-	if err != nil {
-		return nil, err
-	}
-	p.ips[network.String()] = true
-	p.ips[broadcast.IP.String()] = true
 
 	return p, nil
-}
-
-func (p *Prefix) broadcast() (*IP, error) {
-	ipnet, err := p.IPNet()
-	if err != nil {
-		return nil, err
-	}
-	network, err := p.Network()
-	if err != nil {
-		return nil, err
-	}
-	mask := ipnet.Mask
-	n := IP{IP: network}
-	m := IP{IP: net.IP(mask)}
-
-	broadcast := n.or(m.not())
-	return &broadcast, nil
 }
 
 func (p *Prefix) String() string {
@@ -463,44 +423,43 @@ func (p *Prefix) String() string {
 }
 
 func (u *Usage) String() string {
-	if u.AvailablePrefixes == uint64(0) {
+	if u.AcquiredPrefixes == 0 {
 		return fmt.Sprintf("ip:%d/%d", u.AcquiredIPs, u.AvailableIPs)
 	}
-	return fmt.Sprintf("ip:%d/%d prefix:%d/%d", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, u.AvailablePrefixes)
-}
-
-// IPNet return the net.IPNet part of the Prefix
-func (p *Prefix) IPNet() (*net.IPNet, error) {
-	_, ipnet, err := net.ParseCIDR(p.Cidr)
-	return ipnet, err
+	return fmt.Sprintf("ip:%d/%d prefixes alloc:%d avail:%d", u.AcquiredIPs, u.AvailableIPs, u.AcquiredPrefixes, u.AvailableSmallestPrefixes)
 }
 
 // Network return the net.IP part of the Prefix
 func (p *Prefix) Network() (net.IP, error) {
-	ip, ipnet, err := net.ParseCIDR(p.Cidr)
+	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
 	if err != nil {
 		return nil, err
 	}
-	return ip.Mask(ipnet.Mask), nil
+	return ipprefix.IPNet().IP, nil
+}
+
+// hasIPs will return true if there are allocated IPs
+func (p *Prefix) hasIPs() bool {
+	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
+	if err != nil {
+		return false
+	}
+	if ipprefix.IP.Is4() && len(p.ips) > 2 {
+		return true
+	}
+	if ipprefix.IP.Is6() && len(p.ips) > 1 {
+		return true
+	}
+	return false
 }
 
 // availableips return the number of ips available in this Prefix
 func (p *Prefix) availableips() uint64 {
-	_, ipnet, err := net.ParseCIDR(p.Cidr)
+	ipprefix, err := netaddr.ParseIPPrefix(p.Cidr)
 	if err != nil {
 		return 0
 	}
-	var bits int
-	if len(ipnet.IP) == net.IPv4len {
-		bits = 32
-	} else if len(ipnet.IP) == net.IPv6len {
-		bits = 128
-	}
-
-	ones, _ := ipnet.Mask.Size()
-	// FIXME use big.Int
-	count := uint64(math.Pow(float64(2), float64(bits-ones)))
-	return count
+	return 1 << (ipprefix.IP.BitLen() - ipprefix.Bits)
 }
 
 // acquiredips return the number of ips acquired in this Prefix
@@ -508,9 +467,35 @@ func (p *Prefix) acquiredips() uint64 {
 	return uint64(len(p.ips))
 }
 
-// availablePrefixes return the amount of possible prefixes of this prefix if this is a parent prefix
-func (p *Prefix) availablePrefixes() uint64 {
-	return uint64(len(p.availableChildPrefixes))
+// availablePrefixes will return the amount of prefixes allocatable and the amount of smallest 2 bit prefixes
+func (p *Prefix) availablePrefixes() (uint64, []string) {
+	prefix, err := netaddr.ParseIPPrefix(p.Cidr)
+	if err != nil {
+		return 0, nil
+	}
+	var ipset netaddr.IPSet
+	ipset.AddPrefix(prefix)
+	for cp, available := range p.availableChildPrefixes {
+		if available {
+			continue
+		}
+		ipprefix, err := netaddr.ParseIPPrefix(cp)
+		if err != nil {
+			continue
+		}
+		ipset.RemovePrefix(ipprefix)
+	}
+	// Only 2 Bit Prefixes are usable, set max bits available 2 less than max in family
+	maxBits := prefix.IP.BitLen() - 2
+	pfxs := ipset.Prefixes()
+	totalAvailable := uint64(0)
+	availablePrefixes := []string{}
+	for _, pfx := range pfxs {
+		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
+		totalAvailable += 1 << (maxBits - pfx.Bits)
+		availablePrefixes = append(availablePrefixes, pfx.String())
+	}
+	return totalAvailable, availablePrefixes
 }
 
 // acquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
@@ -526,11 +511,13 @@ func (p *Prefix) acquiredPrefixes() uint64 {
 
 // Usage report Prefix usage.
 func (p *Prefix) Usage() Usage {
+	sp, ap := p.availablePrefixes()
 	return Usage{
-		AvailableIPs:      p.availableips(),
-		AcquiredIPs:       p.acquiredips(),
-		AvailablePrefixes: p.availablePrefixes(),
-		AcquiredPrefixes:  p.acquiredPrefixes(),
+		AvailableIPs:              p.availableips(),
+		AcquiredIPs:               p.acquiredips(),
+		AcquiredPrefixes:          p.acquiredPrefixes(),
+		AvailableSmallestPrefixes: sp,
+		AvailablePrefixes:         ap,
 	}
 }
 
@@ -563,19 +550,6 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 			return isOptimisticLock
 		}),
 		retry.Attempts(10),
-		retry.DelayType(JitterDelay),
+		retry.DelayType(retry.CombineDelay(retry.BackOffDelay, retry.RandomDelay)),
 		retry.LastErrorOnly(true))
-}
-
-// jitter will add jitter to a time.Duration.
-func jitter(d time.Duration) time.Duration {
-	const jitter = 0.50
-	jit := 1 + jitter*(rand.Float64()*2-1)
-	return time.Duration(jit * float64(d))
-}
-
-// JitterDelay is a DelayType which varies delay in each iterations
-func JitterDelay(_ uint, err error, config *retry.Config) time.Duration {
-	// fields in config are private, so we hardcode the average delay duration
-	return jitter(100 * time.Millisecond)
 }

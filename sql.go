@@ -14,17 +14,25 @@ type sql struct {
 type prefixJSON struct {
 	Prefix
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
-	ChildPrefixLength      int             // the length of the child prefixes
-	IPs                    map[string]bool // The ips contained in this prefix
-	Version                int64           // Version is used for optimistic locking
+	// TODO remove this in the next release
+	ChildPrefixLength int             // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
+	IsParent          bool            // set to true if there are child prefixes
+	IPs               map[string]bool // The ips contained in this prefix
+	Version           int64           // Version is used for optimistic locking
 }
 
 func (p prefixJSON) toPrefix() Prefix {
+	// Legacy support only on reading from database, convert to isParent.
+	// TODO remove this in the next release
+	if p.ChildPrefixLength > 0 {
+		p.IsParent = true
+	}
 	return Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
 		availableChildPrefixes: p.AvailableChildPrefixes,
 		childPrefixLength:      p.ChildPrefixLength,
+		isParent:               p.IsParent,
 		ips:                    p.IPs,
 		version:                p.Version,
 	}
@@ -37,9 +45,11 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 			ParentCidr: p.ParentCidr,
 		},
 		AvailableChildPrefixes: p.availableChildPrefixes,
-		ChildPrefixLength:      p.childPrefixLength,
-		IPs:                    p.ips,
-		Version:                p.version,
+		IsParent:               p.isParent,
+		// TODO remove this in the next release
+		ChildPrefixLength: p.childPrefixLength,
+		IPs:               p.ips,
+		Version:           p.version,
 	}
 }
 
@@ -80,7 +90,6 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%v", err)
 	}
-
 	return pre.toPrefix(), nil
 }
 
