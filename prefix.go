@@ -37,6 +37,7 @@ func (p Prefix) deepCopy() *Prefix {
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
 		isParent:               p.isParent,
+		childPrefixLength:      p.childPrefixLength,
 		availableChildPrefixes: copyMap(p.availableChildPrefixes),
 		ips:                    copyMap(p.ips),
 		version:                p.version,
@@ -48,6 +49,10 @@ func (p *Prefix) GobEncode() ([]byte, error) {
 	w := new(bytes.Buffer)
 	encoder := gob.NewEncoder(w)
 	err := encoder.Encode(p.availableChildPrefixes)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(p.childPrefixLength)
 	if err != nil {
 		return nil, err
 	}
@@ -79,6 +84,10 @@ func (p *Prefix) GobDecode(buf []byte) error {
 	r := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(r)
 	err := decoder.Decode(&p.availableChildPrefixes)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(&p.childPrefixLength)
 	if err != nil {
 		return err
 	}
