@@ -41,31 +41,34 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Printf("got IP: %s", ip.IP)
+    fmt.Printf("got IP: %s\n", ip.IP)
 
     prefix, err = ipam.ReleaseIP(ip)
     if err != nil {
         panic(err)
     }
-    fmt.Printf("IP: %s released.", ip.IP)
+    fmt.Printf("IP: %s released.\n", ip.IP)
 
     // Now a IPv6 Super Prefix with Child Prefixes
-    prefix, err := ipamer.NewPrefix("2001:aabb::/48")
+    prefix, err = ipam.NewPrefix("2001:aabb::/48")
     if err != nil {
         panic(err)
     }
-    cp1, err := ipamer.AcquireChildPrefix(prefix.Cidr, 64)
+    cp1, err := ipam.AcquireChildPrefix(prefix.Cidr, 64)
     if err != nil {
         panic(err)
     }
-    cp2, err := ipamer.AcquireChildPrefix(prefix.Cidr, 72)
+    fmt.Printf("got Prefix: %s\n", cp1)
+    cp2, err := ipam.AcquireChildPrefix(prefix.Cidr, 72)
     if err != nil {
         panic(err)
     }
-    ip21, err := ipamer.AcquireIP(cp2.Cidr)
+    fmt.Printf("got Prefix: %s\n", cp2)
+    ip21, err := ipam.AcquireIP(cp2.Cidr)
     if err != nil {
         panic(err)
     }
+    fmt.Printf("got IP: %s\n", ip21.IP)
 }
 ```
 
