@@ -26,12 +26,15 @@ message PrefixResponse {
 }
 message PrefixCreateRequest {
     string cidr = 1;
+    google.protobuf.StringValue namespace = 2;
 }
 message PrefixDeleteRequest {
     string cidr = 1;
+    google.protobuf.StringValue namespace = 2;
 }
 message PrefixGetRequest {
     string cidr = 1;
+    google.protobuf.StringValue namespace = 2;
 }
 message AcquireChildRequest {
     string cidr = 1;

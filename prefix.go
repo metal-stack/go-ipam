@@ -23,6 +23,7 @@ var (
 type Prefix struct {
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
+	Namespace              string          // if set overlapping prefixes are possible
 	isParent               bool            // if this Prefix has child prefixes, this is set to true
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
 	// TODO remove this in the next release
@@ -36,6 +37,7 @@ func (p Prefix) deepCopy() *Prefix {
 	return &Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
+		Namespace:              p.Namespace,
 		isParent:               p.isParent,
 		childPrefixLength:      p.childPrefixLength,
 		availableChildPrefixes: copyMap(p.availableChildPrefixes),
@@ -133,7 +135,7 @@ type Usage struct {
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
-	p, err := i.newPrefix(cidr, "")
+	p, err := i.newPrefix(cidr, i.namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -222,6 +224,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 	child := &Prefix{
 		Cidr:       cp.String(),
 		ParentCidr: parentCidr,
+		Namespace:  i.namespace,
 	}
 
 	parent.availableChildPrefixes[child.Cidr] = false
@@ -273,7 +276,7 @@ func (i *ipamer) releaseChildPrefixInternal(child *Prefix) error {
 }
 
 func (i *ipamer) PrefixFrom(cidr string) *Prefix {
-	prefix, err := i.storage.ReadPrefix(cidr)
+	prefix, err := i.storage.ReadPrefix(cidr, i.namespace)
 	if err != nil {
 		return nil
 	}
@@ -327,6 +330,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 			acquired := &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
+				Namespace:    i.namespace,
 			}
 			prefix.ips[ipstring] = true
 			_, err := i.storage.UpdatePrefix(*prefix)
@@ -401,6 +405,7 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
+		Namespace:              i.namespace,
 		ParentCidr:             parentCidr,
 		ips:                    make(map[string]bool),
 		availableChildPrefixes: make(map[string]bool),

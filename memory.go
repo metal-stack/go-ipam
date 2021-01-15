@@ -24,19 +24,19 @@ func NewMemory() Storage {
 func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-
-	_, ok := m.prefixes[prefix.Cidr]
+	key := prefix.Cidr + prefix.Namespace
+	_, ok := m.prefixes[key]
 	if ok {
 		return Prefix{}, fmt.Errorf("prefix already created:%v", prefix)
 	}
-	m.prefixes[prefix.Cidr] = *prefix.deepCopy()
+	m.prefixes[key] = *prefix.deepCopy()
 	return prefix, nil
 }
-func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
+func (m *memory) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	result, ok := m.prefixes[prefix]
+	result, ok := m.prefixes[prefix+namespace]
 	if !ok {
 		return Prefix{}, errors.Errorf("Prefix %s not found", prefix)
 	}
@@ -59,17 +59,18 @@ func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	if prefix.Cidr == "" {
 		return Prefix{}, fmt.Errorf("prefix not present:%v", prefix)
 	}
-	_, ok := m.prefixes[prefix.Cidr]
+	key := prefix.Cidr + prefix.Namespace
+	_, ok := m.prefixes[key]
 	if !ok {
 		return Prefix{}, fmt.Errorf("prefix not found:%s", prefix.Cidr)
 	}
-	m.prefixes[prefix.Cidr] = *prefix.deepCopy()
+	m.prefixes[key] = *prefix.deepCopy()
 	return prefix, nil
 }
 func (m *memory) DeletePrefix(prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	delete(m.prefixes, prefix.Cidr)
+	delete(m.prefixes, prefix.Cidr+prefix.Namespace)
 	return *prefix.deepCopy(), nil
 }

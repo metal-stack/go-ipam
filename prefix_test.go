@@ -46,6 +46,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 
 	type fields struct {
 		prefixCIDR  string
+		namespace   string
 		existingips []string
 	}
 	tests := []struct {
@@ -57,6 +58,15 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			name: "Acquire next IP regularly",
 			fields: fields{
 				prefixCIDR:  "192.168.1.0/24",
+				existingips: []string{},
+			},
+			want: &IP{IP: mustIP("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
+		},
+		{
+			name: "Acquire next namespaced IP regularly",
+			fields: fields{
+				prefixCIDR:  "192.168.1.0/24",
+				namespace:   "my-namespace",
 				existingips: []string{},
 			},
 			want: &IP{IP: mustIP("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
@@ -119,6 +129,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 	for _, tt := range tests {
 
 		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+			ipam.namespace = tt.fields.namespace
 			p, err := ipam.NewPrefix(tt.fields.prefixCIDR)
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
@@ -135,7 +146,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			got, _ := ipam.AcquireIP(updatedPrefix.Cidr)
 			if tt.want == nil || got == nil {
 				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("Ipamer.AcquireIP() want or got is nil, got %v, want %v", got, tt.want)
+					t.Errorf("Ipamer.AcquireIP()/%q want or got is nil, got %v, want %v", tt.name, got, tt.want)
 				}
 			} else {
 				if tt.want.IP.Compare(got.IP) != 0 {

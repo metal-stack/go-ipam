@@ -30,6 +30,7 @@ func (p prefixJSON) toPrefix() Prefix {
 	return Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
+		Namespace:              p.Namespace,
 		availableChildPrefixes: p.AvailableChildPrefixes,
 		childPrefixLength:      p.ChildPrefixLength,
 		isParent:               p.IsParent,
@@ -43,6 +44,7 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 		Prefix: Prefix{
 			Cidr:       p.Cidr,
 			ParentCidr: p.ParentCidr,
+			Namespace:  p.Namespace,
 		},
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		IsParent:               p.isParent,
@@ -54,7 +56,7 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 }
 
 func (s *sql) prefixExists(prefix Prefix) (*Prefix, bool) {
-	p, err := s.ReadPrefix(prefix.Cidr)
+	p, err := s.ReadPrefix(prefix.Cidr, prefix.Namespace)
 	if err != nil {
 		return nil, false
 	}
@@ -75,13 +77,13 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
 	}
-	tx.MustExec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
+	tx.MustExec("INSERT INTO prefixes (cidr, namespace, prefix) VALUES ($1, $2, $3)", prefix.Cidr, prefix.Namespace, pj)
 	return prefix, tx.Commit()
 }
 
-func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
+func (s *sql) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	var result []byte
-	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1", prefix)
+	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1 AND namespace=$2", prefix, namespace)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read prefix:%v", err)
 	}
@@ -95,6 +97,7 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 
 func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 	var prefixes [][]byte
+	// TODO namespace
 	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
 	if err != nil {
 		return nil, fmt.Errorf("unable to read prefixes:%v", err)
@@ -125,7 +128,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
 	}
-	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
+	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND namespace=$2 AND prefix->>'Version'=$3 FOR UPDATE", prefix.Cidr, prefix.Namespace, oldVersion)
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return Prefix{}, err
@@ -137,7 +140,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		}
 		return Prefix{}, newOptimisticLockError("select for update did not effect any row")
 	}
-	result = tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+	result = tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND namespace=$3 AND prefix->>'Version'=$4", pn, prefix.Cidr, prefix.Namespace, oldVersion)
 	rows, err = result.RowsAffected()
 	if err != nil {
 		return Prefix{}, err
@@ -157,6 +160,6 @@ func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
 	}
-	tx.MustExec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
+	tx.MustExec("DELETE from prefixes WHERE cidr=$1 and namespace=$2", prefix.Cidr, prefix.Namespace)
 	return prefix, tx.Commit()
 }
