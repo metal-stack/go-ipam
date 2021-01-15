@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/metal-stack/masterdata-api/pkg/auth"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/go-ipam/pkg/client"
@@ -57,7 +56,7 @@ func run(c client.Client, log *zap.Logger) {
 
 	pcr = &v1.PrefixCreateRequest{
 		Cidr:      "192.168.0.0/16",
-		Namespace: wrapperspb.String("my-namespace"),
+		Namespace: "my-namespace",
 	}
 	res, err = c.Ipam().Create(ctx, pcr)
 	if err != nil {
@@ -72,7 +71,7 @@ func run(c client.Client, log *zap.Logger) {
 	}
 
 	// child prefix
-	cp, err := c.Ipam().AcquireChild(ctx, &v1.AcquireChildRequest{Cidr: "192.168.0.0/16", Namespace: wrapperspb.String("my-namespace"), Length: 18})
+	cp, err := c.Ipam().AcquireChild(ctx, &v1.AcquireChildRequest{Cidr: "192.168.0.0/16", Namespace: "my-namespace", Length: 18})
 	if err != nil {
 		log.Fatal("acquire child prefix not working", zap.Error(err))
 	}

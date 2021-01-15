@@ -18,7 +18,7 @@ service IpamService {
 
 message Prefix {
     string cidr = 1;
-    google.protobuf.StringValue namespace = 2;
+    string namespace = 2;
 	string parent_cidr = 3;
 }
 message PrefixResponse {
@@ -26,29 +26,29 @@ message PrefixResponse {
 }
 message PrefixCreateRequest {
     string cidr = 1;
-    google.protobuf.StringValue namespace = 2;
+    string namespace = 2;
 }
 message PrefixDeleteRequest {
     string cidr = 1;
-    google.protobuf.StringValue namespace = 2;
+    string namespace = 2;
 }
 message PrefixGetRequest {
     string cidr = 1;
-    google.protobuf.StringValue namespace = 2;
+    string namespace = 2;
 }
 message AcquireChildRequest {
     string cidr = 1;
     uint32 length = 2;
-    google.protobuf.StringValue namespace = 3;
+    string namespace = 3;
 }
 message ReleaseChildRequest {
     string cidr = 1;
-    google.protobuf.StringValue namespace = 2;
+    string namespace = 2;
 }
 
 message IP {
     string ip = 1;
-    google.protobuf.StringValue namespace = 2;
+    string namespace = 2;
     string parent_prefix = 3;
 }
 message IPResponse {
@@ -56,11 +56,11 @@ message IPResponse {
 }
 message IPAcquireRequest {
     string prefix_cidr = 1;
-    google.protobuf.StringValue namespace = 2;
+    string namespace = 2;
     google.protobuf.StringValue ip = 3;
 }
 message IPReleaseRequest {
     string prefix_cidr = 1;
-    google.protobuf.StringValue namespace = 2;
+    string namespace = 2;
     string ip = 3;
 }
