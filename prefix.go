@@ -135,7 +135,7 @@ type Usage struct {
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
-	p, err := i.newPrefix(cidr, i.namespace)
+	p, err := i.newPrefix(cidr, "")
 	if err != nil {
 		return nil, err
 	}
