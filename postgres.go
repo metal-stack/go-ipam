@@ -13,12 +13,13 @@ const postgresSchema = `
 CREATE TABLE IF NOT EXISTS prefixes (
 	cidr      text NOT NULL,
 	prefix    JSONB,
-	namespace text NOT NULL DEFAULT ''
+	namespace text NOT NULL DEFAULT '',
+	PRIMARY KEY (cidr, namespace)
 );
-
-ALTER TABLE prefixes DROP CONSTRAINT IF EXISTS prefixes_pkey;
+-- FIXME write primary key migration as well
+-- ALTER TABLE prefixes DROP CONSTRAINT IF EXISTS prefixes_pkey;
+-- ALTER TABLE prefixes ALTER PRIMARY KEY (cidr, namespace);
 ALTER TABLE prefixes ADD COLUMN IF NOT EXISTS namespace text NOT NULL DEFAULT '';
-ALTER TABLE prefixes ADD PRIMARY KEY (cidr, namespace);
 UPDATE prefixes SET namespace = DEFAULT WHERE namespace IS NULL;
 
 CREATE INDEX IF NOT EXISTS prefix_idx ON prefixes USING GIN(prefix);
