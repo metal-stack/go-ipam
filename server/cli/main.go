@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/metal-stack/masterdata-api/pkg/auth"
+	"github.com/metal-stack/go-ipam/server/pkg/auth"
 
 	v1 "github.com/metal-stack/go-ipam/server/api/v1"
 	"github.com/metal-stack/go-ipam/server/pkg/client"

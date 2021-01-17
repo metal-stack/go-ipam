@@ -12,8 +12,8 @@ require (
 	github.com/lib/pq v1.9.0
 	// sqlite v2.x is a unfortunate release
 	github.com/mattn/go-sqlite3 v1.14.6 // indirect
-	// FIXME remove masterdata dependency
-	github.com/metal-stack/masterdata-api v0.8.4
+	github.com/metal-stack/metal-lib v0.6.7
+	github.com/metal-stack/security v0.4.0
 	github.com/metal-stack/v v1.0.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.9.0
@@ -26,5 +26,5 @@ require (
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
 	google.golang.org/grpc v1.35.0
 	google.golang.org/protobuf v1.25.0
-	inet.af/netaddr v0.0.0-20210105212526-648fbc18a69d
+	inet.af/netaddr v0.0.0-20210115183222-bffc12a571f6
 )

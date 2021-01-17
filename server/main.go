@@ -25,9 +25,8 @@ import (
 	apiv1 "github.com/metal-stack/go-ipam/server/api/v1"
 	"github.com/metal-stack/go-ipam/server/pkg/service"
 
-	// FIXME masterdata dependency must be removed
-	"github.com/metal-stack/masterdata-api/pkg/auth"
-	"github.com/metal-stack/masterdata-api/pkg/interceptors/grpc_internalerror"
+	"github.com/metal-stack/go-ipam/server/pkg/auth"
+	"github.com/metal-stack/go-ipam/server/pkg/interceptors/grpc_internalerror"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
