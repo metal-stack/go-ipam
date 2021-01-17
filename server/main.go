@@ -144,6 +144,7 @@ func run() {
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		Certificates: []tls.Certificate{cert},
 		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS12,
 	})
 
 	opts := []grpc.ServerOption{

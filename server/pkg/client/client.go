@@ -60,6 +60,7 @@ func NewClient(ctx context.Context, hostname string, port int, certFile string, 
 		ServerName:   hostname,
 		Certificates: []tls.Certificate{clientCertificate},
 		RootCAs:      certPool,
+		MinVersion:   tls.VersionTLS12,
 	})
 
 	if hmacKey == "" {
