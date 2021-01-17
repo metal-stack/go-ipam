@@ -56,8 +56,8 @@ cockroach-rm:
 
 .PHONY: protoc
 protoc:
-	docker run --rm --user $$(id -u):$$(id -g) -v ${PWD}:/work metalstack/builder protoc -I api --go_out=plugins=grpc:api api/v1/*.proto
-	docker run --rm --user $$(id -u):$$(id -g) -v ${PWD}:/work metalstack/builder protoc -I api --go_out=plugins=grpc:api api/grpc/health/v1/*.proto
+	docker run --rm --user $$(id -u):$$(id -g) -v ${PWD}:/work metalstack/builder protoc --proto_path=server/api --go_out=plugins=grpc:server/api server/api/v1/*.proto
+	docker run --rm --user $$(id -u):$$(id -g) -v ${PWD}:/work metalstack/builder protoc --proto_path=server/api --go_out=plugins=grpc:server/api server/api/grpc/health/v1/*.proto
 
 .PHONY: server
 server:
@@ -70,7 +70,7 @@ server:
 
 .PHONY: client
 client:
-	go build -tags netgo -o bin/client client/main.go
+	go build -tags netgo -o bin/client server/cli/main.go
 	strip bin/client
 
 .PHONY: postgres-up

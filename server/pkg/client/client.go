@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	v1 "github.com/metal-stack/go-ipam/api/v1"
+	v1 "github.com/metal-stack/go-ipam/server/api/v1"
 	"go.uber.org/zap"
 )
 

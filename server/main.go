@@ -22,8 +22,8 @@ import (
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/metal-stack/go-ipam"
-	apiv1 "github.com/metal-stack/go-ipam/api/v1"
-	"github.com/metal-stack/go-ipam/pkg/service"
+	apiv1 "github.com/metal-stack/go-ipam/server/api/v1"
+	"github.com/metal-stack/go-ipam/server/pkg/service"
 
 	// FIXME masterdata dependency must be removed
 	"github.com/metal-stack/masterdata-api/pkg/auth"

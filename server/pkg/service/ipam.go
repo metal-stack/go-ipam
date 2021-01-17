@@ -6,7 +6,7 @@ import (
 
 	"github.com/gogo/status"
 	"github.com/metal-stack/go-ipam"
-	v1 "github.com/metal-stack/go-ipam/api/v1"
+	v1 "github.com/metal-stack/go-ipam/server/api/v1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 )

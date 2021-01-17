@@ -7,8 +7,8 @@ import (
 
 	"github.com/metal-stack/masterdata-api/pkg/auth"
 
-	v1 "github.com/metal-stack/go-ipam/api/v1"
-	"github.com/metal-stack/go-ipam/pkg/client"
+	v1 "github.com/metal-stack/go-ipam/server/api/v1"
+	"github.com/metal-stack/go-ipam/server/pkg/client"
 	"go.uber.org/zap"
 )
 
