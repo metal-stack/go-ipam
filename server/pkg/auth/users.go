@@ -8,16 +8,16 @@ import (
 var (
 	// EditGroups members can edit
 	EditGroups = []security.ResourceAccess{
-		security.ResourceAccess("tmdm-all-all-edit"),
+		security.ResourceAccess("ipam-all-all-edit"),
 	}
 
 	EditAccess = sec.MergeResourceAccess(EditGroups)
 
 	// EditUser is able to edit content
 	EditUser = security.User{
-		EMail:  "tmdm@metal-stack.io",
-		Name:   "tmdm",
+		EMail:  "ipam@metal-stack.io",
+		Name:   "ipam",
 		Groups: sec.MergeResourceAccess(EditGroups),
-		Tenant: "tmdm",
+		Tenant: "ipam",
 	}
 )

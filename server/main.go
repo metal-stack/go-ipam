@@ -103,7 +103,7 @@ func run() {
 		logger.Fatal("failed to listen", zap.Error(err))
 	}
 
-	logger.Info("starting masterdata-api", zap.Stringer("version", v.V), zap.String("address", addr))
+	logger.Info("starting go-ipam", zap.Stringer("version", v.V), zap.String("address", addr))
 
 	hmacKey := viper.GetString("hmackey")
 	if hmacKey == "" {

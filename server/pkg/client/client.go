@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/metal-stack/masterdata-api/pkg/auth"
+	"github.com/metal-stack/go-ipam/server/pkg/auth"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

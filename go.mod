@@ -25,6 +25,7 @@ require (
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
 	google.golang.org/grpc v1.35.0
+	google.golang.org/grpc/examples v0.0.0-20210116000752-504caa93c539 // indirect
 	google.golang.org/protobuf v1.25.0
 	inet.af/netaddr v0.0.0-20210115183222-bffc12a571f6
 )

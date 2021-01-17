@@ -21,8 +21,8 @@ const (
 	// hmacMethod fictive non-rest-method used for HMAC-Token
 	hmacMethod = "GRPC"
 
-	// hmacAuthtype reflects the application for that the hmac is used (tenant masterdata-management)
-	hmacAuthtype = "tmdm"
+	// hmacAuthtype reflects the application for that the hmac is used
+	hmacAuthtype = "ipam"
 
 	// lifetime of the hmac token
 	hmacLifetime = 15 * time.Second
