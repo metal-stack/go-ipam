@@ -493,6 +493,7 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	for _, pfx := range pfxs {
 		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
 		totalAvailable += 1 << (maxBits - pfx.Bits)
+		fmt.Printf("calculate usage of %s: maxBits:%d prefix Bits:%d total Available:%d\n", pfx.IP, maxBits, pfx.Bits, totalAvailable)
 		availablePrefixes = append(availablePrefixes, pfx.String())
 	}
 	return totalAvailable, availablePrefixes
