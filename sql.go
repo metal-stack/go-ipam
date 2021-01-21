@@ -95,20 +95,32 @@ func (s *sql) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	return pre.toPrefix(), nil
 }
 
-func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
+func (s *sql) ReadPrefixes(namespace string) ([]Prefix, error) {
 	var prefixes [][]byte
-	// TODO namespace
-	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
+	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes WHERE namespace=$1", namespace)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read prefixes:%v", err)
+		return nil, fmt.Errorf("unable to read prefixes in namespace:%s %w", namespace, err)
 	}
 
+	return toPrefixes(prefixes)
+}
+
+func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
+	var prefixes [][]byte
+	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
+	if err != nil {
+		return nil, fmt.Errorf("unable to read prefixes:%w", err)
+	}
+	return toPrefixes(prefixes)
+}
+
+func toPrefixes(prefixes [][]byte) ([]Prefix, error) {
 	result := []Prefix{}
 	for _, v := range prefixes {
 		var pre prefixJSON
-		err = json.Unmarshal(v, &pre)
+		err := json.Unmarshal(v, &pre)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal prefix:%v", err)
+			return nil, fmt.Errorf("unable to unmarshal prefix:%w", err)
 		}
 		result = append(result, pre.toPrefix())
 	}
