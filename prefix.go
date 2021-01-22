@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"math"
 	"net"
 	"strings"
 
@@ -459,6 +460,10 @@ func (p *Prefix) availableips() uint64 {
 	if err != nil {
 		return 0
 	}
+	// FIXME how to handle overflow more gently, is it event worth reporting more that 2^32
+	if (ipprefix.IP.BitLen() - ipprefix.Bits) > 32 {
+		return math.MaxInt32
+	}
 	return 1 << (ipprefix.IP.BitLen() - ipprefix.Bits)
 }
 
@@ -493,7 +498,10 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	for _, pfx := range pfxs {
 		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
 		totalAvailable += 1 << (maxBits - pfx.Bits)
-		fmt.Printf("calculate usage of %s: maxBits:%d prefix Bits:%d total Available:%d\n", pfx.IP, maxBits, pfx.Bits, totalAvailable)
+		// FIXME how to handle overflow more gently, is it event worth reporting more that 2^32
+		if (maxBits - pfx.Bits) > 32 {
+			totalAvailable = math.MaxInt32
+		}
 		availablePrefixes = append(availablePrefixes, pfx.String())
 	}
 	return totalAvailable, availablePrefixes
