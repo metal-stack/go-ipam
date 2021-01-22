@@ -498,11 +498,11 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	for _, pfx := range pfxs {
 		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
 		totalAvailable += 1 << (maxBits - pfx.Bits)
-		// FIXME how to handle overflow more gently, is it event worth reporting more that 2^32
-		if (maxBits - pfx.Bits) > 32 {
-			totalAvailable = math.MaxInt32
-		}
 		availablePrefixes = append(availablePrefixes, pfx.String())
+	}
+	// FIXME how to handle overflow more gently, is it event worth reporting more that 2^32
+	if totalAvailable > math.MaxInt32 {
+		totalAvailable = math.MaxInt32
 	}
 	return totalAvailable, availablePrefixes
 }
