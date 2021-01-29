@@ -154,6 +154,29 @@ Now we could do something like this:
 
 As it turns out we got even more. Because we switched all network object manipulation from go standard library `net` to `inet.af/netaddr`, all of our functions got way faster with less memory consumption. Go comes with fantastic benchmarking built in and we will explain howto get most out of this in a later blog post.
 
+### Benchmark results before and after using `inet.af/netaddr`
+
+```sh
+name                    old time/op    new time/op    delta
+NewPrefixMemory-4         3.15µs ± 1%    2.34µs ± 7%   -25.56%  (p=0.016 n=4+5)
+NewPrefixPostgres-4       10.3ms ± 6%    10.1ms ±12%      ~     (p=0.686 n=4+4)
+NewPrefixCockroach-4      81.1ms ± 5%    80.0ms ± 3%      ~     (p=0.486 n=4+4)
+AcquireIPMemory-4         4.63µs ±12%    3.90µs ± 1%   -15.91%  (p=0.016 n=5+4)
+AcquireIPPostgres-4       12.6ms ± 9%    13.4ms ± 7%      ~     (p=0.222 n=5+5)
+AcquireIPCockroach-4      79.6ms ± 6%    85.2ms ± 9%      ~     (p=0.095 n=5+5)
+AcquireChildPrefix1-4     31.6µs ±12%     8.1µs ± 7%   -74.43%  (p=0.008 n=5+5)
+AcquireChildPrefix2-4     93.8µs ±17%     8.3µs ±10%   -91.17%  (p=0.008 n=5+5)
+AcquireChildPrefix3-4     1.56ms ± 7%    0.01ms ± 5%   -99.51%  (p=0.008 n=5+5)
+AcquireChildPrefix4-4     9.79ms ±37%    0.01ms ± 4%   -99.92%  (p=0.008 n=5+5)
+AcquireChildPrefix5-4     82.4ms ± 6%     0.0ms ±34%   -99.99%  (p=0.008 n=5+5)
+AcquireChildPrefix6-4     10.9µs ±10%     7.9µs ± 5%   -27.17%  (p=0.008 n=5+5)
+AcquireChildPrefix7-4     15.0µs ± 6%     7.7µs ± 2%   -48.61%  (p=0.008 n=5+5)
+AcquireChildPrefix8-4     30.2µs ± 0%     7.5µs ± 1%   -75.04%  (p=0.016 n=4+5)
+AcquireChildPrefix9-4     97.2µs ± 9%     7.7µs ± 3%   -92.10%  (p=0.008 n=5+5)
+AcquireChildPrefix10-4     360µs ± 7%       8µs ± 1%   -97.91%  (p=0.008 n=5+5)
+PrefixOverlapping-4       1.65µs ±12%    0.34µs ± 1%   -79.25%  (p=0.008 n=5+5)
+```
+
 ## the next steps
 
 go-ipam is the foundation for ip address management in metal-stack and is IPv6 ready now. We are currently in the process of make all dependent parts IPv6 aware as well. This journey will be ready in the next couple of weeks.
