@@ -99,11 +99,11 @@ So we ripped out netbox from metal-api and used our own go-ipam since then.
 
 As we wanted to be fast during the implementation of go-ipam, we skipped some ugly parts. We where not able to implement two major things:
 
-- IPv6
+- [IPv6](https://en.wikipedia.org/wiki/IPv6)
 - Child prefixes with variable bitlength or mask
 
 Both features require complicated and well tested algorithms for ip addresses. We skipped this effort for the time being.
-We also did not had an urgent requirement to support IPv6 because kubernetes was at version 1.13 and IPv6 support was not implemented either.
+We also did not had an urgent requirement to support IPv6 because kubernetes was at version 1.13 and IPv6 support was not implemented either, see: [Kubernetes warms up to ipv6](https://thenewstack.io/kubernetes-warms-up-to-ipv6/).
 But we where aware that at a later point in time we have to come back and dive deep into IPv6.
 
 The missing support for variable bitlength for child prefixes was another story. Missing this feature forces us to create several networks "by hand" for some cases.
@@ -180,3 +180,12 @@ PrefixOverlapping-4       1.65µs ±12%    0.34µs ± 1%   -79.25%  (p=0.008 n=5
 ## the next steps
 
 go-ipam is the foundation for ip address management in metal-stack and is IPv6 ready now. We are currently in the process of make all dependent parts IPv6 aware as well. This journey will be ready in the next couple of weeks.
+
+The following metal-stack components needs adoption or at least testing (probably incomplete):
+
+- [metal-api](https://github.com/metal-stack/metal-api/pull/152)
+- [metalctl](https://github.com/metal-stack/metalctl/pull/72)
+- [metal-networker](https://github.com/metal-stack/metal-networker/pull/42)
+- [metal-images](https://github.com/metal-stack/metal-images/pull/70)
+- [mini-lab](https://github.com/metal-stack/mini-lab/tree/ipv6)
+- [firewall-controller](https://github.com/metal-stack/firewall-controller)
