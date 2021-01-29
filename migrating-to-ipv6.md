@@ -1,8 +1,6 @@
 # IPv6 Support for metal-stack
 
-![IPv6](https://en.wikipedia.org/wiki/IPv6#/media/File:IPv6_address_terminology-en.svg)
-
-Two year ago, when we started to implement metal-stack, we first decided to rely on a external tool to do all the hard IP address management.
+Two years ago, when we started to implement metal-stack, we first decided to rely on a external tool to do all the hard IP address management.
 For this purpose we used [netbox](https://github.com/netbox-community/netbox) from digitalocean.
 To talk to netbox we also implemented our own go library, which was not available back then, because all of metal-stack is written in go.
 
