@@ -9,7 +9,7 @@ We also found that their api forced us to make a lot of calls for one single pur
 
 Because one of our main goals during the development of metal-stack was speed and simplicity we decided to implement our own IPAM (IP Address Management) and [go-ipam](https://github.com/metal-stack/go-ipam) was born.
 
-## go-ipam the beginning
+## The Beginning
 
 go-ipam should only serve the IPAM requirements from metal-stack and these are:
 
@@ -95,7 +95,7 @@ The following snippet show you how.
 With this implementation we where able to do all IPAM operations in a matter of milliseconds instead of 10s of seconds when using netbox.
 So we ripped out netbox from metal-api and used our own go-ipam since then.
 
-## go-ipam open issues
+## Open Issues
 
 As we wanted to be fast during the implementation of go-ipam, we skipped some ugly parts. We where not able to implement two major things:
 
@@ -108,7 +108,7 @@ But we where aware that at a later point in time we have to come back and dive d
 
 The missing support for variable bitlength for child prefixes was another story. Missing this feature forces us to create several networks "by hand" for some cases.
 
-## the solution
+## The Solution
 
 As time went by, we discovered the excellent work from the people behind [tailscale](https://tailscale.com).
 They implemented a alternative network manipulation library for go called [inet.af/netaddr](https://github.com/inetaf/netaddr).
@@ -177,7 +177,7 @@ AcquireChildPrefix10-4     360µs ± 7%       8µs ± 1%   -97.91%  (p=0.008 n=5
 PrefixOverlapping-4       1.65µs ±12%    0.34µs ± 1%   -79.25%  (p=0.008 n=5+5)
 ```
 
-## the next steps
+## Next Steps
 
 go-ipam is the foundation for ip address management in metal-stack and is IPv6 ready now. We are currently in the process of make all dependent parts IPv6 aware as well. This journey will be ready in the next couple of weeks.
 
