@@ -111,7 +111,7 @@ The missing support for variable bitlength for child prefixes was another story.
 ## the solution
 
 As time went by, we discovered the excellent work from the people behind [tailscale](tailscale.com).
-They implemented a alternative network manipulation library for go called [netaddr](github.com/inetaf/netaddr).
+They implemented a alternative network manipulation library for go called [inet.af/netaddr](github.com/inetaf/netaddr).
 In contrast to the `net` package in the go standard library, `inet.af/netaddr` has a more convenient and usable API to manipulate network objects.
 
 The most important are `netaddr.IP.Next()` and `netaddr.IP.Contains`, with them it was a snap to implement `AcquireIP` IPv6 compatible. It took us less than 4 hours to make this work, add additional tests and all passes. Hurray.
