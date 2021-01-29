@@ -152,9 +152,13 @@ Now we could do something like this:
     // Child Prefix 2 IP1: 2001:aabb:0:1::1
 ```
 
+After this work which was done under the hood of `go-ipam`, we still have the same API which makes migration of the dependent projects easy.
+
+### Benchmarks
+
 As it turns out we got even more. Because we switched all network object manipulation from go standard library `net` to `inet.af/netaddr`, all of our functions got way faster with less memory consumption. Go comes with fantastic benchmarking built in and we will explain how to get most out of this in a later blog post.
 
-### Benchmark results before and after using `inet.af/netaddr`
+Shown below are the benchmark results before and after using `inet.af/netaddr`
 
 ```sh
 name                    old time/op    new time/op    delta
@@ -176,6 +180,8 @@ AcquireChildPrefix9-4     97.2µs ± 9%     7.7µs ± 3%   -92.10%  (p=0.008 n=5
 AcquireChildPrefix10-4     360µs ± 7%       8µs ± 1%   -97.91%  (p=0.008 n=5+5)
 PrefixOverlapping-4       1.65µs ±12%    0.34µs ± 1%   -79.25%  (p=0.008 n=5+5)
 ```
+
+As you can see, we are faster all over the place by a large margin.
 
 ## Next Steps
 
