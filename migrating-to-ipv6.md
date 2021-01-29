@@ -110,8 +110,8 @@ The missing support for variable bitlength for child prefixes was another story.
 
 ## the solution
 
-As time went by, we discovered the excellent work from the people behind [tailscale](tailscale.com).
-They implemented a alternative network manipulation library for go called [inet.af/netaddr](github.com/inetaf/netaddr).
+As time went by, we discovered the excellent work from the people behind [tailscale](https://tailscale.com).
+They implemented a alternative network manipulation library for go called [inet.af/netaddr](https://github.com/inetaf/netaddr).
 In contrast to the `net` package in the go standard library, `inet.af/netaddr` has a more convenient and usable API to manipulate network objects.
 
 The most important are `netaddr.IP.Next()` and `netaddr.IP.Contains`, with them it was a snap to implement `AcquireIP` IPv6 compatible. It took us less than 4 hours to make this work, add additional tests and all passes. Hurray.
@@ -152,7 +152,7 @@ Now we could do something like this:
     // Child Prefix 2 IP1: 2001:aabb:0:1::1
 ```
 
-As it turns out we got even more. Because we switched all network object manipulation from go standard library `net` to `inet.af/netaddr`, all of our functions got way faster with less memory consumption. Go comes with fantastic benchmarking built in and we will explain howto get most out of this in a later blog post.
+As it turns out we got even more. Because we switched all network object manipulation from go standard library `net` to `inet.af/netaddr`, all of our functions got way faster with less memory consumption. Go comes with fantastic benchmarking built in and we will explain how to get most out of this in a later blog post.
 
 ### Benchmark results before and after using `inet.af/netaddr`
 
