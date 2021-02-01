@@ -64,7 +64,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	crOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "cockroachdb/cockroach:v20.2.3",
+			Image:        "cockroachdb/cockroach:v20.2.4",
 			ExposedPorts: []string{"26257/tcp", "8080/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
 			WaitingFor: wait.ForAll(
@@ -72,7 +72,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 				wait.ForListeningPort("8080/tcp"),
 				wait.ForListeningPort("26257/tcp"),
 			),
-			Cmd: []string{"start-single-node", "--insecure", "--listen-addr=0.0.0.0"},
+			Cmd: []string{"start-single-node", "--insecure", "--listen-addr=0.0.0.0", "--store=type=mem,size=70%"},
 		}
 		crContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
