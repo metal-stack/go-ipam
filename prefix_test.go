@@ -1208,6 +1208,11 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 			if tt.want != got {
 				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got, tt.want)
 			}
+
+			got2 := p.Usage().AvailableSmallestPrefixes
+			if tt.want != got2 {
+				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got2, tt.want)
+			}
 		})
 	}
 }

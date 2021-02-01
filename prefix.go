@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"math"
 	"net"
 	"strings"
 
@@ -121,10 +122,12 @@ func copyMap(m map[string]bool) map[string]bool {
 // Usage of ips and child Prefixes of a Prefix
 type Usage struct {
 	// AvailableIPs the number of available IPs if this is not a parent prefix
+	// No more than 2^31 available IPs are reported
 	AvailableIPs uint64
 	// AcquiredIPs the number of acquire IPs if this is not a parent prefix
 	AcquiredIPs uint64
 	// AvailableSmallestPrefixes is the count of available Prefixes with 2 countable Bits
+	// No more than 2^31 available Prefixes are reported
 	AvailableSmallestPrefixes uint64
 	// AvailablePrefixes is a list of prefixes which are available
 	AvailablePrefixes []string
@@ -459,6 +462,10 @@ func (p *Prefix) availableips() uint64 {
 	if err != nil {
 		return 0
 	}
+	// We don't report more than 2^31 available IPs by design
+	if (ipprefix.IP.BitLen() - ipprefix.Bits) > 31 {
+		return math.MaxInt32
+	}
 	return 1 << (ipprefix.IP.BitLen() - ipprefix.Bits)
 }
 
@@ -494,6 +501,10 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
 		totalAvailable += 1 << (maxBits - pfx.Bits)
 		availablePrefixes = append(availablePrefixes, pfx.String())
+	}
+	// we are not reporting more that 2^31 available prefixes
+	if totalAvailable > math.MaxInt32 {
+		totalAvailable = math.MaxInt32
 	}
 	return totalAvailable, availablePrefixes
 }
