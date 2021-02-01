@@ -878,13 +878,15 @@ func TestIpamer_NewPrefix(t *testing.T) {
 	tests := []struct {
 		name        string
 		cidr        string
+		parentCidr  string
 		wantErr     bool
 		errorString string
 	}{
 		{
-			name:    "valid Prefix",
-			cidr:    "192.168.0.0/24",
-			wantErr: false,
+			name:       "valid Prefix",
+			cidr:       "192.168.0.0/24",
+			parentCidr: "",
+			wantErr:    false,
 		},
 		{
 			name:        "invalid Prefix",
@@ -927,8 +929,11 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if !reflect.DeepEqual(got.Cidr, tt.cidr) {
+			if got.Cidr != tt.cidr {
 				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.Cidr, tt.cidr)
+			}
+			if got.ParentCidr != tt.parentCidr {
+				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.ParentCidr, tt.parentCidr)
 			}
 		})
 	}
@@ -1213,6 +1218,11 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 
 			if tt.want != got {
 				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got, tt.want)
+			}
+
+			got2 := p.Usage().AvailableSmallestPrefixes
+			if tt.want != got2 {
+				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got2, tt.want)
 			}
 		})
 	}

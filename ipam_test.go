@@ -77,7 +77,7 @@ func ExampleIpamer_AcquireChildPrefix() {
 	// Child Prefix 1: 2001:aabb::/64
 	// Child Prefix 2: 2001:aabb:0:1::/72
 	// Child Prefix 2 IP1: 2001:aabb:0:1::1
-	// Super Prefix available child prefixes with 2 bytes: 13817043656772681728
+	// Super Prefix available child prefixes with 2 bytes: 2147483647
 	// Super Prefix available child prefixes: 2001:aabb:0:1:100::/72,2001:aabb:0:1:200::/71,2001:aabb:0:1:400::/70,2001:aabb:0:1:800::/69,2001:aabb:0:1:1000::/68,2001:aabb:0:1:2000::/67,2001:aabb:0:1:4000::/66,2001:aabb:0:1:8000::/65,2001:aabb:0:2::/63,2001:aabb:0:4::/62,2001:aabb:0:8::/61,2001:aabb:0:10::/60,2001:aabb:0:20::/59,2001:aabb:0:40::/58,2001:aabb:0:80::/57,2001:aabb:0:100::/56,2001:aabb:0:200::/55,2001:aabb:0:400::/54,2001:aabb:0:800::/53,2001:aabb:0:1000::/52,2001:aabb:0:2000::/51,2001:aabb:0:4000::/50,2001:aabb:0:8000::/49
 	err = ipamer.ReleaseChildPrefix(cp1)
 	if err != nil {
