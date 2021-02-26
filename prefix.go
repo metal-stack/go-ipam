@@ -18,6 +18,8 @@ var (
 	ErrNotFound NotFoundError
 	// ErrNoIPAvailable is returned if no IP is available anymore
 	ErrNoIPAvailable NoIPAvailableError
+	// ErrAlreadyAllocated is returned if the requested address is not available
+	ErrAlreadyAllocated AlreadyAllocatedError
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
@@ -292,10 +294,7 @@ func (i *ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 	})
 }
 
-// acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
-// If specificIP is empty, the next free IP is returned.
-// If there is no free IP an NoIPAvailableError is returned.
-// If the Prefix is not found an NotFoundError is returned.
+// acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return AlreadyAllocatedError.
 func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
@@ -310,37 +309,33 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 	}
 
 	var specificIPnet netaddr.IP
-	if specificIP != "" {
-		specificIPnet, err = netaddr.ParseIP(specificIP)
-		if err != nil {
-			return nil, fmt.Errorf("given ip:%s in not valid", specificIP)
-		}
-		if !ipnet.Contains(specificIPnet) {
-			return nil, fmt.Errorf("given ip:%s is not in %s", specificIP, prefixCidr)
-		}
+	specificIPnet, err = netaddr.ParseIP(specificIP)
+	if err != nil {
+		return nil, fmt.Errorf("given ip:%s in not valid", specificIP)
+	}
+	if !ipnet.Contains(specificIPnet) {
+		return nil, fmt.Errorf("given ip:%s is not in %s", specificIP, prefixCidr)
 	}
 
-	for ip := ipnet.Range().From; ipnet.Contains(ip); ip = ip.Next() {
-		ipstring := ip.String()
-		_, ok := prefix.ips[ipstring]
-		if ok {
-			continue
-		}
-		if specificIP == "" || specificIPnet.Compare(ip) == 0 {
-			acquired := &IP{
-				IP:           ip,
-				ParentPrefix: prefix.Cidr,
-			}
-			prefix.ips[ipstring] = true
-			_, err := i.storage.UpdatePrefix(*prefix)
-			if err != nil {
-				return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
-			}
-			return acquired, nil
-		}
+	ipstring := specificIPnet.String()
+
+	_, allocated := prefix.ips[ipstring]
+	if allocated {
+		return nil, fmt.Errorf("%w: ip is already allocated: %s", ErrAlreadyAllocated, specificIP)
 	}
 
-	return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
+	acquired := &IP{
+		IP:           specificIPnet,
+		ParentPrefix: prefix.Cidr,
+	}
+	prefix.ips[ipstring] = true
+
+	_, err = i.storage.UpdatePrefix(*prefix)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
+	}
+
+	return acquired, nil
 }
 
 func (i *ipamer) AcquireIP(prefixCidr string) (*IP, error) {
@@ -547,6 +542,14 @@ type NotFoundError struct {
 
 func (o NotFoundError) Error() string {
 	return "NotFound"
+}
+
+// AlreadyAllocatedError is raised if the given address is already in use
+type AlreadyAllocatedError struct {
+}
+
+func (o AlreadyAllocatedError) Error() string {
+	return "AlreadyAllocatedError"
 }
 
 // retries the given function if the reported error is an OptimisticLockError
