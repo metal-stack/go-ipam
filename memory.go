@@ -36,7 +36,7 @@ func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
 
 	result, ok := m.prefixes[prefix]
 	if !ok {
-		return Prefix{}, fmt.Errorf("Prefix %s not found", prefix)
+		return Prefix{}, fmt.Errorf("prefix %s not found", prefix)
 	}
 	return *result.deepCopy(), nil
 }
