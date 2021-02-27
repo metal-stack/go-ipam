@@ -1059,7 +1059,7 @@ func TestIpamerAcquireAlreadyAquiredIPv4(t *testing.T) {
 		_, err = ipam.AcquireSpecificIP(p.Cidr, "192.168.2.4")
 		require.EqualError(t, err, "given ip:192.168.2.4 is already allocated")
 
-		p, err = ipam.ReleaseIP(ip)
+		_, err = ipam.ReleaseIP(ip)
 		require.NoError(t, err)
 		_, err = ipam.DeletePrefix(cidr)
 		require.NoError(t, err)
@@ -1078,7 +1078,7 @@ func TestIpamerAcquireAlreadyAquiredIPv6(t *testing.T) {
 		_, err = ipam.AcquireSpecificIP(p.Cidr, "2001:0db8:85a3::1")
 		require.EqualError(t, err, "given ip:2001:0db8:85a3::1 is already allocated")
 
-		p, err = ipam.ReleaseIP(ip)
+		_, err = ipam.ReleaseIP(ip)
 		require.NoError(t, err)
 		_, err = ipam.DeletePrefix(cidr)
 		require.NoError(t, err)
