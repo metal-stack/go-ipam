@@ -75,7 +75,10 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	tx.MustExec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
+	_, err = tx.Exec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to insert prefix:%w", err)
+	}
 	return prefix, tx.Commit()
 }
 
@@ -157,6 +160,9 @@ func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	tx.MustExec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
+	_, err = tx.Exec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable delete prefix:%w", err)
+	}
 	return prefix, tx.Commit()
 }
