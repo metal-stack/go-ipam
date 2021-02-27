@@ -119,12 +119,13 @@ func TestIpamer_AcquireIP(t *testing.T) {
 	}
 	for _, tt := range tests {
 
+		test := tt
 		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
-			p, err := ipam.NewPrefix(tt.fields.prefixCIDR)
+			p, err := ipam.NewPrefix(test.fields.prefixCIDR)
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
 			}
-			for _, ipString := range tt.fields.existingips {
+			for _, ipString := range test.fields.existingips {
 				p.ips[ipString] = true
 			}
 
@@ -134,13 +135,13 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				t.Errorf("Could not update prefix: %v", err)
 			}
 			got, _ := ipam.AcquireIP(updatedPrefix.Cidr)
-			if tt.want == nil || got == nil {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("Ipamer.AcquireIP() want or got is nil, got %v, want %v", got, tt.want)
+			if test.want == nil || got == nil {
+				if !reflect.DeepEqual(got, test.want) {
+					t.Errorf("Ipamer.AcquireIP() want or got is nil, got %v, want %v", got, test.want)
 				}
 			} else {
-				if tt.want.IP.Compare(got.IP) != 0 {
-					t.Errorf("Ipamer.AcquireIP() got %v, want %v", got, tt.want)
+				if test.want.IP.Compare(got.IP) != 0 {
+					t.Errorf("Ipamer.AcquireIP() got %v, want %v", got, test.want)
 				}
 			}
 		})
@@ -768,12 +769,13 @@ func TestPrefix_Availableips(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		test := tt
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Prefix{
-				Cidr: tt.Cidr,
+				Cidr: test.Cidr,
 			}
-			if got := p.availableips(); got != tt.want {
-				t.Errorf("Prefix.Availableips() = %v, want %v", got, tt.want)
+			if got := p.availableips(); got != test.want {
+				t.Errorf("Prefix.Availableips() = %v, want %v", got, test.want)
 			}
 		})
 	}
@@ -839,8 +841,9 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		test := tt
 		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
-			for _, ep := range tt.existingPrefixes {
+			for _, ep := range test.existingPrefixes {
 				p, err := ipam.NewPrefix(ep)
 				if err != nil {
 					t.Errorf("Newprefix on ExistingPrefix failed:%v", err)
@@ -849,15 +852,15 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 					t.Errorf("Newprefix on ExistingPrefix returns nil")
 				}
 			}
-			err := ipam.PrefixesOverlapping(tt.existingPrefixes, tt.newPrefixes)
-			if tt.wantErr && err == nil {
+			err := ipam.PrefixesOverlapping(test.existingPrefixes, test.newPrefixes)
+			if test.wantErr && err == nil {
 				t.Errorf("Ipamer.PrefixesOverlapping() expected error but err was nil")
 			}
-			if tt.wantErr && err != nil && err.Error() != tt.errorString {
-				t.Errorf("Ipamer.PrefixesOverlapping() error = %v, wantErr %v, errorString = %v", err, tt.wantErr, tt.errorString)
+			if test.wantErr && err != nil && err.Error() != test.errorString {
+				t.Errorf("Ipamer.PrefixesOverlapping() error = %v, wantErr %v, errorString = %v", err, test.wantErr, test.errorString)
 			}
-			if !tt.wantErr && err != nil {
-				t.Errorf("Ipamer.PrefixesOverlapping() error = %v, wantErr %v", err, tt.wantErr)
+			if !test.wantErr && err != nil {
+				t.Errorf("Ipamer.PrefixesOverlapping() error = %v, wantErr %v", err, test.wantErr)
 			}
 		})
 	}
@@ -903,27 +906,27 @@ func TestIpamer_NewPrefix(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-
+		test := tt
 		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
-			got, err := ipam.NewPrefix(tt.cidr)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Ipamer.NewPrefix() error = %v, wantErr %v", err, tt.wantErr)
+			got, err := ipam.NewPrefix(test.cidr)
+			if (err != nil) != test.wantErr {
+				t.Errorf("Ipamer.NewPrefix() error = %v, wantErr %v", err, test.wantErr)
 				return
 			}
 
-			if (err != nil) && tt.errorString != err.Error() {
-				t.Errorf("Ipamer.NewPrefix() error = %v, errorString %v", err, tt.errorString)
+			if (err != nil) && test.errorString != err.Error() {
+				t.Errorf("Ipamer.NewPrefix() error = %v, errorString %v", err, test.errorString)
 				return
 			}
 
 			if err != nil {
 				return
 			}
-			if got.Cidr != tt.cidr {
-				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.Cidr, tt.cidr)
+			if got.Cidr != test.cidr {
+				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.Cidr, test.cidr)
 			}
-			if got.ParentCidr != tt.parentCidr {
-				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.ParentCidr, tt.parentCidr)
+			if got.ParentCidr != test.parentCidr {
+				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.ParentCidr, test.parentCidr)
 			}
 		})
 	}
@@ -1203,10 +1206,11 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		test := tt
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Prefix{
-				Cidr:                   tt.cidr,
-				availableChildPrefixes: tt.availableChildPrefixes,
+				Cidr:                   test.cidr,
+				availableChildPrefixes: test.availableChildPrefixes,
 			}
 			got, avpfxs := p.availablePrefixes()
 			for _, pfx := range avpfxs {
@@ -1217,13 +1221,13 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 				t.Logf("available prefix:%s smallest left:%d", pfx, smallest)
 			}
 
-			if tt.want != got {
-				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got, tt.want)
+			if test.want != got {
+				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got, test.want)
 			}
 
 			got2 := p.Usage().AvailableSmallestPrefixes
-			if tt.want != got2 {
-				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got2, tt.want)
+			if test.want != got2 {
+				t.Errorf("Prefix.availablePrefixes() = %d, want %d", got2, test.want)
 			}
 		})
 	}

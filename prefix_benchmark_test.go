@@ -27,16 +27,17 @@ func BenchmarkNewPrefix(b *testing.B) {
 		{name: "Cockroach", ipam: cockipam},
 	}
 	for _, bm := range benchmarks {
-		b.Run(bm.name, func(b *testing.B) {
+		test := bm
+		b.Run(test.name, func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				p, err := bm.ipam.NewPrefix("192.168.0.0/24")
+				p, err := test.ipam.NewPrefix("192.168.0.0/24")
 				if err != nil {
 					panic(err)
 				}
 				if p == nil {
 					panic("Prefix nil")
 				}
-				_, err = bm.ipam.DeletePrefix(p.Cidr)
+				_, err = test.ipam.DeletePrefix(p.Cidr)
 				if err != nil {
 					panic(err)
 				}
@@ -68,25 +69,26 @@ func BenchmarkAcquireIP(b *testing.B) {
 		{name: "Cockroach", ipam: cockipam, cidr: "10.0.0.0/16"},
 	}
 	for _, bm := range benchmarks {
-		b.Run(bm.name, func(b *testing.B) {
-			p, err := bm.ipam.NewPrefix(bm.cidr)
+		test := bm
+		b.Run(test.name, func(b *testing.B) {
+			p, err := test.ipam.NewPrefix(test.cidr)
 			if err != nil {
 				panic(err)
 			}
 			for n := 0; n < b.N; n++ {
-				ip, err := bm.ipam.AcquireIP(p.Cidr)
+				ip, err := test.ipam.AcquireIP(p.Cidr)
 				if err != nil {
 					panic(err)
 				}
 				if ip == nil {
 					panic("IP nil")
 				}
-				p, err = bm.ipam.ReleaseIP(ip)
+				p, err = test.ipam.ReleaseIP(ip)
 				if err != nil {
 					panic(err)
 				}
 			}
-			_, err = bm.ipam.DeletePrefix(bm.cidr)
+			_, err = test.ipam.DeletePrefix(test.cidr)
 			if err != nil {
 				b.Fatalf("error deleting prefix:%v", err)
 			}
@@ -112,14 +114,15 @@ func BenchmarkAcquireChildPrefix(b *testing.B) {
 		{name: "16/26", parentLength: 16, childLength: 26},
 	}
 	for _, bm := range benchmarks {
-		b.Run(bm.name, func(b *testing.B) {
+		test := bm
+		b.Run(test.name, func(b *testing.B) {
 			ipam := New()
-			p, err := ipam.NewPrefix(fmt.Sprintf("192.168.0.0/%d", bm.parentLength))
+			p, err := ipam.NewPrefix(fmt.Sprintf("192.168.0.0/%d", test.parentLength))
 			if err != nil {
 				panic(err)
 			}
 			for n := 0; n < b.N; n++ {
-				p, err := ipam.AcquireChildPrefix(p.Cidr, bm.childLength)
+				p, err := ipam.AcquireChildPrefix(p.Cidr, test.childLength)
 				if err != nil {
 					panic(err)
 				}
