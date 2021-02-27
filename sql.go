@@ -128,28 +128,30 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
+	result, err := tx.Exec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("%w: unable to select for update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+	}
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return Prefix{}, err
 	}
 	if rows == 0 {
-		err := tx.Rollback()
-		if err != nil {
-			return Prefix{}, fmt.Errorf("select for update did not effect any row, but rollback did not work:%w", err)
-		}
+		// Rollback, but ignore error, if rollback is ommited, updatePrefix sometimes stucks forever, dunno why.
+		_ = tx.Rollback()
 		return Prefix{}, fmt.Errorf("%w: select for update did not effect any row", ErrOptimisticLockError)
 	}
-	result = tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+	result, err = tx.Exec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+	}
 	rows, err = result.RowsAffected()
 	if err != nil {
 		return Prefix{}, err
 	}
 	if rows == 0 {
-		err := tx.Rollback()
-		if err != nil {
-			return Prefix{}, fmt.Errorf("updatePrefix did not effect any row, but rollback did not work:%w", err)
-		}
+		// Rollback, but ignore error, if rollback is ommited, updatePrefix sometimes stucks forever, dunno why.
+		_ = tx.Rollback()
 		return Prefix{}, fmt.Errorf("%w: updatePrefix did not effect any row", ErrOptimisticLockError)
 	}
 	return prefix, tx.Commit()
