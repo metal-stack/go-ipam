@@ -18,6 +18,8 @@ var (
 	ErrNotFound NotFoundError
 	// ErrNoIPAvailable is returned if no IP is available anymore
 	ErrNoIPAvailable NoIPAvailableError
+	// ErrAlreadyAllocated is returned if the requested address is not available
+	ErrAlreadyAllocated AlreadyAllocatedError
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
@@ -318,6 +320,10 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		if !ipnet.Contains(specificIPnet) {
 			return nil, fmt.Errorf("given ip:%s is not in %s", specificIP, prefixCidr)
 		}
+		_, ok := prefix.ips[specificIPnet.String()]
+		if ok {
+			return nil, fmt.Errorf("%w: given ip:%s is already allocated", ErrAlreadyAllocated, specificIP)
+		}
 	}
 
 	for ip := ipnet.Range().From; ipnet.Contains(ip); ip = ip.Next() {
@@ -547,6 +553,14 @@ type NotFoundError struct {
 
 func (o NotFoundError) Error() string {
 	return "NotFound"
+}
+
+// AlreadyAllocatedError is raised if the given address is already in use
+type AlreadyAllocatedError struct {
+}
+
+func (o AlreadyAllocatedError) Error() string {
+	return "AlreadyAllocatedError"
 }
 
 // retries the given function if the reported error is an OptimisticLockError
