@@ -69,11 +69,11 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 	prefix.version = int64(0)
 	pj, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
+		return Prefix{}, fmt.Errorf("unable to marshal prefix:%w", err)
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
+		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
 	tx.MustExec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
 	return prefix, tx.Commit()
@@ -83,12 +83,12 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 	var result []byte
 	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1", prefix)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read prefix:%v", err)
+		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
 	var pre prefixJSON
 	err = json.Unmarshal(result, &pre)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%v", err)
+		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%w", err)
 	}
 	return pre.toPrefix(), nil
 }
@@ -97,7 +97,7 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 	var prefixes [][]byte
 	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
 	if err != nil {
-		return nil, fmt.Errorf("unable to read prefixes:%v", err)
+		return nil, fmt.Errorf("unable to read prefixes:%w", err)
 	}
 
 	result := []Prefix{}
@@ -105,7 +105,7 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 		var pre prefixJSON
 		err = json.Unmarshal(v, &pre)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal prefix:%v", err)
+			return nil, fmt.Errorf("unable to unmarshal prefix:%w", err)
 		}
 		result = append(result, pre.toPrefix())
 	}
@@ -119,11 +119,11 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	prefix.version = oldVersion + 1
 	pn, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
+		return Prefix{}, fmt.Errorf("unable to marshal prefix:%w", err)
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
+		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
 	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
 	rows, err := result.RowsAffected()
@@ -155,7 +155,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
+		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
 	tx.MustExec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
 	return prefix, tx.Commit()
