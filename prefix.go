@@ -18,6 +18,9 @@ var (
 	ErrNotFound NotFoundError
 	// ErrNoIPAvailable is returned if no IP is available anymore
 	ErrNoIPAvailable NoIPAvailableError
+
+	// ErrOptimisticLockError is returned if insert or update conflicts with the existing data
+	ErrOptimisticLockError OptimisticLockError
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
@@ -549,6 +552,15 @@ func (o NotFoundError) Error() string {
 	return "NotFound"
 }
 
+// OptimisticLockError indicates that the operation could not be executed because the dataset to update has changed in the meantime.
+// clients can decide to read the current dataset and retry the operation.
+type OptimisticLockError struct {
+}
+
+func (o OptimisticLockError) Error() string {
+	return "OptimisticLockError"
+}
+
 // retries the given function if the reported error is an OptimisticLockError
 // with ten attempts and jitter delay ~100ms
 // returns only error of last failed attempt
@@ -557,11 +569,7 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 	return retry.Do(
 		retryableFunc,
 		retry.RetryIf(func(err error) bool {
-			unwrapped := errors.Unwrap(err)
-			fmt.Printf("Error Type:%T Unwrapped:%T\n", err, unwrapped)
-			var ole OptimisticLockError
-			isOptimisticLock := errors.Is(unwrapped, ole)
-			return isOptimisticLock
+			return errors.Is(err, ErrOptimisticLockError)
 		}),
 		retry.Attempts(10),
 		retry.DelayType(retry.CombineDelay(retry.BackOffDelay, retry.RandomDelay)),
