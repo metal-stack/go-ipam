@@ -991,29 +991,19 @@ func TestIpamerAcquireIP(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "10.0.0.0/16"
 		p, err := ipam.NewPrefix(cidr)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 		for n := 0; n < 10; n++ {
 			if len(p.ips) != 2 {
 				t.Fatalf("expected 2 ips in prefix, got %d", len(p.ips))
 			}
 			ip, err := ipam.AcquireIP(p.Cidr)
-			if err != nil {
-				panic(err)
-			}
-			if ip == nil {
-				panic("IP nil")
-			}
+			require.NoError(t, err)
+			require.NotNil(t, ip, "IP is nil")
 			p, err = ipam.ReleaseIP(ip)
-			if err != nil {
-				panic(err)
-			}
+			require.NoError(t, err)
 		}
 		_, err = ipam.DeletePrefix(cidr)
-		if err != nil {
-			t.Errorf("error deleting prefix:%v", err)
-		}
+		require.NoError(t, err, "error deleting prefix:%v", err)
 	})
 }
 
@@ -1022,29 +1012,19 @@ func TestIpamerAcquireIPv6(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "2001:0db8:85a3::/120"
 		p, err := ipam.NewPrefix(cidr)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 		for n := 0; n < 10; n++ {
 			if len(p.ips) != 1 {
 				t.Fatalf("expected 1 ips in prefix, got %d", len(p.ips))
 			}
 			ip, err := ipam.AcquireIP(p.Cidr)
-			if err != nil {
-				panic(err)
-			}
-			if ip == nil {
-				panic("IP nil")
-			}
+			require.NoError(t, err)
+			require.NotNil(t, ip, "IP is nil")
 			p, err = ipam.ReleaseIP(ip)
-			if err != nil {
-				panic(err)
-			}
+			require.NoError(t, err)
 		}
 		_, err = ipam.DeletePrefix(cidr)
-		if err != nil {
-			t.Errorf("error deleting prefix:%v", err)
-		}
+		require.NoError(t, err, "error deleting prefix:%v", err)
 	})
 }
 func TestIpamerAcquireAlreadyAquiredIPv4(t *testing.T) {
@@ -1091,9 +1071,7 @@ func TestGetHostAddresses(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "4.1.0.0/24"
 		ips, err := ipam.getHostAddresses(cidr)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 		require.NotNil(t, ips)
 		require.Equal(t, 254, len(ips))
 
@@ -1106,9 +1084,7 @@ func TestGetHostAddresses(t *testing.T) {
 
 		cidr = "3.1.0.0/26"
 		ips, err = ipam.getHostAddresses(cidr)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 		require.NotNil(t, ips)
 		require.Equal(t, 62, len(ips))
 
@@ -1125,9 +1101,7 @@ func TestGetHostAddressesIPv6(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "2001:0db8:85a3::/120"
 		ips, err := ipam.getHostAddresses(cidr)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 		require.NotNil(t, ips)
 		require.Equal(t, 255, len(ips))
 
@@ -1140,9 +1114,7 @@ func TestGetHostAddressesIPv6(t *testing.T) {
 
 		cidr = "2001:0db8:95a3::/122"
 		ips, err = ipam.getHostAddresses(cidr)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 		require.NotNil(t, ips)
 		require.Equal(t, 63, len(ips))
 
