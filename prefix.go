@@ -318,6 +318,10 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		if !ipnet.Contains(specificIPnet) {
 			return nil, fmt.Errorf("given ip:%s is not in %s", specificIP, prefixCidr)
 		}
+		_, ok := prefix.ips[specificIPnet.String()]
+		if ok {
+			return nil, fmt.Errorf("given ip:%s is already allocated", specificIP)
+		}
 	}
 
 	for ip := ipnet.Range().From; ipnet.Contains(ip); ip = ip.Next() {
