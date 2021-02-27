@@ -1047,7 +1047,46 @@ func TestIpamerAcquireIPv6(t *testing.T) {
 		}
 	})
 }
+func TestIpamerAcquireAlreadyAquiredIPv4(t *testing.T) {
 
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		cidr := "192.168.0.0/16"
+		p, err := ipam.NewPrefix(cidr)
+		require.NoError(t, err)
+		ip, err := ipam.AcquireSpecificIP(p.Cidr, "192.168.2.4")
+		require.NoError(t, err)
+		require.NotNil(t, ip, "IP is nil")
+		require.Equal(t, ip.IP.String(), "192.168.2.4")
+		_, err = ipam.AcquireSpecificIP(p.Cidr, "192.168.2.4")
+		require.ErrorIs(t, err, ErrAlreadyAllocated)
+		require.EqualError(t, err, "AlreadyAllocatedError: given ip:192.168.2.4 is already allocated")
+
+		_, err = ipam.ReleaseIP(ip)
+		require.NoError(t, err)
+		_, err = ipam.DeletePrefix(cidr)
+		require.NoError(t, err)
+	})
+}
+func TestIpamerAcquireAlreadyAquiredIPv6(t *testing.T) {
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		cidr := "2001:0db8:85a3::/64"
+		p, err := ipam.NewPrefix(cidr)
+		require.NoError(t, err)
+		ip, err := ipam.AcquireSpecificIP(p.Cidr, "2001:0db8:85a3::1")
+		require.NoError(t, err)
+		require.NotNil(t, ip, "IP is nil")
+		require.Equal(t, ip.IP.String(), "2001:db8:85a3::1")
+		_, err = ipam.AcquireSpecificIP(p.Cidr, "2001:0db8:85a3::1")
+		require.ErrorIs(t, err, ErrAlreadyAllocated)
+		require.EqualError(t, err, "AlreadyAllocatedError: given ip:2001:0db8:85a3::1 is already allocated")
+
+		_, err = ipam.ReleaseIP(ip)
+		require.NoError(t, err)
+		_, err = ipam.DeletePrefix(cidr)
+		require.NoError(t, err)
+	})
+}
 func TestGetHostAddresses(t *testing.T) {
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "4.1.0.0/24"
