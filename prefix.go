@@ -294,16 +294,41 @@ func (i *ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
 	})
 }
 
-// acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return AlreadyAllocatedError.
-func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
+func (i *ipamer) parseAndValidatePrefix(prefixCidr string) (*Prefix, netaddr.IPPrefix, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
-		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
+		return nil, netaddr.IPPrefix{}, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
 	}
 	if prefix.isParent {
-		return nil, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
+		return nil, netaddr.IPPrefix{}, fmt.Errorf("prefix %s has childprefixes, acquire ip not possible", prefix.Cidr)
 	}
 	ipnet, err := netaddr.ParseIPPrefix(prefix.Cidr)
+	if err != nil {
+		return nil, netaddr.IPPrefix{}, err
+	}
+
+	return prefix, ipnet, nil
+}
+
+func (i *ipamer) persistAcquiredIP(prefix *Prefix, ip netaddr.IP) (*IP, error) {
+	acquired := &IP{
+		IP:           ip,
+		ParentPrefix: prefix.Cidr,
+	}
+	prefix.ips[ip.String()] = true
+	_, err := i.storage.UpdatePrefix(*prefix)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
+	}
+	return acquired, nil
+}
+
+// acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
+// If specificIP is empty, the next free IP is returned.
+// If there is no free IP an NoIPAvailableError is returned.
+// If the Prefix is not found an NotFoundError is returned.
+func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
+	prefix, ipnet, err := i.parseAndValidatePrefix(prefixCidr)
 	if err != nil {
 		return nil, err
 	}
@@ -318,28 +343,35 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 	}
 
 	ipstring := specificIPnet.String()
-
 	_, allocated := prefix.ips[ipstring]
+
+	// this would be nicer from the ouside:
+	// if allocated {
+	// 	return nil, fmt.Errorf("%w: ip is already allocated: %s", ErrAlreadyAllocated, specificIP)
+	// }
 	if allocated {
-		return nil, fmt.Errorf("%w: ip is already allocated: %s", ErrAlreadyAllocated, specificIP)
+		return nil, nil
 	}
 
-	acquired := &IP{
-		IP:           specificIPnet,
-		ParentPrefix: prefix.Cidr,
-	}
-	prefix.ips[ipstring] = true
-
-	_, err = i.storage.UpdatePrefix(*prefix)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
-	}
-
-	return acquired, nil
+	return i.persistAcquiredIP(prefix, specificIPnet)
 }
 
 func (i *ipamer) AcquireIP(prefixCidr string) (*IP, error) {
-	return i.AcquireSpecificIP(prefixCidr, "")
+	prefix, ipnet, err := i.parseAndValidatePrefix(prefixCidr)
+	if err != nil {
+		return nil, err
+	}
+
+	for ip := ipnet.Range().From; ipnet.Contains(ip); ip = ip.Next() {
+		ipstring := ip.String()
+		_, allocated := prefix.ips[ipstring]
+		if allocated {
+			continue
+		}
+		return i.persistAcquiredIP(prefix, ip)
+	}
+
+	return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
 }
 
 func (i *ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
