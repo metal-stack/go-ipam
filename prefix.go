@@ -3,13 +3,13 @@ package ipam
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"math"
 	"net"
 	"strings"
 
 	"github.com/avast/retry-go"
-	"github.com/pkg/errors"
 	"inet.af/netaddr"
 )
 
@@ -18,6 +18,10 @@ var (
 	ErrNotFound NotFoundError
 	// ErrNoIPAvailable is returned if no IP is available anymore
 	ErrNoIPAvailable NoIPAvailableError
+	// ErrAlreadyAllocated is returned if the requested address is not available
+	ErrAlreadyAllocated AlreadyAllocatedError
+	// ErrOptimisticLockError is returned if insert or update conflicts with the existing data
+	ErrOptimisticLockError OptimisticLockError
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
@@ -160,7 +164,7 @@ func (i *ipamer) DeletePrefix(cidr string) (*Prefix, error) {
 	}
 	prefix, err := i.storage.DeletePrefix(*p)
 	if err != nil {
-		return nil, fmt.Errorf("delete prefix:%s %v", cidr, err)
+		return nil, fmt.Errorf("delete prefix:%s %w", cidr, err)
 	}
 
 	return &prefix, nil
@@ -192,7 +196,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", parent.Cidr)
 	}
 
-	var ipset netaddr.IPSet
+	var ipset netaddr.IPSetBuilder
 	ipset.AddPrefix(ipprefix)
 	for cp, available := range parent.availableChildPrefixes {
 		if available {
@@ -205,9 +209,9 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 		ipset.RemovePrefix(cpipprefix)
 	}
 
-	cp, ok := ipset.RemoveFreePrefix(length)
+	cp, _, ok := ipset.IPSet().RemoveFreePrefix(length)
 	if !ok {
-		pfxs := ipset.Prefixes()
+		pfxs := ipset.IPSet().Prefixes()
 		if len(pfxs) == 0 {
 			return nil, fmt.Errorf("no prefix found in %s with length:%d", parentCidr, length)
 		}
@@ -235,15 +239,15 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 
 	_, err = i.storage.UpdatePrefix(*parent)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", parent)
+		return nil, fmt.Errorf("unable to update parent prefix:%v error:%w", parent, err)
 	}
 	child, err = i.newPrefix(child.Cidr, parentCidr)
 	if err != nil {
-		return nil, fmt.Errorf("unable to persist created child:%v", err)
+		return nil, fmt.Errorf("unable to persist created child:%w", err)
 	}
 	_, err = i.storage.CreatePrefix(*child)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to update parent prefix:%v", child)
+		return nil, fmt.Errorf("unable to update parent prefix:%v error:%w", child, err)
 	}
 
 	return child, nil
@@ -269,11 +273,11 @@ func (i *ipamer) releaseChildPrefixInternal(child *Prefix) error {
 	parent.availableChildPrefixes[child.Cidr] = true
 	_, err := i.DeletePrefix(child.Cidr)
 	if err != nil {
-		return fmt.Errorf("unable to release prefix %v:%v", child, err)
+		return fmt.Errorf("unable to release prefix %v:%w", child, err)
 	}
 	_, err = i.storage.UpdatePrefix(*parent)
 	if err != nil {
-		return fmt.Errorf("unable to release prefix %v:%v", child, err)
+		return fmt.Errorf("unable to release prefix %v:%w", child, err)
 	}
 	return nil
 }
@@ -321,6 +325,10 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		if !ipnet.Contains(specificIPnet) {
 			return nil, fmt.Errorf("given ip:%s is not in %s", specificIP, prefixCidr)
 		}
+		_, ok := prefix.ips[specificIPnet.String()]
+		if ok {
+			return nil, fmt.Errorf("%w: given ip:%s is already allocated", ErrAlreadyAllocated, specificIP)
+		}
 	}
 
 	for ip := ipnet.Range().From; ipnet.Contains(ip); ip = ip.Next() {
@@ -338,7 +346,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 			prefix.ips[ipstring] = true
 			_, err := i.storage.UpdatePrefix(*prefix)
 			if err != nil {
-				return nil, errors.Wrapf(err, "unable to persist acquired ip:%v", prefix)
+				return nil, fmt.Errorf("unable to persist acquired ip:%v error:%w", prefix, err)
 			}
 			return acquired, nil
 		}
@@ -385,12 +393,12 @@ func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []st
 	for _, ep := range existingPrefixes {
 		eip, err := netaddr.ParseIPPrefix(ep)
 		if err != nil {
-			return fmt.Errorf("parsing prefix %s failed:%v", ep, err)
+			return fmt.Errorf("parsing prefix %s failed:%w", ep, err)
 		}
 		for _, np := range newPrefixes {
 			nip, err := netaddr.ParseIPPrefix(np)
 			if err != nil {
-				return fmt.Errorf("parsing prefix %s failed:%v", np, err)
+				return fmt.Errorf("parsing prefix %s failed:%w", np, err)
 			}
 			if eip.Overlaps(nip) || nip.Overlaps(eip) {
 				return fmt.Errorf("%s overlaps %s", np, ep)
@@ -404,7 +412,7 @@ func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []st
 func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 	ipnet, err := netaddr.ParseIPPrefix(cidr)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse cidr:%s %v", cidr, err)
+		return nil, fmt.Errorf("unable to parse cidr:%s %w", cidr, err)
 	}
 	p := &Prefix{
 		Cidr:                   cidr,
@@ -485,7 +493,7 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	if err != nil {
 		return 0, nil
 	}
-	var ipset netaddr.IPSet
+	var ipset netaddr.IPSetBuilder
 	ipset.AddPrefix(prefix)
 	for cp, available := range p.availableChildPrefixes {
 		if available {
@@ -499,7 +507,7 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	}
 	// Only 2 Bit Prefixes are usable, set max bits available 2 less than max in family
 	maxBits := prefix.IP.BitLen() - 2
-	pfxs := ipset.Prefixes()
+	pfxs := ipset.IPSet().Prefixes()
 	totalAvailable := uint64(0)
 	availablePrefixes := []string{}
 	for _, pfx := range pfxs {
@@ -554,6 +562,23 @@ func (o NotFoundError) Error() string {
 	return "NotFound"
 }
 
+// OptimisticLockError indicates that the operation could not be executed because the dataset to update has changed in the meantime.
+// clients can decide to read the current dataset and retry the operation.
+type OptimisticLockError struct {
+}
+
+func (o OptimisticLockError) Error() string {
+	return "OptimisticLockError"
+}
+
+// AlreadyAllocatedError is raised if the given address is already in use
+type AlreadyAllocatedError struct {
+}
+
+func (o AlreadyAllocatedError) Error() string {
+	return "AlreadyAllocatedError"
+}
+
 // retries the given function if the reported error is an OptimisticLockError
 // with ten attempts and jitter delay ~100ms
 // returns only error of last failed attempt
@@ -562,8 +587,7 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 	return retry.Do(
 		retryableFunc,
 		retry.RetryIf(func(err error) bool {
-			_, isOptimisticLock := errors.Cause(err).(OptimisticLockError)
-			return isOptimisticLock
+			return errors.Is(err, ErrOptimisticLockError)
 		}),
 		retry.Attempts(10),
 		retry.DelayType(retry.CombineDelay(retry.BackOffDelay, retry.RandomDelay)),

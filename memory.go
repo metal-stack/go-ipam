@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 type memory struct {
@@ -39,7 +37,7 @@ func (m *memory) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	key := prefix + "@" + namespace
 	result, ok := m.prefixes[key]
 	if !ok {
-		return Prefix{}, errors.Errorf("Prefix %s not found", prefix)
+		return Prefix{}, fmt.Errorf("prefix %s not found", prefix)
 	}
 	return *result.deepCopy(), nil
 }

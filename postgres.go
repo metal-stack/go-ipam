@@ -61,7 +61,7 @@ func NewPostgresStorage(host, port, user, password, dbname string, sslmode SSLMo
 func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*sql, error) {
 	db, err := sqlx.Connect("postgres", dataSource(host, port, user, password, dbname, sslmode))
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to database:%v", err)
+		return nil, fmt.Errorf("unable to connect to database:%w", err)
 	}
 	db.MustExec(postgresSchema)
 	return &sql{
