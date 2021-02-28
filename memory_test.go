@@ -13,7 +13,7 @@ func Test_ReadPrefix(t *testing.T) {
 	// Prefix
 	p, err := m.ReadPrefix("12.0.0.0/8", "")
 	require.NotNil(t, err)
-	require.Equal(t, "Prefix 12.0.0.0/8 not found", err.Error())
+	require.Equal(t, "prefix 12.0.0.0/8 not found", err.Error())
 	require.Empty(t, p)
 
 	prefix := Prefix{Cidr: "12.0.0.0/16"}
