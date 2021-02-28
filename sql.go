@@ -69,13 +69,16 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 	prefix.version = int64(0)
 	pj, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
+		return Prefix{}, fmt.Errorf("unable to marshal prefix:%w", err)
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
+		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	tx.MustExec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
+	_, err = tx.Exec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to insert prefix:%w", err)
+	}
 	return prefix, tx.Commit()
 }
 
@@ -83,12 +86,12 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 	var result []byte
 	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1", prefix)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read prefix:%v", err)
+		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
 	var pre prefixJSON
 	err = json.Unmarshal(result, &pre)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%v", err)
+		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%w", err)
 	}
 	return pre.toPrefix(), nil
 }
@@ -97,7 +100,7 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 	var prefixes [][]byte
 	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
 	if err != nil {
-		return nil, fmt.Errorf("unable to read prefixes:%v", err)
+		return nil, fmt.Errorf("unable to read prefixes:%w", err)
 	}
 
 	result := []Prefix{}
@@ -105,7 +108,7 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 		var pre prefixJSON
 		err = json.Unmarshal(v, &pre)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal prefix:%v", err)
+			return nil, fmt.Errorf("unable to unmarshal prefix:%w", err)
 		}
 		result = append(result, pre.toPrefix())
 	}
@@ -119,35 +122,37 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	prefix.version = oldVersion + 1
 	pn, err := json.Marshal(prefix.toPrefixJSON())
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to marshal prefix:%v", err)
+		return Prefix{}, fmt.Errorf("unable to marshal prefix:%w", err)
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
+		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	result := tx.MustExec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
+	result, err := tx.Exec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("%w: unable to select for update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+	}
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return Prefix{}, err
 	}
 	if rows == 0 {
-		err := tx.Rollback()
-		if err != nil {
-			return Prefix{}, newOptimisticLockError("select for update did not effect any row, but rollback did not work:" + err.Error())
-		}
-		return Prefix{}, newOptimisticLockError("select for update did not effect any row")
+		// Rollback, but ignore error, if rollback is ommited, updatePrefix sometimes stucks forever, dunno why.
+		_ = tx.Rollback()
+		return Prefix{}, fmt.Errorf("%w: select for update did not effect any row", ErrOptimisticLockError)
 	}
-	result = tx.MustExec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+	result, err = tx.Exec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+	}
 	rows, err = result.RowsAffected()
 	if err != nil {
 		return Prefix{}, err
 	}
 	if rows == 0 {
-		err := tx.Rollback()
-		if err != nil {
-			return Prefix{}, newOptimisticLockError("updatePrefix did not effect any row, but rollback did not work:" + err.Error())
-		}
-		return Prefix{}, newOptimisticLockError("updatePrefix did not effect any row")
+		// Rollback, but ignore error, if rollback is ommited, updatePrefix sometimes stucks forever, dunno why.
+		_ = tx.Rollback()
+		return Prefix{}, fmt.Errorf("%w: updatePrefix did not effect any row", ErrOptimisticLockError)
 	}
 	return prefix, tx.Commit()
 }
@@ -155,8 +160,11 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%v", err)
+		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	tx.MustExec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
+	_, err = tx.Exec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable delete prefix:%w", err)
+	}
 	return prefix, tx.Commit()
 }

@@ -3,8 +3,6 @@ package ipam
 import (
 	"fmt"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 type memory struct {
@@ -38,7 +36,7 @@ func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
 
 	result, ok := m.prefixes[prefix]
 	if !ok {
-		return Prefix{}, errors.Errorf("Prefix %s not found", prefix)
+		return Prefix{}, fmt.Errorf("prefix %s not found", prefix)
 	}
 	return *result.deepCopy(), nil
 }
