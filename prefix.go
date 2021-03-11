@@ -140,10 +140,6 @@ type Usage struct {
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
-	ipprefix, err := netaddr.ParseIPPrefix(cidr)
-	if err != nil {
-		return nil, err
-	}
 	pp, err := i.storage.ReadAllPrefixes()
 	if err != nil {
 		return nil, err
@@ -152,7 +148,7 @@ func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	for i, p := range pp {
 		existingPrefixes[i] = p.Cidr
 	}
-	p, err := i.newPrefix(ipprefix.String(), "")
+	p, err := i.newPrefix(cidr, "")
 	if err != nil {
 		return nil, err
 	}
