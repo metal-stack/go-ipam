@@ -137,7 +137,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		return Prefix{}, err
 	}
 	if rows == 0 {
-		// Rollback, but ignore error, if rollback is ommited, updatePrefix sometimes stucks forever, dunno why.
+		// Rollback, but ignore error, if rollback is omitted, the row lock created by SELECT FOR UPDATE will not get released.
 		_ = tx.Rollback()
 		return Prefix{}, fmt.Errorf("%w: select for update did not effect any row", ErrOptimisticLockError)
 	}
@@ -150,7 +150,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		return Prefix{}, err
 	}
 	if rows == 0 {
-		// Rollback, but ignore error, if rollback is ommited, updatePrefix sometimes stucks forever, dunno why.
+		// Rollback, but ignore error, if rollback is omitted, the row lock created by SELECT FOR UPDATE will not get released.
 		_ = tx.Rollback()
 		return Prefix{}, fmt.Errorf("%w: updatePrefix did not effect any row", ErrOptimisticLockError)
 	}
