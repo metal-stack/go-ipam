@@ -43,6 +43,18 @@ func (i *ipamer) getHostAddresses(prefix string) ([]string, error) {
 	}
 }
 
+func TestIPRangeOverlapping(t *testing.T) {
+	i := New()
+
+	cidr := "10.10.10.0/24"
+	_, err := i.NewPrefix(cidr)
+	require.Nil(t, err)
+
+	cidr = "10.10.10.1/24"
+	_, err = i.NewPrefix(cidr)
+	require.NotNil(t, err)
+}
+
 func TestIpamer_AcquireIP(t *testing.T) {
 
 	type fields struct {

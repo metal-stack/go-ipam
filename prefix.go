@@ -144,7 +144,19 @@ func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
+	pp, err := i.storage.ReadAllPrefixes()
+	if err != nil {
+		return nil, err
+	}
+	existingPrefixes := make([]string, len(pp))
+	for i, p := range pp {
+		existingPrefixes[i] = p.Cidr
+	}
 	p, err := i.newPrefix(ipprefix.String(), "")
+	if err != nil {
+		return nil, err
+	}
+	err = i.PrefixesOverlapping(existingPrefixes, []string{p.Cidr})
 	if err != nil {
 		return nil, err
 	}
