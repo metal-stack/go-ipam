@@ -140,7 +140,11 @@ type Usage struct {
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
-	p, err := i.newPrefix(cidr, "")
+	ipprefix, err := netaddr.ParseIPPrefix(cidr)
+	if err != nil {
+		return nil, err
+	}
+	p, err := i.newPrefix(ipprefix.String(), "")
 	if err != nil {
 		return nil, err
 	}
