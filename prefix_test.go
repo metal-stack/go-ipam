@@ -881,21 +881,17 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 func TestIpamer_NewPrefix(t *testing.T) {
 
 	tests := []struct {
-		name           string
-		cidr           string
-		parentCidr     string
-		wantcidr       string
-		wantparentCidr string
-		wantErr        bool
-		errorString    string
+		name        string
+		cidr        string
+		wantcidr    string
+		wantErr     bool
+		errorString string
 	}{
 		{
-			name:           "valid Prefix",
-			cidr:           "192.168.0.0/24",
-			parentCidr:     "",
-			wantcidr:       "192.168.0.0/24",
-			wantparentCidr: "",
-			wantErr:        false,
+			name:     "valid Prefix",
+			cidr:     "192.168.0.0/24",
+			wantcidr: "192.168.0.0/24",
+			wantErr:  false,
 		},
 		{
 			name:        "invalid Prefix",
@@ -940,10 +936,7 @@ func TestIpamer_NewPrefix(t *testing.T) {
 				return
 			}
 			if got.Cidr != test.wantcidr {
-				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.Cidr, test.cidr)
-			}
-			if got.ParentCidr != test.wantparentCidr {
-				t.Errorf("Ipamer.NewPrefix() = %v, want %v", got.ParentCidr, test.parentCidr)
+				t.Errorf("Ipamer.NewPrefix() cidr = %v, want %v", got.Cidr, test.wantcidr)
 			}
 		})
 	}
