@@ -118,7 +118,7 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 
 // ReadAllPrefixCidrs is cheaper that ReadAllPrefixes because it only returns the Cidrs.
 func (s *sql) ReadAllPrefixCidrs() ([]string, error) {
-	var cidrs []string
+	cidrs := []string{}
 	err := s.db.Select(&cidrs, "SELECT cidr FROM prefixes")
 	if err != nil {
 		return nil, fmt.Errorf("unable to read prefixes:%w", err)

@@ -60,7 +60,7 @@ func Test_sql_CreatePrefix(t *testing.T) {
 		require.NotNil(t, p)
 		require.Equal(t, prefix.Cidr, p.Cidr)
 
-		ps, err := db.ReadAllPrefixes()
+		ps, err := db.ReadAllPrefixCidrs()
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 1, len(ps))
@@ -94,7 +94,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		require.NotNil(t, db)
 
 		// no Prefixes
-		ps, err := db.ReadAllPrefixes()
+		ps, err := db.ReadAllPrefixCidrs()
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 0, len(ps))
@@ -104,7 +104,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		p, err := db.CreatePrefix(prefix)
 		require.Nil(t, err)
 		require.NotNil(t, p)
-		ps, err = db.ReadAllPrefixes()
+		ps, err = db.ReadAllPrefixCidrs()
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 1, len(ps))
@@ -112,7 +112,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		// no Prefixes again
 		_, err = db.DeletePrefix(prefix)
 		require.Nil(t, err)
-		ps, err = db.ReadAllPrefixes()
+		ps, err = db.ReadAllPrefixCidrs()
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 0, len(ps))

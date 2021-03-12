@@ -422,6 +422,14 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse cidr:%s %w", cidr, err)
 	}
+	if parentCidr != "" {
+		ipnetParent, err := netaddr.ParseIPPrefix(parentCidr)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse parent cidr:%s %w", cidr, err)
+		}
+		parentCidr = ipnetParent.String()
+	}
+
 	p := &Prefix{
 		Cidr:                   ipnet.String(),
 		ParentCidr:             parentCidr,
