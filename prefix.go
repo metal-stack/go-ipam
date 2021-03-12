@@ -140,13 +140,9 @@ type Usage struct {
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
-	pp, err := i.storage.ReadAllPrefixes()
+	existingPrefixes, err := i.storage.ReadAllPrefixCidrs()
 	if err != nil {
 		return nil, err
-	}
-	existingPrefixes := make([]string, len(pp))
-	for i, p := range pp {
-		existingPrefixes[i] = p.Cidr
 	}
 	p, err := i.newPrefix(cidr, "")
 	if err != nil {
@@ -292,7 +288,11 @@ func (i *ipamer) releaseChildPrefixInternal(child *Prefix) error {
 }
 
 func (i *ipamer) PrefixFrom(cidr string) *Prefix {
-	prefix, err := i.storage.ReadPrefix(cidr)
+	ipprefix, err := netaddr.ParseIPPrefix(cidr)
+	if err != nil {
+		return nil
+	}
+	prefix, err := i.storage.ReadPrefix(ipprefix.String())
 	if err != nil {
 		return nil
 	}
@@ -336,7 +336,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		}
 		_, ok := prefix.ips[specificIPnet.String()]
 		if ok {
-			return nil, fmt.Errorf("%w: given ip:%s is already allocated", ErrAlreadyAllocated, specificIP)
+			return nil, fmt.Errorf("%w: given ip:%s is already allocated", ErrAlreadyAllocated, specificIPnet)
 		}
 	}
 
@@ -409,7 +409,7 @@ func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []st
 				return fmt.Errorf("parsing prefix %s failed:%w", np, err)
 			}
 			if eip.Overlaps(nip) || nip.Overlaps(eip) {
-				return fmt.Errorf("%s overlaps %s", np, ep)
+				return fmt.Errorf("%s overlaps %s", nip, eip)
 			}
 		}
 	}
@@ -423,7 +423,7 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 		return nil, fmt.Errorf("unable to parse cidr:%s %w", cidr, err)
 	}
 	p := &Prefix{
-		Cidr:                   cidr,
+		Cidr:                   ipnet.String(),
 		ParentCidr:             parentCidr,
 		ips:                    make(map[string]bool),
 		availableChildPrefixes: make(map[string]bool),
