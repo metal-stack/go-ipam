@@ -108,6 +108,7 @@ func (s *sql) ReadPrefixes(namespace string) ([]Prefix, error) {
 	return toPrefixes(prefixes)
 }
 
+// ReadAllPrefixes returns all known prefixes.
 func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 	var prefixes [][]byte
 	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
@@ -128,6 +129,16 @@ func toPrefixes(prefixes [][]byte) ([]Prefix, error) {
 		result = append(result, pre.toPrefix())
 	}
 	return result, nil
+}
+
+// ReadAllPrefixCidrs is cheaper that ReadAllPrefixes because it only returns the Cidrs.
+func (s *sql) ReadAllPrefixCidrs(namespace string) ([]string, error) {
+	cidrs := []string{}
+	err := s.db.Select(&cidrs, "SELECT cidr FROM prefixes WHERE namespace=$1", namespace)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read prefixes in namespace:%s :%w", namespace, err)
+	}
+	return cidrs, nil
 }
 
 // UpdatePrefix tries to update the prefix.
@@ -152,7 +163,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		return Prefix{}, err
 	}
 	if rows == 0 {
-		// Rollback, but ignore error, if rollback is ommited, updatePrefix sometimes stucks forever, dunno why.
+		// Rollback, but ignore error, if rollback is omitted, the row lock created by SELECT FOR UPDATE will not get released.
 		_ = tx.Rollback()
 		return Prefix{}, fmt.Errorf("%w: select for update did not effect any row", ErrOptimisticLockError)
 	}
@@ -165,7 +176,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		return Prefix{}, err
 	}
 	if rows == 0 {
-		// Rollback, but ignore error, if rollback is ommited, updatePrefix sometimes stucks forever, dunno why.
+		// Rollback, but ignore error, if rollback is omitted, the row lock created by SELECT FOR UPDATE will not get released.
 		_ = tx.Rollback()
 		return Prefix{}, fmt.Errorf("%w: updatePrefix did not effect any row", ErrOptimisticLockError)
 	}

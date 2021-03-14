@@ -6,6 +6,7 @@ type Storage interface {
 	ReadPrefix(prefix, namespace string) (Prefix, error)
 	ReadPrefixes(namspace string) ([]Prefix, error)
 	ReadAllPrefixes() ([]Prefix, error)
+	ReadAllPrefixCidrs(namspace string) ([]string, error)
 	UpdatePrefix(prefix Prefix) (Prefix, error)
 	DeletePrefix(prefix Prefix) (Prefix, error)
 }

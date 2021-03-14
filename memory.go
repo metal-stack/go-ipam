@@ -65,6 +65,19 @@ func (m *memory) ReadAllPrefixes() ([]Prefix, error) {
 	}
 	return ps, nil
 }
+func (m *memory) ReadAllPrefixCidrs(namespace string) ([]string, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	ps := make([]string, 0, len(m.prefixes))
+	for cidr := range m.prefixes {
+		if strings.HasSuffix(cidr, "@"+namespace) {
+			c := strings.TrimSuffix(cidr, "@"+namespace)
+			ps = append(ps, c)
+		}
+	}
+	return ps, nil
+}
 func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
