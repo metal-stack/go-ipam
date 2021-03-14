@@ -292,7 +292,7 @@ func (i *ipamer) PrefixFrom(cidr string) *Prefix {
 	if err != nil {
 		return nil
 	}
-	prefix, err := i.storage.ReadPrefix(ipprefix.String())
+	prefix, err := i.storage.ReadPrefix(ipprefix.Masked().String())
 	if err != nil {
 		return nil
 	}
@@ -427,11 +427,11 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse parent cidr:%s %w", cidr, err)
 		}
-		parentCidr = ipnetParent.String()
+		parentCidr = ipnetParent.Masked().String()
 	}
 
 	p := &Prefix{
-		Cidr:                   ipnet.String(),
+		Cidr:                   ipnet.Masked().String(),
 		ParentCidr:             parentCidr,
 		ips:                    make(map[string]bool),
 		availableChildPrefixes: make(map[string]bool),

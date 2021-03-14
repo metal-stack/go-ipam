@@ -894,6 +894,18 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			wantErr:  false,
 		},
 		{
+			name:     "valid Prefix, not in canocical form",
+			cidr:     "192.169.0.1/24",
+			wantcidr: "192.169.0.0/24",
+			wantErr:  false,
+		},
+		{
+			name:     "valid Prefix, not in canocical form",
+			cidr:     "192.167.10.0/16",
+			wantcidr: "192.167.0.0/16",
+			wantErr:  false,
+		},
+		{
 			name:        "invalid Prefix",
 			cidr:        "192.168.0.0/33",
 			wantErr:     true,
@@ -903,6 +915,12 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			name:     "valid IPv6 Prefix",
 			cidr:     "2001:0db8:85a3::/120",
 			wantcidr: "2001:db8:85a3::/120",
+			wantErr:  false,
+		},
+		{
+			name:     "valid IPv6 Prefix, not in canocical form",
+			cidr:     "2001:0db8:85a4::2/120",
+			wantcidr: "2001:db8:85a4::/120",
 			wantErr:  false,
 		},
 		{
@@ -996,6 +1014,18 @@ func TestIpamer_PrefixFrom(t *testing.T) {
 
 		prefix = ipam.PrefixFrom("192.168.0.0/20")
 		require.NotNil(t, prefix)
+
+		// non canonical form still returns the same prefix
+		prefix2 := ipam.PrefixFrom("10.0.5.0/8")
+		require.Nil(t, prefix2)
+
+		prefix2a, err := ipam.NewPrefix("10.8.0.0/8")
+		require.Nil(t, err)
+		require.NotNil(t, prefix2a)
+
+		prefix2b := ipam.PrefixFrom("10.2.0.0/8")
+		require.NotNil(t, prefix2b)
+		require.Equal(t, prefix2a.Cidr, prefix2b.Cidr)
 	})
 }
 
