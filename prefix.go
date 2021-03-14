@@ -140,6 +140,8 @@ type Usage struct {
 }
 
 func (i *ipamer) NewPrefix(cidr string) (*Prefix, error) {
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	existingPrefixes, err := i.storage.ReadAllPrefixCidrs()
 	if err != nil {
 		return nil, err

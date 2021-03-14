@@ -1,5 +1,7 @@
 package ipam
 
+import "sync"
+
 // Ipamer can be used to do IPAM stuff.
 type Ipamer interface {
 	// NewPrefix create a new Prefix from a string notation.
@@ -31,6 +33,7 @@ type Ipamer interface {
 }
 
 type ipamer struct {
+	mu      sync.Mutex
 	storage Storage
 }
 
