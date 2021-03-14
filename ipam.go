@@ -1,5 +1,7 @@
 package ipam
 
+import "sync"
+
 // Ipamer can be used to do IPAM stuff.
 type Ipamer interface {
 	// SetNamespace to use for separating prefixes which is required to have overlapping prefixes for different purposes.
@@ -35,6 +37,7 @@ type Ipamer interface {
 }
 
 type ipamer struct {
+	mu        sync.Mutex
 	storage   Storage
 	namespace string
 }
