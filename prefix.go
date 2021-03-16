@@ -182,13 +182,24 @@ func (i *ipamer) AcquireChildPrefix(parentCidr string, length uint8) (*Prefix, e
 	var prefix *Prefix
 	return prefix, retryOnOptimisticLock(func() error {
 		var err error
-		prefix, err = i.acquireChildPrefixInternal(parentCidr, length)
+		prefix, err = i.acquireChildPrefixInternal(parentCidr, "", length)
+		return err
+	})
+}
+
+func (i *ipamer) AcquireSpecificChildPrefix(parentCidr, childCidr string) (*Prefix, error) {
+	var prefix *Prefix
+	return prefix, retryOnOptimisticLock(func() error {
+		var err error
+		prefix, err = i.acquireChildPrefixInternal(parentCidr, childCidr, 0)
 		return err
 	})
 }
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
-func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*Prefix, error) {
+func (i *ipamer) acquireChildPrefixInternal(parentCidr, childCidr string, length uint8) (*Prefix, error) {
+	specificChildRequest := childCidr != ""
+	var childprefix netaddr.IPPrefix
 	parent := i.PrefixFrom(parentCidr)
 	if parent == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
@@ -196,6 +207,13 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 	ipprefix, err := netaddr.ParseIPPrefix(parent.Cidr)
 	if err != nil {
 		return nil, err
+	}
+	if specificChildRequest {
+		childprefix, err = netaddr.ParseIPPrefix(childCidr)
+		if err != nil {
+			return nil, err
+		}
+		length = childprefix.Bits
 	}
 	if ipprefix.Bits >= length {
 		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits)
@@ -217,23 +235,34 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr string, length uint8) (*P
 		ipset.RemovePrefix(cpipprefix)
 	}
 
-	cp, _, ok := ipset.IPSet().RemoveFreePrefix(length)
-	if !ok {
-		pfxs := ipset.IPSet().Prefixes()
-		if len(pfxs) == 0 {
-			return nil, fmt.Errorf("no prefix found in %s with length:%d", parentCidr, length)
-		}
+	var cp netaddr.IPPrefix
 
-		var availablePrefixes []string
-		for _, p := range pfxs {
-			availablePrefixes = append(availablePrefixes, p.String())
-		}
-		adj := "are"
-		if len(availablePrefixes) == 1 {
-			adj = "is"
-		}
+	if !specificChildRequest {
+		var ok bool
+		cp, _, ok = ipset.IPSet().RemoveFreePrefix(length)
+		if !ok {
+			pfxs := ipset.IPSet().Prefixes()
+			if len(pfxs) == 0 {
+				return nil, fmt.Errorf("no prefix found in %s with length:%d", parentCidr, length)
+			}
 
-		return nil, fmt.Errorf("no prefix found in %s with length:%d, but %s %s available", parentCidr, length, strings.Join(availablePrefixes, ","), adj)
+			var availablePrefixes []string
+			for _, p := range pfxs {
+				availablePrefixes = append(availablePrefixes, p.String())
+			}
+			adj := "are"
+			if len(availablePrefixes) == 1 {
+				adj = "is"
+			}
+
+			return nil, fmt.Errorf("no prefix found in %s with length:%d, but %s %s available", parentCidr, length, strings.Join(availablePrefixes, ","), adj)
+		}
+	} else {
+		if ok := ipset.IPSet().ContainsPrefix(childprefix); !ok {
+			// Parent prefix does not contain specific child prefix
+			return nil, fmt.Errorf("specific prefix %s is not available in prefix %s", childCidr, parentCidr)
+		}
+		cp = childprefix
 	}
 
 	child := &Prefix{
