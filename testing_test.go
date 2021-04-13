@@ -2,8 +2,10 @@ package ipam
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"sync"
 	"testing"
 
@@ -12,13 +14,24 @@ import (
 )
 
 var (
-	pgOnce      sync.Once
-	crOnce      sync.Once
-	pgContainer testcontainers.Container
-	crContainer testcontainers.Container
+	pgOnce           sync.Once
+	crOnce           sync.Once
+	pgContainer      testcontainers.Container
+	crContainer      testcontainers.Container
+	pgVersion        string
+	cockroachVersion string
 )
 
 func init() {
+	pgVersion = os.Getenv("PG_VERSION")
+	if pgVersion == "" {
+		pgVersion = "13"
+	}
+	cockroachVersion = os.Getenv("COCKROACH_VERSION")
+	if cockroachVersion == "" {
+		cockroachVersion = "v20.2.7"
+	}
+	fmt.Printf("Using postgres:%s cockroach:%s\n", pgVersion, cockroachVersion)
 	// prevent testcontainer logging mangle test and benchmark output
 	log.SetOutput(ioutil.Discard)
 }
@@ -28,7 +41,7 @@ func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 	pgOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "postgres:13-alpine",
+			Image:        "postgres:" + pgVersion,
 			ExposedPorts: []string{"5432/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
 			WaitingFor: wait.ForAll(
@@ -64,7 +77,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	crOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "cockroachdb/cockroach:v20.2.4",
+			Image:        "cockroachdb/cockroach:" + cockroachVersion,
 			ExposedPorts: []string{"26257/tcp", "8080/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
 			WaitingFor: wait.ForAll(
