@@ -2,6 +2,7 @@ package ipam
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -22,24 +23,38 @@ func NewMemory() Storage {
 func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-
-	_, ok := m.prefixes[prefix.Cidr]
+	key := prefix.Cidr + "@" + prefix.Namespace
+	_, ok := m.prefixes[key]
 	if ok {
 		return Prefix{}, fmt.Errorf("prefix already created:%v", prefix)
 	}
-	m.prefixes[prefix.Cidr] = *prefix.deepCopy()
+	m.prefixes[key] = *prefix.deepCopy()
 	return prefix, nil
 }
-func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
+func (m *memory) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-
-	result, ok := m.prefixes[prefix]
+	key := prefix + "@" + namespace
+	result, ok := m.prefixes[key]
 	if !ok {
 		return Prefix{}, fmt.Errorf("prefix %s not found", prefix)
 	}
 	return *result.deepCopy(), nil
 }
+
+func (m *memory) ReadPrefixes(namespace string) ([]Prefix, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	ps := make([]Prefix, 0, len(m.prefixes))
+	for k, v := range m.prefixes {
+		if strings.HasSuffix(k, "@"+namespace) {
+			ps = append(ps, *v.deepCopy())
+		}
+	}
+	return ps, nil
+}
+
 func (m *memory) ReadAllPrefixes() ([]Prefix, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -50,13 +65,16 @@ func (m *memory) ReadAllPrefixes() ([]Prefix, error) {
 	}
 	return ps, nil
 }
-func (m *memory) ReadAllPrefixCidrs() ([]string, error) {
+func (m *memory) ReadAllPrefixCidrs(namespace string) ([]string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	ps := make([]string, 0, len(m.prefixes))
 	for cidr := range m.prefixes {
-		ps = append(ps, cidr)
+		if strings.HasSuffix(cidr, "@"+namespace) {
+			c := strings.TrimSuffix(cidr, "@"+namespace)
+			ps = append(ps, c)
+		}
 	}
 	return ps, nil
 }
@@ -67,17 +85,18 @@ func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	if prefix.Cidr == "" {
 		return Prefix{}, fmt.Errorf("prefix not present:%v", prefix)
 	}
-	_, ok := m.prefixes[prefix.Cidr]
+	key := prefix.Cidr + "@" + prefix.Namespace
+	_, ok := m.prefixes[key]
 	if !ok {
 		return Prefix{}, fmt.Errorf("prefix not found:%s", prefix.Cidr)
 	}
-	m.prefixes[prefix.Cidr] = *prefix.deepCopy()
+	m.prefixes[key] = *prefix.deepCopy()
 	return prefix, nil
 }
 func (m *memory) DeletePrefix(prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-
-	delete(m.prefixes, prefix.Cidr)
+	key := prefix.Cidr + "@" + prefix.Namespace
+	delete(m.prefixes, key)
 	return *prefix.deepCopy(), nil
 }

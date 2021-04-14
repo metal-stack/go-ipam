@@ -30,6 +30,7 @@ func (p prefixJSON) toPrefix() Prefix {
 	return Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
+		Namespace:              p.Namespace,
 		availableChildPrefixes: p.AvailableChildPrefixes,
 		childPrefixLength:      p.ChildPrefixLength,
 		isParent:               p.IsParent,
@@ -43,6 +44,7 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 		Prefix: Prefix{
 			Cidr:       p.Cidr,
 			ParentCidr: p.ParentCidr,
+			Namespace:  p.Namespace,
 		},
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		IsParent:               p.isParent,
@@ -54,7 +56,7 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 }
 
 func (s *sql) prefixExists(prefix Prefix) (*Prefix, bool) {
-	p, err := s.ReadPrefix(prefix.Cidr)
+	p, err := s.ReadPrefix(prefix.Cidr, prefix.Namespace)
 	if err != nil {
 		return nil, false
 	}
@@ -75,16 +77,16 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	_, err = tx.Exec("INSERT INTO prefixes (cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
+	_, err = tx.Exec("INSERT INTO prefixes (cidr, namespace, prefix) VALUES ($1, $2, $3)", prefix.Cidr, prefix.Namespace, pj)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to insert prefix:%w", err)
 	}
 	return prefix, tx.Commit()
 }
 
-func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
+func (s *sql) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	var result []byte
-	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1", prefix)
+	err := s.db.Get(&result, "SELECT prefix FROM prefixes WHERE cidr=$1 AND namespace=$2", prefix, namespace)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
@@ -96,6 +98,16 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 	return pre.toPrefix(), nil
 }
 
+func (s *sql) ReadPrefixes(namespace string) ([]Prefix, error) {
+	var prefixes [][]byte
+	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes WHERE namespace=$1", namespace)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read prefixes in namespace:%s %w", namespace, err)
+	}
+
+	return toPrefixes(prefixes)
+}
+
 // ReadAllPrefixes returns all known prefixes.
 func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 	var prefixes [][]byte
@@ -103,11 +115,14 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to read prefixes:%w", err)
 	}
+	return toPrefixes(prefixes)
+}
 
+func toPrefixes(prefixes [][]byte) ([]Prefix, error) {
 	result := []Prefix{}
 	for _, v := range prefixes {
 		var pre prefixJSON
-		err = json.Unmarshal(v, &pre)
+		err := json.Unmarshal(v, &pre)
 		if err != nil {
 			return nil, fmt.Errorf("unable to unmarshal prefix:%w", err)
 		}
@@ -117,11 +132,11 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 }
 
 // ReadAllPrefixCidrs is cheaper that ReadAllPrefixes because it only returns the Cidrs.
-func (s *sql) ReadAllPrefixCidrs() ([]string, error) {
+func (s *sql) ReadAllPrefixCidrs(namespace string) ([]string, error) {
 	cidrs := []string{}
-	err := s.db.Select(&cidrs, "SELECT cidr FROM prefixes")
+	err := s.db.Select(&cidrs, "SELECT cidr FROM prefixes WHERE namespace=$1", namespace)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read prefixes:%w", err)
+		return nil, fmt.Errorf("unable to read prefixes in namespace:%s :%w", namespace, err)
 	}
 	return cidrs, nil
 }
@@ -139,7 +154,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	result, err := tx.Exec("SELECT prefix FROM prefixes WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
+	result, err := tx.Exec("SELECT prefix FROM prefixes WHERE cidr=$1 AND namespace=$2 AND prefix->>'Version'=$3 FOR UPDATE", prefix.Cidr, prefix.Namespace, oldVersion)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("%w: unable to select for update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 	}
@@ -152,7 +167,7 @@ func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		_ = tx.Rollback()
 		return Prefix{}, fmt.Errorf("%w: select for update did not effect any row", ErrOptimisticLockError)
 	}
-	result, err = tx.Exec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
+	result, err = tx.Exec("UPDATE prefixes SET prefix=$1 WHERE cidr=$2 AND namespace=$3 AND prefix->>'Version'=$4", pn, prefix.Cidr, prefix.Namespace, oldVersion)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 	}
@@ -173,7 +188,7 @@ func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
-	_, err = tx.Exec("DELETE from prefixes WHERE cidr=$1", prefix.Cidr)
+	_, err = tx.Exec("DELETE from prefixes WHERE cidr=$1 and namespace=$2", prefix.Cidr, prefix.Namespace)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable delete prefix:%w", err)
 	}

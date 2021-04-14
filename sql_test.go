@@ -60,7 +60,7 @@ func Test_sql_CreatePrefix(t *testing.T) {
 		require.NotNil(t, p)
 		require.Equal(t, prefix.Cidr, p.Cidr)
 
-		ps, err := db.ReadAllPrefixCidrs()
+		ps, err := db.ReadAllPrefixCidrs("")
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 1, len(ps))
@@ -72,20 +72,21 @@ func Test_sql_ReadPrefix(t *testing.T) {
 		require.NotNil(t, db)
 
 		// Prefix
-		p, err := db.ReadPrefix("12.0.0.0/8")
+		p, err := db.ReadPrefix("12.0.0.0/8", "a")
 		require.NotNil(t, err)
 		require.Equal(t, "unable to read prefix:sql: no rows in result set", err.Error())
 		require.Empty(t, p)
 
-		prefix := Prefix{Cidr: "12.0.0.0/16"}
+		prefix := Prefix{Cidr: "12.0.0.0/16", Namespace: "a"}
 		p, err = db.CreatePrefix(prefix)
 		require.Nil(t, err)
 		require.NotNil(t, p)
 
-		p, err = db.ReadPrefix("12.0.0.0/16")
+		p, err = db.ReadPrefix("12.0.0.0/16", "a")
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, "12.0.0.0/16", p.Cidr)
+		require.Equal(t, "a", p.Namespace)
 	})
 }
 
@@ -94,7 +95,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		require.NotNil(t, db)
 
 		// no Prefixes
-		ps, err := db.ReadAllPrefixCidrs()
+		ps, err := db.ReadAllPrefixCidrs("")
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 0, len(ps))
@@ -104,7 +105,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		p, err := db.CreatePrefix(prefix)
 		require.Nil(t, err)
 		require.NotNil(t, p)
-		ps, err = db.ReadAllPrefixCidrs()
+		ps, err = db.ReadAllPrefixCidrs("")
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 1, len(ps))
@@ -112,7 +113,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		// no Prefixes again
 		_, err = db.DeletePrefix(prefix)
 		require.Nil(t, err)
-		ps, err = db.ReadAllPrefixCidrs()
+		ps, err = db.ReadAllPrefixCidrs("")
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 0, len(ps))
@@ -130,7 +131,7 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 		require.NotNil(t, p)
 
 		// Check if present
-		p, err = db.ReadPrefix("13.0.0.0/16")
+		p, err = db.ReadPrefix("13.0.0.0/16", "")
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, "13.0.0.0/16", p.Cidr)
@@ -141,7 +142,7 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 		p, err = db.UpdatePrefix(prefix)
 		require.Nil(t, err)
 		require.NotNil(t, p)
-		p, err = db.ReadPrefix("13.0.0.0/16")
+		p, err = db.ReadPrefix("13.0.0.0/16", "")
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, "13.0.0.0/16", p.Cidr)

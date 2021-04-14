@@ -59,6 +59,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 
 	type fields struct {
 		prefixCIDR  string
+		namespace   string
 		existingips []string
 	}
 	tests := []struct {
@@ -70,6 +71,15 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			name: "Acquire next IP regularly",
 			fields: fields{
 				prefixCIDR:  "192.168.1.0/24",
+				existingips: []string{},
+			},
+			want: &IP{IP: mustIP("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
+		},
+		{
+			name: "Acquire next namespaced IP regularly",
+			fields: fields{
+				prefixCIDR:  "192.168.1.0/24",
+				namespace:   "my-namespace",
 				existingips: []string{},
 			},
 			want: &IP{IP: mustIP("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
@@ -133,6 +143,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 
 		test := tt
 		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+			ipam.namespace = test.fields.namespace
 			p, err := ipam.NewPrefix(test.fields.prefixCIDR)
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
