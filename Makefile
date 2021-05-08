@@ -36,14 +36,6 @@ golangcicheck:
 lint: golangcicheck
 	golangci-lint run
 
-.PHONY: postgres-up
-postgres-up: postgres-rm
-	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:$(PG_VERSION) -c 'max_connections=200'
-
-.PHONY: postgres-rm
-postgres-rm:
-	docker rm -f ipamdb || true
-
 .PHONY: cockroach-up
 cockroach-up: cockroach-rm postgres-rm
 	# https://www.cockroachlabs.com/docs/v19.2/start-a-local-cluster-in-docker-linux.html#main-content
