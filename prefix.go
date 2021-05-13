@@ -28,6 +28,7 @@ var (
 type Prefix struct {
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
+	Namespace              string          // if set overlapping prefixes are possible
 	isParent               bool            // if this Prefix has child prefixes, this is set to true
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
 	// TODO remove this in the next release
@@ -41,6 +42,7 @@ func (p Prefix) deepCopy() *Prefix {
 	return &Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
+		Namespace:              p.Namespace,
 		isParent:               p.isParent,
 		childPrefixLength:      p.childPrefixLength,
 		availableChildPrefixes: copyMap(p.availableChildPrefixes),
@@ -268,6 +270,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr, childCidr string, length
 	child := &Prefix{
 		Cidr:       cp.String(),
 		ParentCidr: parentCidr,
+		Namespace:  i.namespace,
 	}
 
 	parent.availableChildPrefixes[child.Cidr] = false
@@ -323,7 +326,7 @@ func (i *ipamer) PrefixFrom(cidr string) *Prefix {
 	if err != nil {
 		return nil
 	}
-	prefix, err := i.storage.ReadPrefix(ipprefix.Masked().String())
+	prefix, err := i.storage.ReadPrefix(ipprefix.Masked().String(), i.namespace)
 	if err != nil {
 		return nil
 	}
@@ -381,6 +384,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 			acquired := &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
+				Namespace:    i.namespace,
 			}
 			prefix.ips[ipstring] = true
 			_, err := i.storage.UpdatePrefix(*prefix)
@@ -463,6 +467,7 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 
 	p := &Prefix{
 		Cidr:                   ipnet.Masked().String(),
+		Namespace:              i.namespace,
 		ParentCidr:             parentCidr,
 		ips:                    make(map[string]bool),
 		availableChildPrefixes: make(map[string]bool),

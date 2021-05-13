@@ -4,6 +4,10 @@ import "sync"
 
 // Ipamer can be used to do IPAM stuff.
 type Ipamer interface {
+	// SetNamespace to use for separating prefixes which is required to have overlapping prefixes for different purposes.
+	// Prefixes must still be collision free inside the same namespace.
+	// if not set, all prefixes/ips belong to a empty default namespace, collisions are not possible.
+	SetNamespace(namespace string)
 	// NewPrefix create a new Prefix from a string notation.
 	NewPrefix(cidr string) (*Prefix, error)
 	// DeletePrefix delete a Prefix from a string notation.
@@ -35,8 +39,13 @@ type Ipamer interface {
 }
 
 type ipamer struct {
-	mu      sync.Mutex
-	storage Storage
+	mu        sync.Mutex
+	storage   Storage
+	namespace string
+}
+
+func (i *ipamer) SetNamespace(namespace string) {
+	i.namespace = namespace
 }
 
 // New returns a Ipamer with in memory storage for networks, prefixes and ips.

@@ -5,6 +5,11 @@ GO111MODULE := on
 PG_VERSION := $(or ${PG_VERSION},"13-alpine")
 COCKROACH_VERSION := $(or ${COCKROACH_VERSION},"v20.2.7")
 
+SHA := $(shell git rev-parse --short=8 HEAD)
+GITVERSION := $(shell git describe --long --all)
+BUILDDATE := $(shell date -Iseconds)
+VERSION := $(or ${VERSION},devel)
+
 all: test bench
 
 .PHONY: bench
@@ -31,14 +36,6 @@ golangcicheck:
 lint: golangcicheck
 	golangci-lint run
 
-.PHONY: postgres-up
-postgres-up: postgres-rm
-	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" postgres:$(PG_VERSION) -c 'max_connections=200'
-
-.PHONY: postgres-rm
-postgres-rm:
-	docker rm -f ipamdb || true
-
 .PHONY: cockroach-up
 cockroach-up: cockroach-rm postgres-rm
 	# https://www.cockroachlabs.com/docs/v19.2/start-a-local-cluster-in-docker-linux.html#main-content
@@ -58,3 +55,36 @@ cockroach-up-cluster: cockroach-rm
 cockroach-rm:
 	docker rm -f roach1 roach2 roach3 || true
 	docker network rm roachnet || true
+
+.PHONY: protoc
+protoc:
+	docker run --rm --user $$(id -u):$$(id -g) -v ${PWD}:/work metalstack/builder protoc --proto_path=server/api --go_out=plugins=grpc:server/api server/api/v1/*.proto
+	docker run --rm --user $$(id -u):$$(id -g) -v ${PWD}:/work metalstack/builder protoc --proto_path=server/api --go_out=plugins=grpc:server/api server/api/grpc/health/v1/*.proto
+
+.PHONY: server
+server:
+	go build -tags netgo -ldflags "-X 'github.com/metal-stack/v.Version=$(VERSION)' \
+								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
+						 -o bin/server server/main.go
+	strip bin/server
+
+.PHONY: client
+client:
+	go build -tags netgo -o bin/client server/cli/main.go
+	strip bin/client
+
+.PHONY: postgres-up
+postgres-up: postgres-rm
+	docker run -d --name ipamdb -p 5433:5432 -e POSTGRES_PASSWORD="password" -e POSTGRES_USER="ipam" -e POSTGRES_DB="ipam" postgres:13-alpine
+
+.PHONY: postgres-rm
+postgres-rm:
+	docker rm -f ipamdb || true
+
+.PHONY: certs
+certs:
+	cd certs && cfssl gencert -initca ca-csr.json | cfssljson -bare ca -
+	cd certs && cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile client-server server.json | cfssljson -bare server -
+	cd certs && cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile client client.json | cfssljson -bare client -
