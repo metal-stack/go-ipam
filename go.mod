@@ -21,8 +21,8 @@ require (
 	github.com/testcontainers/testcontainers-go v0.10.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf // indirect
-	golang.org/x/net v0.0.0-20210508051633-16afe75a6701 // indirect
-	google.golang.org/grpc v1.37.0
+	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
+	google.golang.org/grpc v1.37.1
 	google.golang.org/protobuf v1.26.0
-	inet.af/netaddr v0.0.0-20210508014949-da1c2a70a83d
+	inet.af/netaddr v0.0.0-20210511181906-37180328850c
 )

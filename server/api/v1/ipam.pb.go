@@ -135,7 +135,7 @@ func (x *PrefixResponse) GetPrefix() *Prefix {
 	return nil
 }
 
-type PrefixCreateRequest struct {
+type CreatePrefixRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -144,8 +144,8 @@ type PrefixCreateRequest struct {
 	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
 }
 
-func (x *PrefixCreateRequest) Reset() {
-	*x = PrefixCreateRequest{}
+func (x *CreatePrefixRequest) Reset() {
+	*x = CreatePrefixRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_v1_ipam_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -153,13 +153,13 @@ func (x *PrefixCreateRequest) Reset() {
 	}
 }
 
-func (x *PrefixCreateRequest) String() string {
+func (x *CreatePrefixRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PrefixCreateRequest) ProtoMessage() {}
+func (*CreatePrefixRequest) ProtoMessage() {}
 
-func (x *PrefixCreateRequest) ProtoReflect() protoreflect.Message {
+func (x *CreatePrefixRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_v1_ipam_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -171,26 +171,26 @@ func (x *PrefixCreateRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PrefixCreateRequest.ProtoReflect.Descriptor instead.
-func (*PrefixCreateRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreatePrefixRequest.ProtoReflect.Descriptor instead.
+func (*CreatePrefixRequest) Descriptor() ([]byte, []int) {
 	return file_v1_ipam_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *PrefixCreateRequest) GetCidr() string {
+func (x *CreatePrefixRequest) GetCidr() string {
 	if x != nil {
 		return x.Cidr
 	}
 	return ""
 }
 
-func (x *PrefixCreateRequest) GetNamespace() string {
+func (x *CreatePrefixRequest) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
 	}
 	return ""
 }
 
-type PrefixDeleteRequest struct {
+type DeletePrefixRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -199,8 +199,8 @@ type PrefixDeleteRequest struct {
 	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
 }
 
-func (x *PrefixDeleteRequest) Reset() {
-	*x = PrefixDeleteRequest{}
+func (x *DeletePrefixRequest) Reset() {
+	*x = DeletePrefixRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_v1_ipam_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -208,13 +208,13 @@ func (x *PrefixDeleteRequest) Reset() {
 	}
 }
 
-func (x *PrefixDeleteRequest) String() string {
+func (x *DeletePrefixRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PrefixDeleteRequest) ProtoMessage() {}
+func (*DeletePrefixRequest) ProtoMessage() {}
 
-func (x *PrefixDeleteRequest) ProtoReflect() protoreflect.Message {
+func (x *DeletePrefixRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_v1_ipam_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -226,26 +226,26 @@ func (x *PrefixDeleteRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PrefixDeleteRequest.ProtoReflect.Descriptor instead.
-func (*PrefixDeleteRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeletePrefixRequest.ProtoReflect.Descriptor instead.
+func (*DeletePrefixRequest) Descriptor() ([]byte, []int) {
 	return file_v1_ipam_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *PrefixDeleteRequest) GetCidr() string {
+func (x *DeletePrefixRequest) GetCidr() string {
 	if x != nil {
 		return x.Cidr
 	}
 	return ""
 }
 
-func (x *PrefixDeleteRequest) GetNamespace() string {
+func (x *DeletePrefixRequest) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
 	}
 	return ""
 }
 
-type PrefixGetRequest struct {
+type GetPrefixRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -254,8 +254,8 @@ type PrefixGetRequest struct {
 	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
 }
 
-func (x *PrefixGetRequest) Reset() {
-	*x = PrefixGetRequest{}
+func (x *GetPrefixRequest) Reset() {
+	*x = GetPrefixRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_v1_ipam_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -263,13 +263,13 @@ func (x *PrefixGetRequest) Reset() {
 	}
 }
 
-func (x *PrefixGetRequest) String() string {
+func (x *GetPrefixRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PrefixGetRequest) ProtoMessage() {}
+func (*GetPrefixRequest) ProtoMessage() {}
 
-func (x *PrefixGetRequest) ProtoReflect() protoreflect.Message {
+func (x *GetPrefixRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_v1_ipam_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -281,26 +281,26 @@ func (x *PrefixGetRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PrefixGetRequest.ProtoReflect.Descriptor instead.
-func (*PrefixGetRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetPrefixRequest.ProtoReflect.Descriptor instead.
+func (*GetPrefixRequest) Descriptor() ([]byte, []int) {
 	return file_v1_ipam_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *PrefixGetRequest) GetCidr() string {
+func (x *GetPrefixRequest) GetCidr() string {
 	if x != nil {
 		return x.Cidr
 	}
 	return ""
 }
 
-func (x *PrefixGetRequest) GetNamespace() string {
+func (x *GetPrefixRequest) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
 	}
 	return ""
 }
 
-type AcquireChildRequest struct {
+type AcquireChildPrefixRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -310,8 +310,8 @@ type AcquireChildRequest struct {
 	Namespace string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
 }
 
-func (x *AcquireChildRequest) Reset() {
-	*x = AcquireChildRequest{}
+func (x *AcquireChildPrefixRequest) Reset() {
+	*x = AcquireChildPrefixRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_v1_ipam_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -319,13 +319,13 @@ func (x *AcquireChildRequest) Reset() {
 	}
 }
 
-func (x *AcquireChildRequest) String() string {
+func (x *AcquireChildPrefixRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AcquireChildRequest) ProtoMessage() {}
+func (*AcquireChildPrefixRequest) ProtoMessage() {}
 
-func (x *AcquireChildRequest) ProtoReflect() protoreflect.Message {
+func (x *AcquireChildPrefixRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_v1_ipam_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -337,33 +337,33 @@ func (x *AcquireChildRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AcquireChildRequest.ProtoReflect.Descriptor instead.
-func (*AcquireChildRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AcquireChildPrefixRequest.ProtoReflect.Descriptor instead.
+func (*AcquireChildPrefixRequest) Descriptor() ([]byte, []int) {
 	return file_v1_ipam_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *AcquireChildRequest) GetCidr() string {
+func (x *AcquireChildPrefixRequest) GetCidr() string {
 	if x != nil {
 		return x.Cidr
 	}
 	return ""
 }
 
-func (x *AcquireChildRequest) GetLength() uint32 {
+func (x *AcquireChildPrefixRequest) GetLength() uint32 {
 	if x != nil {
 		return x.Length
 	}
 	return 0
 }
 
-func (x *AcquireChildRequest) GetNamespace() string {
+func (x *AcquireChildPrefixRequest) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
 	}
 	return ""
 }
 
-type ReleaseChildRequest struct {
+type ReleaseChildPrefixRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -372,8 +372,8 @@ type ReleaseChildRequest struct {
 	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
 }
 
-func (x *ReleaseChildRequest) Reset() {
-	*x = ReleaseChildRequest{}
+func (x *ReleaseChildPrefixRequest) Reset() {
+	*x = ReleaseChildPrefixRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_v1_ipam_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -381,13 +381,13 @@ func (x *ReleaseChildRequest) Reset() {
 	}
 }
 
-func (x *ReleaseChildRequest) String() string {
+func (x *ReleaseChildPrefixRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReleaseChildRequest) ProtoMessage() {}
+func (*ReleaseChildPrefixRequest) ProtoMessage() {}
 
-func (x *ReleaseChildRequest) ProtoReflect() protoreflect.Message {
+func (x *ReleaseChildPrefixRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_v1_ipam_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -399,19 +399,19 @@ func (x *ReleaseChildRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReleaseChildRequest.ProtoReflect.Descriptor instead.
-func (*ReleaseChildRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReleaseChildPrefixRequest.ProtoReflect.Descriptor instead.
+func (*ReleaseChildPrefixRequest) Descriptor() ([]byte, []int) {
 	return file_v1_ipam_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *ReleaseChildRequest) GetCidr() string {
+func (x *ReleaseChildPrefixRequest) GetCidr() string {
 	if x != nil {
 		return x.Cidr
 	}
 	return ""
 }
 
-func (x *ReleaseChildRequest) GetNamespace() string {
+func (x *ReleaseChildPrefixRequest) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
 	}
@@ -481,7 +481,7 @@ func (x *IP) GetParentPrefix() string {
 	return ""
 }
 
-type IPResponse struct {
+type AcquireIPResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -489,8 +489,8 @@ type IPResponse struct {
 	Ip *IP `protobuf:"bytes,1,opt,name=ip,proto3" json:"ip,omitempty"`
 }
 
-func (x *IPResponse) Reset() {
-	*x = IPResponse{}
+func (x *AcquireIPResponse) Reset() {
+	*x = AcquireIPResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_v1_ipam_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -498,13 +498,13 @@ func (x *IPResponse) Reset() {
 	}
 }
 
-func (x *IPResponse) String() string {
+func (x *AcquireIPResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*IPResponse) ProtoMessage() {}
+func (*AcquireIPResponse) ProtoMessage() {}
 
-func (x *IPResponse) ProtoReflect() protoreflect.Message {
+func (x *AcquireIPResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_v1_ipam_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -516,30 +516,28 @@ func (x *IPResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use IPResponse.ProtoReflect.Descriptor instead.
-func (*IPResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AcquireIPResponse.ProtoReflect.Descriptor instead.
+func (*AcquireIPResponse) Descriptor() ([]byte, []int) {
 	return file_v1_ipam_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *IPResponse) GetIp() *IP {
+func (x *AcquireIPResponse) GetIp() *IP {
 	if x != nil {
 		return x.Ip
 	}
 	return nil
 }
 
-type IPAcquireRequest struct {
+type ReleaseIPResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	PrefixCidr string                  `protobuf:"bytes,1,opt,name=prefix_cidr,json=prefixCidr,proto3" json:"prefix_cidr,omitempty"`
-	Namespace  string                  `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Ip         *wrapperspb.StringValue `protobuf:"bytes,3,opt,name=ip,proto3" json:"ip,omitempty"`
+	Ip *IP `protobuf:"bytes,1,opt,name=ip,proto3" json:"ip,omitempty"`
 }
 
-func (x *IPAcquireRequest) Reset() {
-	*x = IPAcquireRequest{}
+func (x *ReleaseIPResponse) Reset() {
+	*x = ReleaseIPResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_v1_ipam_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -547,13 +545,13 @@ func (x *IPAcquireRequest) Reset() {
 	}
 }
 
-func (x *IPAcquireRequest) String() string {
+func (x *ReleaseIPResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*IPAcquireRequest) ProtoMessage() {}
+func (*ReleaseIPResponse) ProtoMessage() {}
 
-func (x *IPAcquireRequest) ProtoReflect() protoreflect.Message {
+func (x *ReleaseIPResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_v1_ipam_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -565,44 +563,30 @@ func (x *IPAcquireRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use IPAcquireRequest.ProtoReflect.Descriptor instead.
-func (*IPAcquireRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReleaseIPResponse.ProtoReflect.Descriptor instead.
+func (*ReleaseIPResponse) Descriptor() ([]byte, []int) {
 	return file_v1_ipam_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *IPAcquireRequest) GetPrefixCidr() string {
-	if x != nil {
-		return x.PrefixCidr
-	}
-	return ""
-}
-
-func (x *IPAcquireRequest) GetNamespace() string {
-	if x != nil {
-		return x.Namespace
-	}
-	return ""
-}
-
-func (x *IPAcquireRequest) GetIp() *wrapperspb.StringValue {
+func (x *ReleaseIPResponse) GetIp() *IP {
 	if x != nil {
 		return x.Ip
 	}
 	return nil
 }
 
-type IPReleaseRequest struct {
+type AcquireIPRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	PrefixCidr string `protobuf:"bytes,1,opt,name=prefix_cidr,json=prefixCidr,proto3" json:"prefix_cidr,omitempty"`
-	Namespace  string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Ip         string `protobuf:"bytes,3,opt,name=ip,proto3" json:"ip,omitempty"`
+	PrefixCidr string                  `protobuf:"bytes,1,opt,name=prefix_cidr,json=prefixCidr,proto3" json:"prefix_cidr,omitempty"`
+	Namespace  string                  `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Ip         *wrapperspb.StringValue `protobuf:"bytes,3,opt,name=ip,proto3" json:"ip,omitempty"`
 }
 
-func (x *IPReleaseRequest) Reset() {
-	*x = IPReleaseRequest{}
+func (x *AcquireIPRequest) Reset() {
+	*x = AcquireIPRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_v1_ipam_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -610,13 +594,13 @@ func (x *IPReleaseRequest) Reset() {
 	}
 }
 
-func (x *IPReleaseRequest) String() string {
+func (x *AcquireIPRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*IPReleaseRequest) ProtoMessage() {}
+func (*AcquireIPRequest) ProtoMessage() {}
 
-func (x *IPReleaseRequest) ProtoReflect() protoreflect.Message {
+func (x *AcquireIPRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_v1_ipam_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -628,26 +612,89 @@ func (x *IPReleaseRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use IPReleaseRequest.ProtoReflect.Descriptor instead.
-func (*IPReleaseRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AcquireIPRequest.ProtoReflect.Descriptor instead.
+func (*AcquireIPRequest) Descriptor() ([]byte, []int) {
 	return file_v1_ipam_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *IPReleaseRequest) GetPrefixCidr() string {
+func (x *AcquireIPRequest) GetPrefixCidr() string {
 	if x != nil {
 		return x.PrefixCidr
 	}
 	return ""
 }
 
-func (x *IPReleaseRequest) GetNamespace() string {
+func (x *AcquireIPRequest) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
 	}
 	return ""
 }
 
-func (x *IPReleaseRequest) GetIp() string {
+func (x *AcquireIPRequest) GetIp() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Ip
+	}
+	return nil
+}
+
+type ReleaseIPRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	PrefixCidr string `protobuf:"bytes,1,opt,name=prefix_cidr,json=prefixCidr,proto3" json:"prefix_cidr,omitempty"`
+	Namespace  string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Ip         string `protobuf:"bytes,3,opt,name=ip,proto3" json:"ip,omitempty"`
+}
+
+func (x *ReleaseIPRequest) Reset() {
+	*x = ReleaseIPRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_v1_ipam_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReleaseIPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReleaseIPRequest) ProtoMessage() {}
+
+func (x *ReleaseIPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_ipam_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReleaseIPRequest.ProtoReflect.Descriptor instead.
+func (*ReleaseIPRequest) Descriptor() ([]byte, []int) {
+	return file_v1_ipam_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ReleaseIPRequest) GetPrefixCidr() string {
+	if x != nil {
+		return x.PrefixCidr
+	}
+	return ""
+}
+
+func (x *ReleaseIPRequest) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *ReleaseIPRequest) GetIp() string {
 	if x != nil {
 		return x.Ip
 	}
@@ -669,79 +716,87 @@ var file_v1_ipam_proto_rawDesc = []byte{
 	0x22, 0x34, 0x0a, 0x0e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
 	0x73, 0x65, 0x12, 0x22, 0x0a, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x06,
-	0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x22, 0x47, 0x0a, 0x13, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78,
-	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a,
+	0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x22, 0x47, 0x0a, 0x13, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a,
 	0x04, 0x63, 0x69, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x63, 0x69, 0x64,
 	0x72, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22,
-	0x47, 0x0a, 0x13, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52,
+	0x47, 0x0a, 0x13, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x69, 0x64, 0x72, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x63, 0x69, 0x64, 0x72, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61,
 	0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e,
-	0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x44, 0x0a, 0x10, 0x50, 0x72, 0x65, 0x66,
-	0x69, 0x78, 0x47, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04,
+	0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x44, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x50,
+	0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04,
 	0x63, 0x69, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x63, 0x69, 0x64, 0x72,
 	0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x5f,
-	0x0a, 0x13, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x69, 0x64, 0x72, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x04, 0x63, 0x69, 0x64, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x6c, 0x65, 0x6e,
-	0x67, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x6c, 0x65, 0x6e, 0x67, 0x74,
-	0x68, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22,
-	0x47, 0x0a, 0x13, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x69, 0x64, 0x72, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x63, 0x69, 0x64, 0x72, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61,
+	0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x65,
+	0x0a, 0x19, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x50, 0x72,
+	0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x63,
+	0x69, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x63, 0x69, 0x64, 0x72, 0x12,
+	0x16, 0x0a, 0x06, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52,
+	0x06, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73,
+	0x70, 0x61, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65,
+	0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x4d, 0x0a, 0x19, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65,
+	0x43, 0x68, 0x69, 0x6c, 0x64, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x69, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x04, 0x63, 0x69, 0x64, 0x72, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70,
+	0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73,
+	0x70, 0x61, 0x63, 0x65, 0x22, 0x57, 0x0a, 0x02, 0x49, 0x50, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x70,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x12, 0x1c, 0x0a, 0x09, 0x6e, 0x61,
 	0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e,
-	0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x57, 0x0a, 0x02, 0x49, 0x50, 0x12, 0x0e,
-	0x0a, 0x02, 0x69, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x12, 0x1c,
-	0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x23, 0x0a, 0x0d,
-	0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x0c, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x65, 0x66, 0x69,
-	0x78, 0x22, 0x24, 0x0a, 0x0a, 0x49, 0x50, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x23, 0x0a, 0x0d, 0x70, 0x61, 0x72, 0x65,
+	0x6e, 0x74, 0x5f, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0c, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x22, 0x2b, 0x0a,
+	0x11, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x49, 0x50, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x16, 0x0a, 0x02, 0x69, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x06,
+	0x2e, 0x76, 0x31, 0x2e, 0x49, 0x50, 0x52, 0x02, 0x69, 0x70, 0x22, 0x2b, 0x0a, 0x11, 0x52, 0x65,
+	0x6c, 0x65, 0x61, 0x73, 0x65, 0x49, 0x50, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
 	0x16, 0x0a, 0x02, 0x69, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x06, 0x2e, 0x76, 0x31,
-	0x2e, 0x49, 0x50, 0x52, 0x02, 0x69, 0x70, 0x22, 0x7f, 0x0a, 0x10, 0x49, 0x50, 0x41, 0x63, 0x71,
-	0x75, 0x69, 0x72, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x70,
+	0x2e, 0x49, 0x50, 0x52, 0x02, 0x69, 0x70, 0x22, 0x7f, 0x0a, 0x10, 0x41, 0x63, 0x71, 0x75, 0x69,
+	0x72, 0x65, 0x49, 0x50, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x70,
 	0x72, 0x65, 0x66, 0x69, 0x78, 0x5f, 0x63, 0x69, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x0a, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x43, 0x69, 0x64, 0x72, 0x12, 0x1c, 0x0a, 0x09,
 	0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x2c, 0x0a, 0x02, 0x69, 0x70,
 	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56,
-	0x61, 0x6c, 0x75, 0x65, 0x52, 0x02, 0x69, 0x70, 0x22, 0x61, 0x0a, 0x10, 0x49, 0x50, 0x52, 0x65,
-	0x6c, 0x65, 0x61, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b,
+	0x61, 0x6c, 0x75, 0x65, 0x52, 0x02, 0x69, 0x70, 0x22, 0x61, 0x0a, 0x10, 0x52, 0x65, 0x6c, 0x65,
+	0x61, 0x73, 0x65, 0x49, 0x50, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b,
 	0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x5f, 0x63, 0x69, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x0a, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x43, 0x69, 0x64, 0x72, 0x12, 0x1c, 0x0a,
 	0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69,
-	0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x32, 0x8c, 0x03, 0x0a, 0x0b,
-	0x49, 0x70, 0x61, 0x6d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x35, 0x0a, 0x06, 0x43,
-	0x72, 0x65, 0x61, 0x74, 0x65, 0x12, 0x17, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69,
-	0x78, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12,
-	0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x35, 0x0a, 0x06, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x12, 0x17, 0x2e, 0x76,
-	0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69,
-	0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2f, 0x0a, 0x03, 0x47, 0x65, 0x74,
-	0x12, 0x14, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x47, 0x65, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66,
-	0x69, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x0c, 0x41, 0x63,
-	0x71, 0x75, 0x69, 0x72, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x12, 0x17, 0x2e, 0x76, 0x31, 0x2e,
-	0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x0c, 0x52, 0x65, 0x6c, 0x65, 0x61,
-	0x73, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x12, 0x17, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x6c,
-	0x65, 0x61, 0x73, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a, 0x09, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x49,
-	0x50, 0x12, 0x14, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x50, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0e, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x50, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a, 0x09, 0x52, 0x65, 0x6c, 0x65, 0x61,
-	0x73, 0x65, 0x49, 0x50, 0x12, 0x14, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x50, 0x52, 0x65, 0x6c, 0x65,
-	0x61, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0e, 0x2e, 0x76, 0x31, 0x2e,
-	0x49, 0x50, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x06, 0x5a, 0x04, 0x2e, 0x2f,
-	0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x32, 0xc4, 0x03, 0x0a, 0x0b,
+	0x49, 0x70, 0x61, 0x6d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3b, 0x0a, 0x0c, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x17, 0x2e, 0x76, 0x31,
+	0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x0c, 0x44, 0x65, 0x6c, 0x65,
+	0x74, 0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x17, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65,
+	0x6c, 0x65, 0x74, 0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x35, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x50, 0x72, 0x65, 0x66,
+	0x69, 0x78, 0x12, 0x14, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72, 0x65, 0x66, 0x69,
+	0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72,
+	0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x47, 0x0a, 0x12,
+	0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x50, 0x72, 0x65, 0x66,
+	0x69, 0x78, 0x12, 0x1d, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x43,
+	0x68, 0x69, 0x6c, 0x64, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x47, 0x0a, 0x12, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65,
+	0x43, 0x68, 0x69, 0x6c, 0x64, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x1d, 0x2e, 0x76, 0x31,
+	0x2e, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x43, 0x68, 0x69, 0x6c, 0x64, 0x50, 0x72, 0x65,
+	0x66, 0x69, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x76, 0x31, 0x2e,
+	0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x38,
+	0x0a, 0x09, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x49, 0x50, 0x12, 0x14, 0x2e, 0x76, 0x31,
+	0x2e, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x49, 0x50, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x15, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x71, 0x75, 0x69, 0x72, 0x65, 0x49, 0x50,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x38, 0x0a, 0x09, 0x52, 0x65, 0x6c, 0x65,
+	0x61, 0x73, 0x65, 0x49, 0x50, 0x12, 0x14, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x6c, 0x65, 0x61,
+	0x73, 0x65, 0x49, 0x50, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x76, 0x31,
+	0x2e, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x49, 0x50, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x42, 0x06, 0x5a, 0x04, 0x2e, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -756,44 +811,46 @@ func file_v1_ipam_proto_rawDescGZIP() []byte {
 	return file_v1_ipam_proto_rawDescData
 }
 
-var file_v1_ipam_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_v1_ipam_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_v1_ipam_proto_goTypes = []interface{}{
-	(*Prefix)(nil),                 // 0: v1.Prefix
-	(*PrefixResponse)(nil),         // 1: v1.PrefixResponse
-	(*PrefixCreateRequest)(nil),    // 2: v1.PrefixCreateRequest
-	(*PrefixDeleteRequest)(nil),    // 3: v1.PrefixDeleteRequest
-	(*PrefixGetRequest)(nil),       // 4: v1.PrefixGetRequest
-	(*AcquireChildRequest)(nil),    // 5: v1.AcquireChildRequest
-	(*ReleaseChildRequest)(nil),    // 6: v1.ReleaseChildRequest
-	(*IP)(nil),                     // 7: v1.IP
-	(*IPResponse)(nil),             // 8: v1.IPResponse
-	(*IPAcquireRequest)(nil),       // 9: v1.IPAcquireRequest
-	(*IPReleaseRequest)(nil),       // 10: v1.IPReleaseRequest
-	(*wrapperspb.StringValue)(nil), // 11: google.protobuf.StringValue
+	(*Prefix)(nil),                    // 0: v1.Prefix
+	(*PrefixResponse)(nil),            // 1: v1.PrefixResponse
+	(*CreatePrefixRequest)(nil),       // 2: v1.CreatePrefixRequest
+	(*DeletePrefixRequest)(nil),       // 3: v1.DeletePrefixRequest
+	(*GetPrefixRequest)(nil),          // 4: v1.GetPrefixRequest
+	(*AcquireChildPrefixRequest)(nil), // 5: v1.AcquireChildPrefixRequest
+	(*ReleaseChildPrefixRequest)(nil), // 6: v1.ReleaseChildPrefixRequest
+	(*IP)(nil),                        // 7: v1.IP
+	(*AcquireIPResponse)(nil),         // 8: v1.AcquireIPResponse
+	(*ReleaseIPResponse)(nil),         // 9: v1.ReleaseIPResponse
+	(*AcquireIPRequest)(nil),          // 10: v1.AcquireIPRequest
+	(*ReleaseIPRequest)(nil),          // 11: v1.ReleaseIPRequest
+	(*wrapperspb.StringValue)(nil),    // 12: google.protobuf.StringValue
 }
 var file_v1_ipam_proto_depIdxs = []int32{
 	0,  // 0: v1.PrefixResponse.prefix:type_name -> v1.Prefix
-	7,  // 1: v1.IPResponse.ip:type_name -> v1.IP
-	11, // 2: v1.IPAcquireRequest.ip:type_name -> google.protobuf.StringValue
-	2,  // 3: v1.IpamService.Create:input_type -> v1.PrefixCreateRequest
-	3,  // 4: v1.IpamService.Delete:input_type -> v1.PrefixDeleteRequest
-	4,  // 5: v1.IpamService.Get:input_type -> v1.PrefixGetRequest
-	5,  // 6: v1.IpamService.AcquireChild:input_type -> v1.AcquireChildRequest
-	6,  // 7: v1.IpamService.ReleaseChild:input_type -> v1.ReleaseChildRequest
-	9,  // 8: v1.IpamService.AcquireIP:input_type -> v1.IPAcquireRequest
-	10, // 9: v1.IpamService.ReleaseIP:input_type -> v1.IPReleaseRequest
-	1,  // 10: v1.IpamService.Create:output_type -> v1.PrefixResponse
-	1,  // 11: v1.IpamService.Delete:output_type -> v1.PrefixResponse
-	1,  // 12: v1.IpamService.Get:output_type -> v1.PrefixResponse
-	1,  // 13: v1.IpamService.AcquireChild:output_type -> v1.PrefixResponse
-	1,  // 14: v1.IpamService.ReleaseChild:output_type -> v1.PrefixResponse
-	8,  // 15: v1.IpamService.AcquireIP:output_type -> v1.IPResponse
-	8,  // 16: v1.IpamService.ReleaseIP:output_type -> v1.IPResponse
-	10, // [10:17] is the sub-list for method output_type
-	3,  // [3:10] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	7,  // 1: v1.AcquireIPResponse.ip:type_name -> v1.IP
+	7,  // 2: v1.ReleaseIPResponse.ip:type_name -> v1.IP
+	12, // 3: v1.AcquireIPRequest.ip:type_name -> google.protobuf.StringValue
+	2,  // 4: v1.IpamService.CreatePrefix:input_type -> v1.CreatePrefixRequest
+	3,  // 5: v1.IpamService.DeletePrefix:input_type -> v1.DeletePrefixRequest
+	4,  // 6: v1.IpamService.GetPrefix:input_type -> v1.GetPrefixRequest
+	5,  // 7: v1.IpamService.AcquireChildPrefix:input_type -> v1.AcquireChildPrefixRequest
+	6,  // 8: v1.IpamService.ReleaseChildPrefix:input_type -> v1.ReleaseChildPrefixRequest
+	10, // 9: v1.IpamService.AcquireIP:input_type -> v1.AcquireIPRequest
+	11, // 10: v1.IpamService.ReleaseIP:input_type -> v1.ReleaseIPRequest
+	1,  // 11: v1.IpamService.CreatePrefix:output_type -> v1.PrefixResponse
+	1,  // 12: v1.IpamService.DeletePrefix:output_type -> v1.PrefixResponse
+	1,  // 13: v1.IpamService.GetPrefix:output_type -> v1.PrefixResponse
+	1,  // 14: v1.IpamService.AcquireChildPrefix:output_type -> v1.PrefixResponse
+	1,  // 15: v1.IpamService.ReleaseChildPrefix:output_type -> v1.PrefixResponse
+	8,  // 16: v1.IpamService.AcquireIP:output_type -> v1.AcquireIPResponse
+	9,  // 17: v1.IpamService.ReleaseIP:output_type -> v1.ReleaseIPResponse
+	11, // [11:18] is the sub-list for method output_type
+	4,  // [4:11] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_v1_ipam_proto_init() }
@@ -827,7 +884,7 @@ func file_v1_ipam_proto_init() {
 			}
 		}
 		file_v1_ipam_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PrefixCreateRequest); i {
+			switch v := v.(*CreatePrefixRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -839,7 +896,7 @@ func file_v1_ipam_proto_init() {
 			}
 		}
 		file_v1_ipam_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PrefixDeleteRequest); i {
+			switch v := v.(*DeletePrefixRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -851,7 +908,7 @@ func file_v1_ipam_proto_init() {
 			}
 		}
 		file_v1_ipam_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PrefixGetRequest); i {
+			switch v := v.(*GetPrefixRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -863,7 +920,7 @@ func file_v1_ipam_proto_init() {
 			}
 		}
 		file_v1_ipam_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AcquireChildRequest); i {
+			switch v := v.(*AcquireChildPrefixRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -875,7 +932,7 @@ func file_v1_ipam_proto_init() {
 			}
 		}
 		file_v1_ipam_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReleaseChildRequest); i {
+			switch v := v.(*ReleaseChildPrefixRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -899,7 +956,7 @@ func file_v1_ipam_proto_init() {
 			}
 		}
 		file_v1_ipam_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IPResponse); i {
+			switch v := v.(*AcquireIPResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -911,7 +968,7 @@ func file_v1_ipam_proto_init() {
 			}
 		}
 		file_v1_ipam_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IPAcquireRequest); i {
+			switch v := v.(*ReleaseIPResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -923,7 +980,19 @@ func file_v1_ipam_proto_init() {
 			}
 		}
 		file_v1_ipam_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IPReleaseRequest); i {
+			switch v := v.(*AcquireIPRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_v1_ipam_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ReleaseIPRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -941,7 +1010,7 @@ func file_v1_ipam_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_v1_ipam_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -967,13 +1036,13 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type IpamServiceClient interface {
-	Create(ctx context.Context, in *PrefixCreateRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
-	Delete(ctx context.Context, in *PrefixDeleteRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
-	Get(ctx context.Context, in *PrefixGetRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
-	AcquireChild(ctx context.Context, in *AcquireChildRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
-	ReleaseChild(ctx context.Context, in *ReleaseChildRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
-	AcquireIP(ctx context.Context, in *IPAcquireRequest, opts ...grpc.CallOption) (*IPResponse, error)
-	ReleaseIP(ctx context.Context, in *IPReleaseRequest, opts ...grpc.CallOption) (*IPResponse, error)
+	CreatePrefix(ctx context.Context, in *CreatePrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
+	DeletePrefix(ctx context.Context, in *DeletePrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
+	GetPrefix(ctx context.Context, in *GetPrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
+	AcquireChildPrefix(ctx context.Context, in *AcquireChildPrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
+	ReleaseChildPrefix(ctx context.Context, in *ReleaseChildPrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error)
+	AcquireIP(ctx context.Context, in *AcquireIPRequest, opts ...grpc.CallOption) (*AcquireIPResponse, error)
+	ReleaseIP(ctx context.Context, in *ReleaseIPRequest, opts ...grpc.CallOption) (*ReleaseIPResponse, error)
 }
 
 type ipamServiceClient struct {
@@ -984,53 +1053,53 @@ func NewIpamServiceClient(cc grpc.ClientConnInterface) IpamServiceClient {
 	return &ipamServiceClient{cc}
 }
 
-func (c *ipamServiceClient) Create(ctx context.Context, in *PrefixCreateRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
+func (c *ipamServiceClient) CreatePrefix(ctx context.Context, in *CreatePrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
 	out := new(PrefixResponse)
-	err := c.cc.Invoke(ctx, "/v1.IpamService/Create", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.IpamService/CreatePrefix", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *ipamServiceClient) Delete(ctx context.Context, in *PrefixDeleteRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
+func (c *ipamServiceClient) DeletePrefix(ctx context.Context, in *DeletePrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
 	out := new(PrefixResponse)
-	err := c.cc.Invoke(ctx, "/v1.IpamService/Delete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.IpamService/DeletePrefix", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *ipamServiceClient) Get(ctx context.Context, in *PrefixGetRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
+func (c *ipamServiceClient) GetPrefix(ctx context.Context, in *GetPrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
 	out := new(PrefixResponse)
-	err := c.cc.Invoke(ctx, "/v1.IpamService/Get", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.IpamService/GetPrefix", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *ipamServiceClient) AcquireChild(ctx context.Context, in *AcquireChildRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
+func (c *ipamServiceClient) AcquireChildPrefix(ctx context.Context, in *AcquireChildPrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
 	out := new(PrefixResponse)
-	err := c.cc.Invoke(ctx, "/v1.IpamService/AcquireChild", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.IpamService/AcquireChildPrefix", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *ipamServiceClient) ReleaseChild(ctx context.Context, in *ReleaseChildRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
+func (c *ipamServiceClient) ReleaseChildPrefix(ctx context.Context, in *ReleaseChildPrefixRequest, opts ...grpc.CallOption) (*PrefixResponse, error) {
 	out := new(PrefixResponse)
-	err := c.cc.Invoke(ctx, "/v1.IpamService/ReleaseChild", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.IpamService/ReleaseChildPrefix", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *ipamServiceClient) AcquireIP(ctx context.Context, in *IPAcquireRequest, opts ...grpc.CallOption) (*IPResponse, error) {
-	out := new(IPResponse)
+func (c *ipamServiceClient) AcquireIP(ctx context.Context, in *AcquireIPRequest, opts ...grpc.CallOption) (*AcquireIPResponse, error) {
+	out := new(AcquireIPResponse)
 	err := c.cc.Invoke(ctx, "/v1.IpamService/AcquireIP", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1038,8 +1107,8 @@ func (c *ipamServiceClient) AcquireIP(ctx context.Context, in *IPAcquireRequest,
 	return out, nil
 }
 
-func (c *ipamServiceClient) ReleaseIP(ctx context.Context, in *IPReleaseRequest, opts ...grpc.CallOption) (*IPResponse, error) {
-	out := new(IPResponse)
+func (c *ipamServiceClient) ReleaseIP(ctx context.Context, in *ReleaseIPRequest, opts ...grpc.CallOption) (*ReleaseIPResponse, error) {
+	out := new(ReleaseIPResponse)
 	err := c.cc.Invoke(ctx, "/v1.IpamService/ReleaseIP", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1049,38 +1118,38 @@ func (c *ipamServiceClient) ReleaseIP(ctx context.Context, in *IPReleaseRequest,
 
 // IpamServiceServer is the server API for IpamService service.
 type IpamServiceServer interface {
-	Create(context.Context, *PrefixCreateRequest) (*PrefixResponse, error)
-	Delete(context.Context, *PrefixDeleteRequest) (*PrefixResponse, error)
-	Get(context.Context, *PrefixGetRequest) (*PrefixResponse, error)
-	AcquireChild(context.Context, *AcquireChildRequest) (*PrefixResponse, error)
-	ReleaseChild(context.Context, *ReleaseChildRequest) (*PrefixResponse, error)
-	AcquireIP(context.Context, *IPAcquireRequest) (*IPResponse, error)
-	ReleaseIP(context.Context, *IPReleaseRequest) (*IPResponse, error)
+	CreatePrefix(context.Context, *CreatePrefixRequest) (*PrefixResponse, error)
+	DeletePrefix(context.Context, *DeletePrefixRequest) (*PrefixResponse, error)
+	GetPrefix(context.Context, *GetPrefixRequest) (*PrefixResponse, error)
+	AcquireChildPrefix(context.Context, *AcquireChildPrefixRequest) (*PrefixResponse, error)
+	ReleaseChildPrefix(context.Context, *ReleaseChildPrefixRequest) (*PrefixResponse, error)
+	AcquireIP(context.Context, *AcquireIPRequest) (*AcquireIPResponse, error)
+	ReleaseIP(context.Context, *ReleaseIPRequest) (*ReleaseIPResponse, error)
 }
 
 // UnimplementedIpamServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedIpamServiceServer struct {
 }
 
-func (*UnimplementedIpamServiceServer) Create(context.Context, *PrefixCreateRequest) (*PrefixResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+func (*UnimplementedIpamServiceServer) CreatePrefix(context.Context, *CreatePrefixRequest) (*PrefixResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatePrefix not implemented")
 }
-func (*UnimplementedIpamServiceServer) Delete(context.Context, *PrefixDeleteRequest) (*PrefixResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+func (*UnimplementedIpamServiceServer) DeletePrefix(context.Context, *DeletePrefixRequest) (*PrefixResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePrefix not implemented")
 }
-func (*UnimplementedIpamServiceServer) Get(context.Context, *PrefixGetRequest) (*PrefixResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+func (*UnimplementedIpamServiceServer) GetPrefix(context.Context, *GetPrefixRequest) (*PrefixResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPrefix not implemented")
 }
-func (*UnimplementedIpamServiceServer) AcquireChild(context.Context, *AcquireChildRequest) (*PrefixResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AcquireChild not implemented")
+func (*UnimplementedIpamServiceServer) AcquireChildPrefix(context.Context, *AcquireChildPrefixRequest) (*PrefixResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcquireChildPrefix not implemented")
 }
-func (*UnimplementedIpamServiceServer) ReleaseChild(context.Context, *ReleaseChildRequest) (*PrefixResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReleaseChild not implemented")
+func (*UnimplementedIpamServiceServer) ReleaseChildPrefix(context.Context, *ReleaseChildPrefixRequest) (*PrefixResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReleaseChildPrefix not implemented")
 }
-func (*UnimplementedIpamServiceServer) AcquireIP(context.Context, *IPAcquireRequest) (*IPResponse, error) {
+func (*UnimplementedIpamServiceServer) AcquireIP(context.Context, *AcquireIPRequest) (*AcquireIPResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AcquireIP not implemented")
 }
-func (*UnimplementedIpamServiceServer) ReleaseIP(context.Context, *IPReleaseRequest) (*IPResponse, error) {
+func (*UnimplementedIpamServiceServer) ReleaseIP(context.Context, *ReleaseIPRequest) (*ReleaseIPResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReleaseIP not implemented")
 }
 
@@ -1088,98 +1157,98 @@ func RegisterIpamServiceServer(s *grpc.Server, srv IpamServiceServer) {
 	s.RegisterService(&_IpamService_serviceDesc, srv)
 }
 
-func _IpamService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PrefixCreateRequest)
+func _IpamService_CreatePrefix_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePrefixRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IpamServiceServer).Create(ctx, in)
+		return srv.(IpamServiceServer).CreatePrefix(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.IpamService/Create",
+		FullMethod: "/v1.IpamService/CreatePrefix",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IpamServiceServer).Create(ctx, req.(*PrefixCreateRequest))
+		return srv.(IpamServiceServer).CreatePrefix(ctx, req.(*CreatePrefixRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IpamService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PrefixDeleteRequest)
+func _IpamService_DeletePrefix_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePrefixRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IpamServiceServer).Delete(ctx, in)
+		return srv.(IpamServiceServer).DeletePrefix(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.IpamService/Delete",
+		FullMethod: "/v1.IpamService/DeletePrefix",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IpamServiceServer).Delete(ctx, req.(*PrefixDeleteRequest))
+		return srv.(IpamServiceServer).DeletePrefix(ctx, req.(*DeletePrefixRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IpamService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PrefixGetRequest)
+func _IpamService_GetPrefix_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPrefixRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IpamServiceServer).Get(ctx, in)
+		return srv.(IpamServiceServer).GetPrefix(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.IpamService/Get",
+		FullMethod: "/v1.IpamService/GetPrefix",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IpamServiceServer).Get(ctx, req.(*PrefixGetRequest))
+		return srv.(IpamServiceServer).GetPrefix(ctx, req.(*GetPrefixRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IpamService_AcquireChild_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AcquireChildRequest)
+func _IpamService_AcquireChildPrefix_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AcquireChildPrefixRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IpamServiceServer).AcquireChild(ctx, in)
+		return srv.(IpamServiceServer).AcquireChildPrefix(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.IpamService/AcquireChild",
+		FullMethod: "/v1.IpamService/AcquireChildPrefix",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IpamServiceServer).AcquireChild(ctx, req.(*AcquireChildRequest))
+		return srv.(IpamServiceServer).AcquireChildPrefix(ctx, req.(*AcquireChildPrefixRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IpamService_ReleaseChild_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReleaseChildRequest)
+func _IpamService_ReleaseChildPrefix_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseChildPrefixRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IpamServiceServer).ReleaseChild(ctx, in)
+		return srv.(IpamServiceServer).ReleaseChildPrefix(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.IpamService/ReleaseChild",
+		FullMethod: "/v1.IpamService/ReleaseChildPrefix",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IpamServiceServer).ReleaseChild(ctx, req.(*ReleaseChildRequest))
+		return srv.(IpamServiceServer).ReleaseChildPrefix(ctx, req.(*ReleaseChildPrefixRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _IpamService_AcquireIP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IPAcquireRequest)
+	in := new(AcquireIPRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1191,13 +1260,13 @@ func _IpamService_AcquireIP_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/v1.IpamService/AcquireIP",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IpamServiceServer).AcquireIP(ctx, req.(*IPAcquireRequest))
+		return srv.(IpamServiceServer).AcquireIP(ctx, req.(*AcquireIPRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _IpamService_ReleaseIP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IPReleaseRequest)
+	in := new(ReleaseIPRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1209,7 +1278,7 @@ func _IpamService_ReleaseIP_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/v1.IpamService/ReleaseIP",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IpamServiceServer).ReleaseIP(ctx, req.(*IPReleaseRequest))
+		return srv.(IpamServiceServer).ReleaseIP(ctx, req.(*ReleaseIPRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1219,24 +1288,24 @@ var _IpamService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*IpamServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Create",
-			Handler:    _IpamService_Create_Handler,
+			MethodName: "CreatePrefix",
+			Handler:    _IpamService_CreatePrefix_Handler,
 		},
 		{
-			MethodName: "Delete",
-			Handler:    _IpamService_Delete_Handler,
+			MethodName: "DeletePrefix",
+			Handler:    _IpamService_DeletePrefix_Handler,
 		},
 		{
-			MethodName: "Get",
-			Handler:    _IpamService_Get_Handler,
+			MethodName: "GetPrefix",
+			Handler:    _IpamService_GetPrefix_Handler,
 		},
 		{
-			MethodName: "AcquireChild",
-			Handler:    _IpamService_AcquireChild_Handler,
+			MethodName: "AcquireChildPrefix",
+			Handler:    _IpamService_AcquireChildPrefix_Handler,
 		},
 		{
-			MethodName: "ReleaseChild",
-			Handler:    _IpamService_ReleaseChild_Handler,
+			MethodName: "ReleaseChildPrefix",
+			Handler:    _IpamService_ReleaseChildPrefix_Handler,
 		},
 		{
 			MethodName: "AcquireIP",

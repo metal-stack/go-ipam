@@ -23,7 +23,7 @@ func NewIpamService(storage ipam.Storage, l *zap.Logger) *IpamService {
 	}
 }
 
-func (i *IpamService) Create(ctx context.Context, req *v1.PrefixCreateRequest) (*v1.PrefixResponse, error) {
+func (i *IpamService) CreatePrefix(ctx context.Context, req *v1.CreatePrefixRequest) (*v1.PrefixResponse, error) {
 	i.ipamer.SetNamespace(req.Namespace)
 	p, err := i.ipamer.NewPrefix(req.Cidr)
 	if err != nil {
@@ -31,7 +31,7 @@ func (i *IpamService) Create(ctx context.Context, req *v1.PrefixCreateRequest) (
 	}
 	return &v1.PrefixResponse{Prefix: &v1.Prefix{Cidr: p.Cidr, Namespace: p.Namespace}}, nil
 }
-func (i *IpamService) Delete(ctx context.Context, req *v1.PrefixDeleteRequest) (*v1.PrefixResponse, error) {
+func (i *IpamService) DeletePrefix(ctx context.Context, req *v1.DeletePrefixRequest) (*v1.PrefixResponse, error) {
 	i.ipamer.SetNamespace(req.Namespace)
 	p, err := i.ipamer.DeletePrefix(req.Cidr)
 	if err != nil {
@@ -39,7 +39,7 @@ func (i *IpamService) Delete(ctx context.Context, req *v1.PrefixDeleteRequest) (
 	}
 	return &v1.PrefixResponse{Prefix: &v1.Prefix{Cidr: p.Cidr, ParentCidr: p.ParentCidr, Namespace: p.Namespace}}, nil
 }
-func (i *IpamService) Get(ctx context.Context, req *v1.PrefixGetRequest) (*v1.PrefixResponse, error) {
+func (i *IpamService) GetPrefix(ctx context.Context, req *v1.GetPrefixRequest) (*v1.PrefixResponse, error) {
 	i.ipamer.SetNamespace(req.Namespace)
 	p := i.ipamer.PrefixFrom(req.Cidr)
 	if p == nil {
@@ -47,7 +47,7 @@ func (i *IpamService) Get(ctx context.Context, req *v1.PrefixGetRequest) (*v1.Pr
 	}
 	return &v1.PrefixResponse{Prefix: &v1.Prefix{Cidr: p.Cidr, ParentCidr: p.ParentCidr, Namespace: p.Namespace}}, nil
 }
-func (i *IpamService) AcquireChild(ctx context.Context, req *v1.AcquireChildRequest) (*v1.PrefixResponse, error) {
+func (i *IpamService) AcquireChildPrefix(ctx context.Context, req *v1.AcquireChildPrefixRequest) (*v1.PrefixResponse, error) {
 	i.ipamer.SetNamespace(req.Namespace)
 	if req.Length > 128 {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("child prefix length:%d must be between 0-128", req.Length))
@@ -58,7 +58,7 @@ func (i *IpamService) AcquireChild(ctx context.Context, req *v1.AcquireChildRequ
 	}
 	return &v1.PrefixResponse{Prefix: &v1.Prefix{Cidr: p.Cidr, ParentCidr: p.ParentCidr, Namespace: p.Namespace}}, nil
 }
-func (i *IpamService) ReleaseChild(ctx context.Context, req *v1.ReleaseChildRequest) (*v1.PrefixResponse, error) {
+func (i *IpamService) ReleaseChildPrefix(ctx context.Context, req *v1.ReleaseChildPrefixRequest) (*v1.PrefixResponse, error) {
 	i.ipamer.SetNamespace(req.Namespace)
 	p := i.ipamer.PrefixFrom(req.Cidr)
 	if p == nil {
@@ -70,26 +70,26 @@ func (i *IpamService) ReleaseChild(ctx context.Context, req *v1.ReleaseChildRequ
 	}
 	return &v1.PrefixResponse{Prefix: &v1.Prefix{Cidr: p.Cidr, ParentCidr: p.ParentCidr, Namespace: p.Namespace}}, nil
 }
-func (i *IpamService) AcquireIP(ctx context.Context, req *v1.IPAcquireRequest) (*v1.IPResponse, error) {
+func (i *IpamService) AcquireIP(ctx context.Context, req *v1.AcquireIPRequest) (*v1.AcquireIPResponse, error) {
 	i.ipamer.SetNamespace(req.Namespace)
 	if req.Ip == nil {
 		ip, err := i.ipamer.AcquireIP(req.PrefixCidr)
 		if err != nil {
 			return nil, err
 		}
-		return &v1.IPResponse{Ip: &v1.IP{Ip: ip.IP.String(), ParentPrefix: ip.ParentPrefix, Namespace: ip.Namespace}}, nil
+		return &v1.AcquireIPResponse{Ip: &v1.IP{Ip: ip.IP.String(), ParentPrefix: ip.ParentPrefix, Namespace: ip.Namespace}}, nil
 	}
 	ip, err := i.ipamer.AcquireSpecificIP(req.PrefixCidr, req.Ip.Value)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.IPResponse{Ip: &v1.IP{Ip: ip.IP.String(), ParentPrefix: ip.ParentPrefix, Namespace: ip.Namespace}}, nil
+	return &v1.AcquireIPResponse{Ip: &v1.IP{Ip: ip.IP.String(), ParentPrefix: ip.ParentPrefix, Namespace: ip.Namespace}}, nil
 }
-func (i *IpamService) ReleaseIP(ctx context.Context, req *v1.IPReleaseRequest) (*v1.IPResponse, error) {
+func (i *IpamService) ReleaseIP(ctx context.Context, req *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error) {
 	i.ipamer.SetNamespace(req.Namespace)
 	err := i.ipamer.ReleaseIPFromPrefix(req.PrefixCidr, req.Ip)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.IPResponse{Ip: &v1.IP{Ip: req.Ip, ParentPrefix: req.PrefixCidr, Namespace: req.Namespace}}, nil
+	return &v1.ReleaseIPResponse{Ip: &v1.IP{Ip: req.Ip, ParentPrefix: req.PrefixCidr, Namespace: req.Namespace}}, nil
 }

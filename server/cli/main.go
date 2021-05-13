@@ -45,33 +45,33 @@ func run(c client.Client, log *zap.Logger) {
 	defer cancel()
 
 	// create
-	pcr := &v1.PrefixCreateRequest{
+	pcr := &v1.CreatePrefixRequest{
 		Cidr: "192.168.0.0/16",
 	}
-	res, err := c.Ipam().Create(ctx, pcr)
+	res, err := c.Ipam().CreatePrefix(ctx, pcr)
 	if err != nil {
 		log.Fatal("could not create prefix", zap.Error(err))
 	}
 	log.Sugar().Infow("created prefix", "prefix", res.Prefix)
 
-	pcr = &v1.PrefixCreateRequest{
+	pcr = &v1.CreatePrefixRequest{
 		Cidr:      "192.168.0.0/16",
 		Namespace: "my-namespace",
 	}
-	res, err = c.Ipam().Create(ctx, pcr)
+	res, err = c.Ipam().CreatePrefix(ctx, pcr)
 	if err != nil {
 		log.Fatal("could not create prefix", zap.Error(err))
 	}
 	log.Sugar().Infow("created namespaced prefix", "prefix", res.Prefix)
 
 	// get
-	_, err = c.Ipam().Get(ctx, &v1.PrefixGetRequest{Cidr: "192.168.0.0/16"})
+	_, err = c.Ipam().GetPrefix(ctx, &v1.GetPrefixRequest{Cidr: "192.168.0.0/16"})
 	if err != nil {
 		log.Fatal("created prefix notfound", zap.Error(err))
 	}
 
 	// child prefix
-	cp, err := c.Ipam().AcquireChild(ctx, &v1.AcquireChildRequest{Cidr: "192.168.0.0/16", Namespace: "my-namespace", Length: 18})
+	cp, err := c.Ipam().AcquireChildPrefix(ctx, &v1.AcquireChildPrefixRequest{Cidr: "192.168.0.0/16", Namespace: "my-namespace", Length: 18})
 	if err != nil {
 		log.Fatal("acquire child prefix not working", zap.Error(err))
 	}

@@ -7,13 +7,13 @@ option go_package = "./v1";
 import "google/protobuf/wrappers.proto";
 
 service IpamService {
-    rpc Create(PrefixCreateRequest) returns (PrefixResponse);
-    rpc Delete(PrefixDeleteRequest) returns (PrefixResponse);
-    rpc Get(PrefixGetRequest) returns (PrefixResponse);
-    rpc AcquireChild(AcquireChildRequest) returns (PrefixResponse);
-    rpc ReleaseChild(ReleaseChildRequest) returns (PrefixResponse);
-    rpc AcquireIP(IPAcquireRequest) returns (IPResponse);
-    rpc ReleaseIP(IPReleaseRequest) returns (IPResponse);
+    rpc CreatePrefix(CreatePrefixRequest) returns (PrefixResponse);
+    rpc DeletePrefix(DeletePrefixRequest) returns (PrefixResponse);
+    rpc GetPrefix(GetPrefixRequest) returns (PrefixResponse);
+    rpc AcquireChildPrefix(AcquireChildPrefixRequest) returns (PrefixResponse);
+    rpc ReleaseChildPrefix(ReleaseChildPrefixRequest) returns (PrefixResponse);
+    rpc AcquireIP(AcquireIPRequest) returns (AcquireIPResponse);
+    rpc ReleaseIP(ReleaseIPRequest) returns (ReleaseIPResponse);
 }
 
 message Prefix {
@@ -24,24 +24,24 @@ message Prefix {
 message PrefixResponse {
     Prefix prefix = 1;
 }
-message PrefixCreateRequest {
+message CreatePrefixRequest {
     string cidr = 1;
     string namespace = 2;
 }
-message PrefixDeleteRequest {
+message DeletePrefixRequest {
     string cidr = 1;
     string namespace = 2;
 }
-message PrefixGetRequest {
+message GetPrefixRequest {
     string cidr = 1;
     string namespace = 2;
 }
-message AcquireChildRequest {
+message AcquireChildPrefixRequest {
     string cidr = 1;
     uint32 length = 2;
     string namespace = 3;
 }
-message ReleaseChildRequest {
+message ReleaseChildPrefixRequest {
     string cidr = 1;
     string namespace = 2;
 }
@@ -51,15 +51,18 @@ message IP {
     string namespace = 2;
     string parent_prefix = 3;
 }
-message IPResponse {
+message AcquireIPResponse {
     IP ip = 1;
 }
-message IPAcquireRequest {
+message ReleaseIPResponse {
+    IP ip = 1;
+}
+message AcquireIPRequest {
     string prefix_cidr = 1;
     string namespace = 2;
     google.protobuf.StringValue ip = 3;
 }
-message IPReleaseRequest {
+message ReleaseIPRequest {
     string prefix_cidr = 1;
     string namespace = 2;
     string ip = 3;
