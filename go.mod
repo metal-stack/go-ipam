@@ -9,5 +9,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.10.0
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	inet.af/netaddr v0.0.0-20210403172118-1e1430f727e0
 )
