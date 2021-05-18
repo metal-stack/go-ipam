@@ -1390,7 +1390,7 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 				// Only logs if fails
 				ipprefix, err := netaddr.ParseIPPrefix(pfx)
 				require.NoError(t, err)
-				smallest := 1 << (ipprefix.IP.BitLen() - 2 - ipprefix.Bits)
+				smallest := 1 << (ipprefix.IP().BitLen() - 2 - ipprefix.Bits())
 				t.Logf("available prefix:%s smallest left:%d", pfx, smallest)
 			}
 
