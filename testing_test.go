@@ -29,7 +29,7 @@ func init() {
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "v21.1.0"
+		cockroachVersion = "v21.1.1"
 	}
 	fmt.Printf("Using postgres:%s cockroach:%s\n", pgVersion, cockroachVersion)
 	// prevent testcontainer logging mangle test and benchmark output
