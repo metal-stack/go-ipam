@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
+	github.com/go-redis/redis/v8 v8.11.0
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.10.2
 	github.com/stretchr/testify v1.7.0

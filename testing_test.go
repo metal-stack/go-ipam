@@ -15,11 +15,14 @@ import (
 
 var (
 	pgOnce           sync.Once
-	crOnce           sync.Once
 	pgContainer      testcontainers.Container
-	crContainer      testcontainers.Container
 	pgVersion        string
+	crOnce           sync.Once
+	crContainer      testcontainers.Container
 	cockroachVersion string
+	redisOnce        sync.Once
+	redisContainer   testcontainers.Container
+	redisVersion     string
 )
 
 func init() {
@@ -31,7 +34,11 @@ func init() {
 	if cockroachVersion == "" {
 		cockroachVersion = "v21.1.3"
 	}
-	fmt.Printf("Using postgres:%s cockroach:%s\n", pgVersion, cockroachVersion)
+	redisVersion = os.Getenv("REDIS_VERSION")
+	if redisVersion == "" {
+		redisVersion = "6-alpine"
+	}
+	fmt.Printf("Using postgres:%s cockroach:%s redis:%s\n", pgVersion, cockroachVersion, redisVersion)
 	// prevent testcontainer logging mangle test and benchmark output
 	log.SetOutput(ioutil.Discard)
 }
@@ -107,6 +114,39 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	db, err := newPostgres(ip, port.Port(), "root", "password", dbname, SSLModeDisable)
 
 	return crContainer, db, err
+}
+
+func startRedis() (container testcontainers.Container, s Storage, err error) {
+	ctx := context.Background()
+	redisOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        "redis:" + redisVersion,
+			ExposedPorts: []string{"6379/tcp"},
+			WaitingFor: wait.ForAll(
+				wait.ForLog("Ready to accept connections"),
+				wait.ForListeningPort("6379/tcp"),
+			),
+		}
+		redisContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := redisContainer.Host(ctx)
+	if err != nil {
+		return redisContainer, nil, err
+	}
+	port, err := redisContainer.MappedPort(ctx, "6379")
+	if err != nil {
+		return redisContainer, nil, err
+	}
+	db := NewRedis(ip, port.Port())
+
+	return redisContainer, db, nil
 }
 
 // func stopDB(c testcontainers.Container) error {
@@ -234,47 +274,60 @@ type storageProvider struct {
 
 func storageProviders() []storageProvider {
 	return []storageProvider{
+		// {
+		// 	name: "Memory",
+		// 	provide: func() Storage {
+		// 		return NewMemory()
+		// 	},
+		// 	providesql: func() *sql {
+		// 		return nil
+		// 	},
+		// },
+		// {
+		// 	name: "Postgres",
+		// 	provide: func() Storage {
+		// 		storage, err := newPostgresWithCleanup()
+		// 		if err != nil {
+		// 			panic("error getting postgres storage")
+		// 		}
+		// 		return storage
+		// 	},
+		// 	providesql: func() *sql {
+		// 		storage, err := newPostgresWithCleanup()
+		// 		if err != nil {
+		// 			panic("error getting postgres storage")
+		// 		}
+		// 		return storage.sql
+		// 	},
+		// },
+		// {
+		// 	name: "Cockroach",
+		// 	provide: func() Storage {
+		// 		storage, err := newCockroachWithCleanup()
+		// 		if err != nil {
+		// 			panic("error getting cockroach storage")
+		// 		}
+		// 		return storage
+		// 	},
+		// 	providesql: func() *sql {
+		// 		storage, err := newCockroachWithCleanup()
+		// 		if err != nil {
+		// 			panic("error getting cockroach storage")
+		// 		}
+		// 		return storage.sql
+		// 	},
+		// },
 		{
-			name: "Memory",
+			name: "Redis",
 			provide: func() Storage {
-				return NewMemory()
+				_, s, err := startRedis()
+				if err != nil {
+					panic(fmt.Sprintf("unable to start redis:%s", err))
+				}
+				return s
 			},
 			providesql: func() *sql {
 				return nil
-			},
-		},
-		{
-			name: "Postgres",
-			provide: func() Storage {
-				storage, err := newPostgresWithCleanup()
-				if err != nil {
-					panic("error getting postgres storage")
-				}
-				return storage
-			},
-			providesql: func() *sql {
-				storage, err := newPostgresWithCleanup()
-				if err != nil {
-					panic("error getting postgres storage")
-				}
-				return storage.sql
-			},
-		},
-		{
-			name: "Cockroach",
-			provide: func() Storage {
-				storage, err := newCockroachWithCleanup()
-				if err != nil {
-					panic("error getting cockroach storage")
-				}
-				return storage
-			},
-			providesql: func() *sql {
-				storage, err := newCockroachWithCleanup()
-				if err != nil {
-					panic("error getting cockroach storage")
-				}
-				return storage.sql
 			},
 		},
 	}
