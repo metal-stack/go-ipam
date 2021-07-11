@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	redigo "github.com/go-redis/redis/v8"
 )
@@ -62,16 +61,14 @@ func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	ss := r.rdb.Keys(ctx, "*")
-	pfxs, err := ss.Result()
+	pfxs, err := r.rdb.Keys(ctx, "*").Result()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
 	result := []Prefix{}
 	for _, pfx := range pfxs {
-		s := r.rdb.Get(ctx, pfx)
-		v, err := s.Bytes()
+		v, err := r.rdb.Get(ctx, pfx).Bytes()
 		if err != nil {
 			return nil, err
 		}
@@ -86,8 +83,7 @@ func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
 func (r *redis) ReadAllPrefixCidrs() ([]string, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	ss := r.rdb.Keys(ctx, "*")
-	pfxs, err := ss.Result()
+	pfxs, err := r.rdb.Keys(ctx, "*").Result()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
@@ -105,8 +101,11 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	}
 
 	// TODO add r.rdb.Multi aka transaktions
-
-	oldPrefix, err := r.ReadPrefix(prefix.Cidr)
+	result, err := r.rdb.Get(ctx, prefix.Cidr).Result()
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+	}
+	oldPrefix, err := fromJSON([]byte(result))
 	if err != nil {
 		return Prefix{}, err
 	}
@@ -114,8 +113,8 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 	}
 
-	s := r.rdb.Set(ctx, prefix.Cidr, pn, 1*time.Second)
-	if s.Err() != nil {
+	_, err = r.rdb.Set(ctx, prefix.Cidr, pn, 0).Result()
+	if err != nil {
 		return Prefix{}, fmt.Errorf("%w: updatePrefix did not effect any row", ErrOptimisticLockError)
 	}
 
@@ -125,9 +124,9 @@ func (r *redis) DeletePrefix(prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	res := r.rdb.Del(ctx, prefix.Cidr)
-	if res.Err() != nil {
-		return *prefix.deepCopy(), res.Err()
+	_, err := r.rdb.Del(ctx, prefix.Cidr).Result()
+	if err != nil {
+		return *prefix.deepCopy(), err
 	}
 	return *prefix.deepCopy(), nil
 }

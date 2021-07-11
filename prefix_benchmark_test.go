@@ -18,6 +18,11 @@ func BenchmarkNewPrefix(b *testing.B) {
 	}
 	defer cock.db.Close()
 	cockipam := NewWithStorage(cock)
+	_, redis, err := startRedis()
+	if err != nil {
+		panic(err)
+	}
+	redisipam := NewWithStorage(redis)
 	benchmarks := []struct {
 		name string
 		ipam Ipamer
@@ -25,6 +30,7 @@ func BenchmarkNewPrefix(b *testing.B) {
 		{name: "Memory", ipam: New()},
 		{name: "Postgres", ipam: pgipam},
 		{name: "Cockroach", ipam: cockipam},
+		{name: "Redis", ipam: redisipam},
 	}
 	for _, bm := range benchmarks {
 		test := bm
@@ -59,6 +65,11 @@ func BenchmarkAcquireIP(b *testing.B) {
 	}
 	defer cr.db.Close()
 	cockipam := NewWithStorage(cr)
+	_, redis, err := startRedis()
+	if err != nil {
+		panic(err)
+	}
+	redisipam := NewWithStorage(redis)
 	benchmarks := []struct {
 		name string
 		ipam Ipamer
@@ -67,6 +78,7 @@ func BenchmarkAcquireIP(b *testing.B) {
 		{name: "Memory", ipam: New(), cidr: "11.0.0.0/24"},
 		{name: "Postgres", ipam: pgipam, cidr: "10.0.0.0/16"},
 		{name: "Cockroach", ipam: cockipam, cidr: "10.0.0.0/16"},
+		{name: "Redis", ipam: redisipam, cidr: "10.0.0.0/16"},
 	}
 	for _, bm := range benchmarks {
 		test := bm

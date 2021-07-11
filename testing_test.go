@@ -13,6 +13,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+// TODO create FLUSHALL for redis on cleanup
 var (
 	pgOnce           sync.Once
 	pgContainer      testcontainers.Container
