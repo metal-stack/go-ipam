@@ -117,7 +117,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	return crContainer, db, err
 }
 
-func startRedis() (container testcontainers.Container, s Storage, err error) {
+func startRedis() (container testcontainers.Container, s *redis, err error) {
 	ctx := context.Background()
 	redisOnce.Do(func() {
 		var err error
@@ -145,7 +145,7 @@ func startRedis() (container testcontainers.Container, s Storage, err error) {
 	if err != nil {
 		return redisContainer, nil, err
 	}
-	db := NewRedis(ip, port.Port())
+	db := newRedis(ip, port.Port())
 
 	return redisContainer, db, nil
 }
@@ -167,6 +167,12 @@ type cleanable interface {
 // extendedSQL extended sql interface
 type extendedSQL struct {
 	*sql
+	c testcontainers.Container
+}
+
+// extendedSQL extended sql interface
+type kvStorage struct {
+	*redis
 	c testcontainers.Container
 }
 
@@ -196,6 +202,19 @@ func newCockroachWithCleanup() (*extendedSQL, error) {
 
 	return ext, nil
 }
+func newRedisWithCleanup() (*kvStorage, error) {
+	c, r, err := startRedis()
+	if err != nil {
+		return nil, err
+	}
+
+	kv := &kvStorage{
+		redis: r,
+		c:     c,
+	}
+
+	return kv, nil
+}
 
 // cleanup database before test
 func (e *extendedSQL) cleanup() error {
@@ -205,6 +224,15 @@ func (e *extendedSQL) cleanup() error {
 		return err
 	}
 	return tx.Commit()
+}
+
+// cleanup database before test
+func (kv *kvStorage) cleanup() error {
+	_, err := kv.redis.rdb.FlushAll(context.Background()).Result()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // cleanup database before test
@@ -275,53 +303,53 @@ type storageProvider struct {
 
 func storageProviders() []storageProvider {
 	return []storageProvider{
-		// {
-		// 	name: "Memory",
-		// 	provide: func() Storage {
-		// 		return NewMemory()
-		// 	},
-		// 	providesql: func() *sql {
-		// 		return nil
-		// 	},
-		// },
-		// {
-		// 	name: "Postgres",
-		// 	provide: func() Storage {
-		// 		storage, err := newPostgresWithCleanup()
-		// 		if err != nil {
-		// 			panic("error getting postgres storage")
-		// 		}
-		// 		return storage
-		// 	},
-		// 	providesql: func() *sql {
-		// 		storage, err := newPostgresWithCleanup()
-		// 		if err != nil {
-		// 			panic("error getting postgres storage")
-		// 		}
-		// 		return storage.sql
-		// 	},
-		// },
-		// {
-		// 	name: "Cockroach",
-		// 	provide: func() Storage {
-		// 		storage, err := newCockroachWithCleanup()
-		// 		if err != nil {
-		// 			panic("error getting cockroach storage")
-		// 		}
-		// 		return storage
-		// 	},
-		// 	providesql: func() *sql {
-		// 		storage, err := newCockroachWithCleanup()
-		// 		if err != nil {
-		// 			panic("error getting cockroach storage")
-		// 		}
-		// 		return storage.sql
-		// 	},
-		// },
+		{
+			name: "Memory",
+			provide: func() Storage {
+				return NewMemory()
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "Postgres",
+			provide: func() Storage {
+				storage, err := newPostgresWithCleanup()
+				if err != nil {
+					panic("error getting postgres storage")
+				}
+				return storage
+			},
+			providesql: func() *sql {
+				storage, err := newPostgresWithCleanup()
+				if err != nil {
+					panic("error getting postgres storage")
+				}
+				return storage.sql
+			},
+		},
+		{
+			name: "Cockroach",
+			provide: func() Storage {
+				storage, err := newCockroachWithCleanup()
+				if err != nil {
+					panic("error getting cockroach storage")
+				}
+				return storage
+			},
+			providesql: func() *sql {
+				storage, err := newCockroachWithCleanup()
+				if err != nil {
+					panic("error getting cockroach storage")
+				}
+				return storage.sql
+			},
+		},
 		{
 			name: "Redis",
 			provide: func() Storage {
-				_, s, err := startRedis()
+				s, err := newRedisWithCleanup()
 				if err != nil {
 					panic(fmt.Sprintf("unable to start redis:%s", err))
 				}

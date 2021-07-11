@@ -17,6 +17,10 @@ type redis struct {
 
 // NewRedis create a redis storage for ipam
 func NewRedis(ip, port string) Storage {
+	return newRedis(ip, port)
+}
+
+func newRedis(ip, port string) *redis {
 	rdb := redigo.NewClient(&redigo.Options{
 		Addr:     fmt.Sprintf("%s:%s", ip, port),
 		Password: "", // no password set
