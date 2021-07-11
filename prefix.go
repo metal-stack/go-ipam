@@ -9,7 +9,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v3"
 	"inet.af/netaddr"
 )
 
