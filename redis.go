@@ -2,6 +2,7 @@ package ipam
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -107,15 +108,14 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	txf := func(tx *redigo.Tx) error {
 		// Get current value or zero.
 		p, err := tx.Get(ctx, prefix.Cidr).Result()
-		if err != nil && err != redigo.Nil {
+		if err != nil && !errors.Is(err, redigo.Nil) {
 			return err
 		}
-
-		// Actual opperation (local in optimistic lock).
 		oldPrefix, err := fromJSON([]byte(p))
 		if err != nil {
 			return err
 		}
+		// Actual opperation (local in optimistic lock).
 		if oldPrefix.version != oldVersion {
 			return fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 		}
