@@ -104,22 +104,32 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		return Prefix{}, err
 	}
 
-	// TODO add r.rdb.Multi aka transaktions
-	result, err := r.rdb.Get(ctx, prefix.Cidr).Result()
-	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+	txf := func(tx *redigo.Tx) error {
+		// Get current value or zero.
+		p, err := tx.Get(ctx, prefix.Cidr).Result()
+		if err != nil && err != redigo.Nil {
+			return err
+		}
+
+		// Actual opperation (local in optimistic lock).
+		oldPrefix, err := fromJSON([]byte(p))
+		if err != nil {
+			return err
+		}
+		if oldPrefix.version != oldVersion {
+			return fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+		}
+
+		// Operation is commited only if the watched keys remain unchanged.
+		_, err = tx.TxPipelined(ctx, func(pipe redigo.Pipeliner) error {
+			pipe.Set(ctx, prefix.Cidr, pn, 0)
+			return nil
+		})
+		return err
 	}
-	oldPrefix, err := fromJSON([]byte(result))
+	err = r.rdb.Watch(ctx, txf, prefix.Cidr)
 	if err != nil {
 		return Prefix{}, err
-	}
-	if oldPrefix.version != oldVersion {
-		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
-	}
-
-	_, err = r.rdb.Set(ctx, prefix.Cidr, pn, 0).Result()
-	if err != nil {
-		return Prefix{}, fmt.Errorf("%w: updatePrefix did not effect any row", ErrOptimisticLockError)
 	}
 
 	return prefix, nil

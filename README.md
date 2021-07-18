@@ -93,3 +93,13 @@ BenchmarkAcquireChildPrefix/16/24-4     138088       8748 ns/op     4496 B/op   
 BenchmarkAcquireChildPrefix/16/26-4     125978       8104 ns/op     4496 B/op    69 allocs/op
 BenchmarkPrefixOverlapping-4           3400266        342 ns/op        0 B/op     0 allocs/op
 ```
+
+## Testing individual Backends
+
+It is possible to test a individual backend only to speed up development roundtrip.
+
+`backend` can be one of `Memory`, `Postgres`, `Cockroach` and `Redis`.
+
+```bash
+BACKEND=backend make test
+```

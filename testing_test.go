@@ -13,7 +13,6 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-// TODO create FLUSHALL for redis on cleanup
 var (
 	pgOnce           sync.Once
 	pgContainer      testcontainers.Container
@@ -24,24 +23,32 @@ var (
 	redisOnce        sync.Once
 	redisContainer   testcontainers.Container
 	redisVersion     string
+	backend          string
 )
 
-func init() {
+func TestMain(m *testing.M) {
+	// call flag.Parse() here if TestMain uses flags
 	pgVersion = os.Getenv("PG_VERSION")
 	if pgVersion == "" {
 		pgVersion = "13"
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "v21.1.3"
+		cockroachVersion = "v21.1.5"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
 		redisVersion = "6-alpine"
 	}
-	fmt.Printf("Using postgres:%s cockroach:%s redis:%s\n", pgVersion, cockroachVersion, redisVersion)
+	backend = os.Getenv("BACKEND")
+	if backend == "" {
+		fmt.Printf("Using postgres:%s cockroach:%s redis:%s\n", pgVersion, cockroachVersion, redisVersion)
+	} else {
+		fmt.Printf("only test %s\n", backend)
+	}
 	// prevent testcontainer logging mangle test and benchmark output
 	log.SetOutput(ioutil.Discard)
+	os.Exit(m.Run())
 }
 
 func startPostgres() (container testcontainers.Container, dn *sql, err error) {
@@ -249,7 +256,9 @@ type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {
 	for _, storageProvider := range storageProviders() {
-
+		if backend != "" && backend != storageProvider.name {
+			continue
+		}
 		storage := storageProvider.provide()
 
 		if tp, ok := storage.(cleanable); ok {
@@ -272,7 +281,9 @@ type sqlTestMethod func(t *testing.T, sql *sql)
 
 func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
 	for _, storageProvider := range storageProviders() {
-
+		if backend != "" && backend != storageProvider.name {
+			continue
+		}
 		sqlstorage := storageProvider.providesql()
 		if sqlstorage == nil {
 			continue
