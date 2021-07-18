@@ -62,7 +62,7 @@ func TestIntegration(t *testing.T) {
 		// Only logs if fails
 		ipprefix, err := netaddr.ParseIPPrefix(pfx)
 		require.NoError(t, err)
-		smallest := 1 << (ipprefix.IP.BitLen() - 2 - ipprefix.Bits)
+		smallest := 1 << (ipprefix.IP().BitLen() - 2 - ipprefix.Bits())
 		sum += smallest
 		t.Logf("available prefix:%s smallest left:%d sum:%d", pfx, smallest, sum)
 	}

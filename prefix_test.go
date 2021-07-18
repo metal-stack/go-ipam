@@ -141,6 +141,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
 			}
+			t.Logf("Prefix:%#v", p)
 			for _, ipString := range test.fields.existingips {
 				p.ips[ipString] = true
 			}
@@ -1390,7 +1391,7 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 				// Only logs if fails
 				ipprefix, err := netaddr.ParseIPPrefix(pfx)
 				require.NoError(t, err)
-				smallest := 1 << (ipprefix.IP.BitLen() - 2 - ipprefix.Bits)
+				smallest := 1 << (ipprefix.IP().BitLen() - 2 - ipprefix.Bits())
 				t.Logf("available prefix:%s smallest left:%d", pfx, smallest)
 			}
 
