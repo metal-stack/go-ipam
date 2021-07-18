@@ -23,7 +23,10 @@ var (
 	redisOnce        sync.Once
 	redisContainer   testcontainers.Container
 	redisVersion     string
-	backend          string
+	keyDBVersion     string
+	keyDBContainer   testcontainers.Container
+
+	backend string
 )
 
 func TestMain(m *testing.M) {
@@ -40,9 +43,13 @@ func TestMain(m *testing.M) {
 	if redisVersion == "" {
 		redisVersion = "6-alpine"
 	}
+	keyDBVersion = os.Getenv("KEYDB_VERSION")
+	if keyDBVersion == "" {
+		keyDBVersion = "alpine_x86_64_v6.0.18"
+	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
-		fmt.Printf("Using postgres:%s cockroach:%s redis:%s\n", pgVersion, cockroachVersion, redisVersion)
+		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion)
 	} else {
 		fmt.Printf("only test %s\n", backend)
 	}
@@ -156,6 +163,38 @@ func startRedis() (container testcontainers.Container, s *redis, err error) {
 
 	return redisContainer, db, nil
 }
+func startKeyDB() (container testcontainers.Container, s *redis, err error) {
+	ctx := context.Background()
+	redisOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        "eqalpha/keydb" + keyDBVersion,
+			ExposedPorts: []string{"6379/tcp"},
+			WaitingFor: wait.ForAll(
+				wait.ForLog("Server initialized"),
+				wait.ForListeningPort("6379/tcp"),
+			),
+		}
+		keyDBContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := redisContainer.Host(ctx)
+	if err != nil {
+		return redisContainer, nil, err
+	}
+	port, err := redisContainer.MappedPort(ctx, "6379")
+	if err != nil {
+		return redisContainer, nil, err
+	}
+	db := newRedis(ip, port.Port())
+
+	return redisContainer, db, nil
+}
 
 // func stopDB(c testcontainers.Container) error {
 // 	ctx := context.Background()
@@ -211,6 +250,19 @@ func newCockroachWithCleanup() (*extendedSQL, error) {
 }
 func newRedisWithCleanup() (*kvStorage, error) {
 	c, r, err := startRedis()
+	if err != nil {
+		return nil, err
+	}
+
+	kv := &kvStorage{
+		redis: r,
+		c:     c,
+	}
+
+	return kv, nil
+}
+func newKeyDBWithCleanup() (*kvStorage, error) {
+	c, r, err := startKeyDB()
 	if err != nil {
 		return nil, err
 	}
@@ -363,6 +415,19 @@ func storageProviders() []storageProvider {
 				s, err := newRedisWithCleanup()
 				if err != nil {
 					panic(fmt.Sprintf("unable to start redis:%s", err))
+				}
+				return s
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "KeyDB",
+			provide: func() Storage {
+				s, err := newKeyDBWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf("unable to start keydb:%s", err))
 				}
 				return s
 			},
