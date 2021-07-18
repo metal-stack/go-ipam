@@ -304,6 +304,31 @@ func (sql *sql) cleanup() error {
 	return tx.Commit()
 }
 
+type benchMethod func(b *testing.B, ipam *ipamer)
+
+func benchWithBackends(b *testing.B, fn benchMethod) {
+	for _, storageProvider := range storageProviders() {
+		if backend != "" && backend != storageProvider.name {
+			continue
+		}
+		storage := storageProvider.provide()
+
+		if tp, ok := storage.(cleanable); ok {
+			err := tp.cleanup()
+			if err != nil {
+				b.Errorf("error cleaning up, %v", err)
+			}
+		}
+
+		ipamer := &ipamer{storage: storage}
+		testName := storageProvider.name
+
+		b.Run(testName, func(b *testing.B) {
+			fn(b, ipamer)
+		})
+	}
+}
+
 type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {

@@ -6,118 +6,48 @@ import (
 )
 
 func BenchmarkNewPrefix(b *testing.B) {
-	_, pg, err := startPostgres()
-	if err != nil {
-		panic(err)
-	}
-	defer pg.db.Close()
-	pgipam := NewWithStorage(pg)
-	_, cock, err := startCockroach()
-	if err != nil {
-		panic(err)
-	}
-	defer cock.db.Close()
-	cockipam := NewWithStorage(cock)
-	_, redis, err := startRedis()
-	if err != nil {
-		panic(err)
-	}
-	redisipam := NewWithStorage(redis)
-	_, keydb, err := startKeyDB()
-	if err != nil {
-		panic(err)
-	}
-	keydbipam := NewWithStorage(keydb)
-	benchmarks := []struct {
-		name string
-		ipam Ipamer
-	}{
-		{name: "Memory", ipam: New()},
-		{name: "Postgres", ipam: pgipam},
-		{name: "Cockroach", ipam: cockipam},
-		{name: "Redis", ipam: redisipam},
-		{name: "KeyDB", ipam: keydbipam},
-	}
-	for _, bm := range benchmarks {
-		test := bm
-		b.Run(test.name, func(b *testing.B) {
-			for n := 0; n < b.N; n++ {
-				p, err := test.ipam.NewPrefix("192.168.0.0/24")
-				if err != nil {
-					panic(err)
-				}
-				if p == nil {
-					panic("Prefix nil")
-				}
-				_, err = test.ipam.DeletePrefix(p.Cidr)
-				if err != nil {
-					panic(err)
-				}
-			}
-		})
-	}
-}
-
-func BenchmarkAcquireIP(b *testing.B) {
-	_, pg, err := startPostgres()
-	if err != nil {
-		panic(err)
-	}
-	defer pg.db.Close()
-	pgipam := NewWithStorage(pg)
-	_, cr, err := startCockroach()
-	if err != nil {
-		panic(err)
-	}
-	defer cr.db.Close()
-	cockipam := NewWithStorage(cr)
-	_, redis, err := startRedis()
-	if err != nil {
-		panic(err)
-	}
-	redisipam := NewWithStorage(redis)
-	_, keydb, err := startKeyDB()
-	if err != nil {
-		panic(err)
-	}
-	keydbipam := NewWithStorage(keydb)
-	benchmarks := []struct {
-		name string
-		ipam Ipamer
-		cidr string
-	}{
-		{name: "Memory", ipam: New(), cidr: "11.0.0.0/24"},
-		{name: "Postgres", ipam: pgipam, cidr: "10.0.0.0/16"},
-		{name: "Cockroach", ipam: cockipam, cidr: "10.0.0.0/16"},
-		{name: "Redis", ipam: redisipam, cidr: "10.0.0.0/16"},
-		{name: "KeyDB", ipam: keydbipam, cidr: "10.0.0.0/16"},
-	}
-	for _, bm := range benchmarks {
-		test := bm
-		b.Run(test.name, func(b *testing.B) {
-			p, err := test.ipam.NewPrefix(test.cidr)
+	benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
+		for n := 0; n < b.N; n++ {
+			p, err := ipam.NewPrefix("192.168.0.0/24")
 			if err != nil {
 				panic(err)
 			}
-			for n := 0; n < b.N; n++ {
-				ip, err := test.ipam.AcquireIP(p.Cidr)
-				if err != nil {
-					panic(err)
-				}
-				if ip == nil {
-					panic("IP nil")
-				}
-				p, err = test.ipam.ReleaseIP(ip)
-				if err != nil {
-					panic(err)
-				}
+			if p == nil {
+				panic("Prefix nil")
 			}
-			_, err = test.ipam.DeletePrefix(test.cidr)
+			_, err = ipam.DeletePrefix(p.Cidr)
 			if err != nil {
-				b.Fatalf("error deleting prefix:%v", err)
+				panic(err)
 			}
-		})
-	}
+		}
+	})
+}
+
+func BenchmarkAcquireIP(b *testing.B) {
+	testCidr := "10.0.0.0/16"
+	benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
+		p, err := ipam.NewPrefix(testCidr)
+		if err != nil {
+			panic(err)
+		}
+		for n := 0; n < b.N; n++ {
+			ip, err := ipam.AcquireIP(p.Cidr)
+			if err != nil {
+				panic(err)
+			}
+			if ip == nil {
+				panic("IP nil")
+			}
+			p, err = ipam.ReleaseIP(ip)
+			if err != nil {
+				panic(err)
+			}
+		}
+		_, err = ipam.DeletePrefix(testCidr)
+		if err != nil {
+			b.Fatalf("error deleting prefix:%v", err)
+		}
+	})
 }
 
 func BenchmarkAcquireChildPrefix(b *testing.B) {
@@ -127,20 +57,19 @@ func BenchmarkAcquireChildPrefix(b *testing.B) {
 		childLength  uint8
 	}{
 		{name: "8/14", parentLength: 8, childLength: 14},
-		{name: "8/16", parentLength: 8, childLength: 16},
-		{name: "8/20", parentLength: 8, childLength: 20},
-		{name: "8/22", parentLength: 8, childLength: 22},
-		{name: "8/24", parentLength: 8, childLength: 24},
-		{name: "16/18", parentLength: 16, childLength: 18},
-		{name: "16/20", parentLength: 16, childLength: 20},
-		{name: "16/22", parentLength: 16, childLength: 22},
-		{name: "16/24", parentLength: 16, childLength: 24},
-		{name: "16/26", parentLength: 16, childLength: 26},
+		// {name: "8/16", parentLength: 8, childLength: 16},
+		// {name: "8/20", parentLength: 8, childLength: 20},
+		// {name: "8/22", parentLength: 8, childLength: 22},
+		// {name: "8/24", parentLength: 8, childLength: 24},
+		// {name: "16/18", parentLength: 16, childLength: 18},
+		// {name: "16/20", parentLength: 16, childLength: 20},
+		// {name: "16/22", parentLength: 16, childLength: 22},
+		// {name: "16/24", parentLength: 16, childLength: 24},
+		// {name: "16/26", parentLength: 16, childLength: 26},
 	}
 	for _, bm := range benchmarks {
 		test := bm
-		b.Run(test.name, func(b *testing.B) {
-			ipam := New()
+		benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
 			p, err := ipam.NewPrefix(fmt.Sprintf("192.168.0.0/%d", test.parentLength))
 			if err != nil {
 				panic(err)
