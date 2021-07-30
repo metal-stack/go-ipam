@@ -120,7 +120,7 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 			return fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 		}
 
-		// Operation is commited only if the watched keys remain unchanged.
+		// Operation is committed only if the watched keys remain unchanged.
 		_, err = tx.TxPipelined(ctx, func(pipe redigo.Pipeliner) error {
 			pipe.Set(ctx, prefix.Cidr, pn, 0)
 			return nil
