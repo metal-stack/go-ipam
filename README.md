@@ -72,24 +72,44 @@ func main() {
 }
 ```
 
+## Supported Databases
+
+|                              | Postgres | CockroachDB | Redis   | KeyDB   | Memory     |
+|------------------------------|----------|-------------|---------|---------|------------|
+| Production ready             | Y        | Y           | Y       | Y       | N          |
+| geo redundant setup possible | N        | Y           | N       | Y       | N          |
+| AcquireIP/sec                | ~100/s   | ~60/s       | ~1400/s | ~1400/s | >200.000/s |
+| AcquireChildPrefix/sec       | ~40/s    | ~35/s       | ~1000/s | ~1000/s | >100.000/s |
+
+Test were run on a Intel(R) Core(TM) i5-6600 CPU @ 3.30GHz
+
 ## Performance
 
 ```bash
-BenchmarkNewPrefix/Memory-4             422596       2712 ns/op     1536 B/op    20 allocs/op
-BenchmarkNewPrefix/Postgres-4              127    8257821 ns/op     5587 B/op   126 allocs/op
-BenchmarkNewPrefix/Cockroach-4              18   78498926 ns/op     5869 B/op   128 allocs/op
-BenchmarkAcquireIP/Memory-4             299738       3941 ns/op     2360 B/op    42 allocs/op
-BenchmarkAcquireIP/Postgres-4               88   13501419 ns/op    10740 B/op   257 allocs/op
-BenchmarkAcquireIP/Cockroach-4              14   79709070 ns/op    11253 B/op   265 allocs/op
-BenchmarkAcquireChildPrefix/8/14-4      153535       7995 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/8/16-4      151178       8000 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/8/20-4      152636       7760 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/8/22-4      154134       7793 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/8/24-4      153325       7759 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/16/18-4     147488       8186 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/16/20-4     154622       7802 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/16/22-4     154148       8034 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/16/24-4     138088       8748 ns/op     4496 B/op    69 allocs/op
-BenchmarkAcquireChildPrefix/16/26-4     125978       8104 ns/op     4496 B/op    69 allocs/op
-BenchmarkPrefixOverlapping-4           3400266        342 ns/op        0 B/op     0 allocs/op
+BenchmarkNewPrefix/Memory-4               464994        2675 ns/op     1728 B/op     27 allocs/op
+BenchmarkNewPrefix/Postgres-4                126    11775448 ns/op     6259 B/op    144 allocs/op
+BenchmarkNewPrefix/Cockroach-4               100    25558820 ns/op     6250 B/op    144 allocs/op
+BenchmarkNewPrefix/Redis-4                  3854      308122 ns/op     3930 B/op     78 allocs/op
+BenchmarkNewPrefix/KeyDB-4                  3907      307655 ns/op     3930 B/op     78 allocs/op
+BenchmarkAcquireIP/Memory-4               229524        4508 ns/op     2680 B/op     56 allocs/op
+BenchmarkAcquireIP/Postgres-4                 98    14918027 ns/op    10684 B/op    263 allocs/op
+BenchmarkAcquireIP/Cockroach-4                51    19688920 ns/op    10728 B/op    264 allocs/op
+BenchmarkAcquireIP/Redis-4                  1734      695545 ns/op    12113 B/op    268 allocs/op
+BenchmarkAcquireIP/KeyDB-4                  1476      751854 ns/op    12110 B/op    268 allocs/op
+BenchmarkAcquireChildPrefix/Memory-4      128704        8453 ns/op     5201 B/op     94 allocs/op
+BenchmarkAcquireChildPrefix/Postgres-4        70    21220704 ns/op    15663 B/op    378 allocs/op
+BenchmarkAcquireChildPrefix/Cockroach-4       32    37638608 ns/op    15774 B/op    381 allocs/op
+BenchmarkAcquireChildPrefix/Redis-4         1280      925054 ns/op    16016 B/op    349 allocs/op
+BenchmarkAcquireChildPrefix/KeyDB-4         1143      953056 ns/op    16018 B/op    349 allocs/op
+BenchmarkPrefixOverlapping-4             4306106       274.4 ns/op        0 B/op      0 allocs/op
+```
+
+## Testing individual Backends
+
+It is possible to test a individual backend only to speed up development roundtrip.
+
+`backend` can be one of `Memory`, `Postgres`, `Cockroach` and `Redis`.
+
+```bash
+BACKEND=backend make test
 ```

@@ -15,25 +15,47 @@ import (
 
 var (
 	pgOnce           sync.Once
-	crOnce           sync.Once
 	pgContainer      testcontainers.Container
-	crContainer      testcontainers.Container
 	pgVersion        string
+	crOnce           sync.Once
+	crContainer      testcontainers.Container
 	cockroachVersion string
+	redisOnce        sync.Once
+	redisContainer   testcontainers.Container
+	redisVersion     string
+	keyDBVersion     string
+	keyDBContainer   testcontainers.Container
+
+	backend string
 )
 
-func init() {
+func TestMain(m *testing.M) {
+	// call flag.Parse() here if TestMain uses flags
 	pgVersion = os.Getenv("PG_VERSION")
 	if pgVersion == "" {
 		pgVersion = "13"
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "v21.1.3"
+		cockroachVersion = "v21.1.5"
 	}
-	fmt.Printf("Using postgres:%s cockroach:%s\n", pgVersion, cockroachVersion)
+	redisVersion = os.Getenv("REDIS_VERSION")
+	if redisVersion == "" {
+		redisVersion = "6-alpine"
+	}
+	keyDBVersion = os.Getenv("KEYDB_VERSION")
+	if keyDBVersion == "" {
+		keyDBVersion = "alpine_x86_64_v6.0.18"
+	}
+	backend = os.Getenv("BACKEND")
+	if backend == "" {
+		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion)
+	} else {
+		fmt.Printf("only test %s\n", backend)
+	}
 	// prevent testcontainer logging mangle test and benchmark output
 	log.SetOutput(ioutil.Discard)
+	os.Exit(m.Run())
 }
 
 func startPostgres() (container testcontainers.Container, dn *sql, err error) {
@@ -109,6 +131,71 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	return crContainer, db, err
 }
 
+func startRedis() (container testcontainers.Container, s *redis, err error) {
+	ctx := context.Background()
+	redisOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        "redis:" + redisVersion,
+			ExposedPorts: []string{"6379/tcp"},
+			WaitingFor: wait.ForAll(
+				wait.ForLog("Ready to accept connections"),
+				wait.ForListeningPort("6379/tcp"),
+			),
+		}
+		redisContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := redisContainer.Host(ctx)
+	if err != nil {
+		return redisContainer, nil, err
+	}
+	port, err := redisContainer.MappedPort(ctx, "6379")
+	if err != nil {
+		return redisContainer, nil, err
+	}
+	db := newRedis(ip, port.Port())
+
+	return redisContainer, db, nil
+}
+func startKeyDB() (container testcontainers.Container, s *redis, err error) {
+	ctx := context.Background()
+	redisOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        "eqalpha/keydb" + keyDBVersion,
+			ExposedPorts: []string{"6379/tcp"},
+			WaitingFor: wait.ForAll(
+				wait.ForLog("Server initialized"),
+				wait.ForListeningPort("6379/tcp"),
+			),
+		}
+		keyDBContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := redisContainer.Host(ctx)
+	if err != nil {
+		return redisContainer, nil, err
+	}
+	port, err := redisContainer.MappedPort(ctx, "6379")
+	if err != nil {
+		return redisContainer, nil, err
+	}
+	db := newRedis(ip, port.Port())
+
+	return redisContainer, db, nil
+}
+
 // func stopDB(c testcontainers.Container) error {
 // 	ctx := context.Background()
 // 	return c.Terminate(ctx)
@@ -126,6 +213,12 @@ type cleanable interface {
 // extendedSQL extended sql interface
 type extendedSQL struct {
 	*sql
+	c testcontainers.Container
+}
+
+// extendedSQL extended sql interface
+type kvStorage struct {
+	*redis
 	c testcontainers.Container
 }
 
@@ -155,6 +248,32 @@ func newCockroachWithCleanup() (*extendedSQL, error) {
 
 	return ext, nil
 }
+func newRedisWithCleanup() (*kvStorage, error) {
+	c, r, err := startRedis()
+	if err != nil {
+		return nil, err
+	}
+
+	kv := &kvStorage{
+		redis: r,
+		c:     c,
+	}
+
+	return kv, nil
+}
+func newKeyDBWithCleanup() (*kvStorage, error) {
+	c, r, err := startKeyDB()
+	if err != nil {
+		return nil, err
+	}
+
+	kv := &kvStorage{
+		redis: r,
+		c:     c,
+	}
+
+	return kv, nil
+}
 
 // cleanup database before test
 func (e *extendedSQL) cleanup() error {
@@ -167,6 +286,15 @@ func (e *extendedSQL) cleanup() error {
 }
 
 // cleanup database before test
+func (kv *kvStorage) cleanup() error {
+	_, err := kv.redis.rdb.FlushAll(context.Background()).Result()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// cleanup database before test
 func (sql *sql) cleanup() error {
 	tx := sql.db.MustBegin()
 	_, err := sql.db.Exec("TRUNCATE TABLE prefixes")
@@ -176,11 +304,38 @@ func (sql *sql) cleanup() error {
 	return tx.Commit()
 }
 
+type benchMethod func(b *testing.B, ipam *ipamer)
+
+func benchWithBackends(b *testing.B, fn benchMethod) {
+	for _, storageProvider := range storageProviders() {
+		if backend != "" && backend != storageProvider.name {
+			continue
+		}
+		storage := storageProvider.provide()
+
+		if tp, ok := storage.(cleanable); ok {
+			err := tp.cleanup()
+			if err != nil {
+				b.Errorf("error cleaning up, %v", err)
+			}
+		}
+
+		ipamer := &ipamer{storage: storage}
+		testName := storageProvider.name
+
+		b.Run(testName, func(b *testing.B) {
+			fn(b, ipamer)
+		})
+	}
+}
+
 type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {
 	for _, storageProvider := range storageProviders() {
-
+		if backend != "" && backend != storageProvider.name {
+			continue
+		}
 		storage := storageProvider.provide()
 
 		if tp, ok := storage.(cleanable); ok {
@@ -203,7 +358,9 @@ type sqlTestMethod func(t *testing.T, sql *sql)
 
 func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
 	for _, storageProvider := range storageProviders() {
-
+		if backend != "" && backend != storageProvider.name {
+			continue
+		}
 		sqlstorage := storageProvider.providesql()
 		if sqlstorage == nil {
 			continue
@@ -275,6 +432,32 @@ func storageProviders() []storageProvider {
 					panic("error getting cockroach storage")
 				}
 				return storage.sql
+			},
+		},
+		{
+			name: "Redis",
+			provide: func() Storage {
+				s, err := newRedisWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf("unable to start redis:%s", err))
+				}
+				return s
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "KeyDB",
+			provide: func() Storage {
+				s, err := newKeyDBWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf("unable to start keydb:%s", err))
+				}
+				return s
+			},
+			providesql: func() *sql {
+				return nil
 			},
 		},
 	}

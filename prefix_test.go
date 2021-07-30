@@ -141,6 +141,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
 			}
+			t.Logf("Prefix:%#v", p)
 			for _, ipString := range test.fields.existingips {
 				p.ips[ipString] = true
 			}
