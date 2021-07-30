@@ -11,5 +11,5 @@ require (
 	github.com/testcontainers/testcontainers-go v0.11.1
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	inet.af/netaddr v0.0.0-20210721214506-ce7a8ad02cc1
+	inet.af/netaddr v0.0.0-20210729200904-31d5ee66059c
 )

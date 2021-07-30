@@ -2,13 +2,12 @@ package ipam
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
-
-	"errors"
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
@@ -1454,5 +1453,26 @@ func TestAcquireIPParallel(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+	})
+}
+
+func Test_ipamer_DumpAndLoad(t *testing.T) {
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("192.168.0.0/24")
+		require.Nil(t, err)
+		require.NotNil(t, prefix)
+
+		data, err := ipam.Dump()
+		require.Nil(t, err)
+		require.NotEmpty(t, data)
+
+		t.Log(data)
+
+		err = ipam.Load(data)
+		require.Nil(t, err)
+
+		newPrefix := ipam.PrefixFrom(prefix.Cidr)
+
+		require.Equal(t, prefix, newPrefix)
 	})
 }

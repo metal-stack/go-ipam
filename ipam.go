@@ -32,6 +32,10 @@ type Ipamer interface {
 	// PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
 	// with one of existingPrefixes
 	PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error
+	// Dump all store prefixes as json formatted string
+	Dump() (string, error)
+	// Load a previously created json formatted dump, deletes all prefixes before loading
+	Load(dump string) error
 }
 
 type ipamer struct {

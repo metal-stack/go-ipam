@@ -36,6 +36,8 @@ type Prefix struct {
 	version           int64           // version is used for optimistic locking
 }
 
+type Prefixes []Prefix
+
 // deepCopy to a new Prefix
 func (p Prefix) deepCopy() *Prefix {
 	return &Prefix{
@@ -482,6 +484,36 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 	}
 
 	return p, nil
+}
+
+func (i *ipamer) Dump() (string, error) {
+	pfxs, err := i.storage.ReadAllPrefixes()
+	if err != nil {
+		return "", err
+	}
+	js, err := pfxs.toJSON()
+	if err != nil {
+		return "", err
+	}
+	return string(js), nil
+}
+
+func (i *ipamer) Load(dump string) error {
+	pfxs, err := fromJSONs([]byte(dump))
+	if err != nil {
+		return err
+	}
+	err = i.storage.DeleteAllPrefixes()
+	if err != nil {
+		return err
+	}
+	for _, pfx := range pfxs {
+		_, err = i.storage.CreatePrefix(pfx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p *Prefix) String() string {
