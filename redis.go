@@ -115,7 +115,7 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		if err != nil {
 			return err
 		}
-		// Actual opperation (local in optimistic lock).
+		// Actual operation (local in optimistic lock).
 		if oldPrefix.version != oldVersion {
 			return fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 		}
