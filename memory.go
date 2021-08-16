@@ -82,6 +82,9 @@ func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	oldVersion := prefix.version
+	prefix.version = oldVersion + 1
+
 	if prefix.Cidr == "" {
 		return Prefix{}, fmt.Errorf("prefix not present:%v", prefix)
 	}
@@ -89,6 +92,13 @@ func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	_, ok := m.prefixes[key]
 	if !ok {
 		return Prefix{}, fmt.Errorf("prefix not found:%s", prefix.Cidr)
+	}
+	oldPrefix, ok := m.prefixes[key]
+	if !ok {
+		return Prefix{}, fmt.Errorf("prefix not found:%s", prefix.Cidr)
+	}
+	if oldPrefix.version != oldVersion {
+		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 	}
 	m.prefixes[key] = *prefix.deepCopy()
 	return prefix, nil

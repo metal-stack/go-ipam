@@ -9,7 +9,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v3"
 	"inet.af/netaddr"
 )
 
@@ -215,17 +215,17 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr, childCidr string, length
 		if err != nil {
 			return nil, err
 		}
-		length = childprefix.Bits
+		length = childprefix.Bits()
 	}
-	if ipprefix.Bits >= length {
-		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits)
+	if ipprefix.Bits() >= length {
+		return nil, fmt.Errorf("given length:%d must be greater than prefix length:%d", length, ipprefix.Bits())
 	}
 	if parent.hasIPs() {
 		return nil, fmt.Errorf("prefix %s has ips, acquire child prefix not possible", parent.Cidr)
 	}
 
-	var ipset netaddr.IPSetBuilder
-	ipset.AddPrefix(ipprefix)
+	var ipsetBuilder netaddr.IPSetBuilder
+	ipsetBuilder.AddPrefix(ipprefix)
 	for cp, available := range parent.availableChildPrefixes {
 		if available {
 			continue
@@ -234,16 +234,20 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr, childCidr string, length
 		if err != nil {
 			return nil, err
 		}
-		ipset.RemovePrefix(cpipprefix)
+		ipsetBuilder.RemovePrefix(cpipprefix)
+	}
+
+	ipset, err := ipsetBuilder.IPSet()
+	if err != nil {
+		return nil, fmt.Errorf("error constructing ipset:%w", err)
 	}
 
 	var cp netaddr.IPPrefix
-
 	if !specificChildRequest {
 		var ok bool
-		cp, _, ok = ipset.IPSet().RemoveFreePrefix(length)
+		cp, _, ok = ipset.RemoveFreePrefix(length)
 		if !ok {
-			pfxs := ipset.IPSet().Prefixes()
+			pfxs := ipset.Prefixes()
 			if len(pfxs) == 0 {
 				return nil, fmt.Errorf("no prefix found in %s with length:%d", parentCidr, length)
 			}
@@ -260,7 +264,7 @@ func (i *ipamer) acquireChildPrefixInternal(parentCidr, childCidr string, length
 			return nil, fmt.Errorf("no prefix found in %s with length:%d, but %s %s available", parentCidr, length, strings.Join(availablePrefixes, ","), adj)
 		}
 	} else {
-		if ok := ipset.IPSet().ContainsPrefix(childprefix); !ok {
+		if ok := ipset.ContainsPrefix(childprefix); !ok {
 			// Parent prefix does not contain specific child prefix
 			return nil, fmt.Errorf("specific prefix %s is not available in prefix %s", childCidr, parentCidr)
 		}
@@ -374,7 +378,7 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		}
 	}
 
-	for ip := ipnet.Range().From; ipnet.Contains(ip); ip = ip.Next() {
+	for ip := ipnet.Range().From(); ipnet.Contains(ip); ip = ip.Next() {
 		ipstring := ip.String()
 		_, ok := prefix.ips[ipstring]
 		if ok {
@@ -476,10 +480,10 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 
 	// FIXME: should this be done by the user ?
 	// First ip in the prefix and broadcast is blocked.
-	p.ips[ipnet.Range().From.String()] = true
-	if ipnet.IP.Is4() {
+	p.ips[ipnet.Range().From().String()] = true
+	if ipnet.IP().Is4() {
 		// broadcast is ipv4 only
-		p.ips[ipnet.Range().To.String()] = true
+		p.ips[ipnet.Range().To().String()] = true
 	}
 
 	return p, nil
@@ -511,10 +515,10 @@ func (p *Prefix) hasIPs() bool {
 	if err != nil {
 		return false
 	}
-	if ipprefix.IP.Is4() && len(p.ips) > 2 {
+	if ipprefix.IP().Is4() && len(p.ips) > 2 {
 		return true
 	}
-	if ipprefix.IP.Is6() && len(p.ips) > 1 {
+	if ipprefix.IP().Is6() && len(p.ips) > 1 {
 		return true
 	}
 	return false
@@ -527,10 +531,10 @@ func (p *Prefix) availableips() uint64 {
 		return 0
 	}
 	// We don't report more than 2^31 available IPs by design
-	if (ipprefix.IP.BitLen() - ipprefix.Bits) > 31 {
+	if (ipprefix.IP().BitLen() - ipprefix.Bits()) > 31 {
 		return math.MaxInt32
 	}
-	return 1 << (ipprefix.IP.BitLen() - ipprefix.Bits)
+	return 1 << (ipprefix.IP().BitLen() - ipprefix.Bits())
 }
 
 // acquiredips return the number of ips acquired in this Prefix
@@ -544,8 +548,8 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	if err != nil {
 		return 0, nil
 	}
-	var ipset netaddr.IPSetBuilder
-	ipset.AddPrefix(prefix)
+	var ipsetBuilder netaddr.IPSetBuilder
+	ipsetBuilder.AddPrefix(prefix)
 	for cp, available := range p.availableChildPrefixes {
 		if available {
 			continue
@@ -554,16 +558,22 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 		if err != nil {
 			continue
 		}
-		ipset.RemovePrefix(ipprefix)
+		ipsetBuilder.RemovePrefix(ipprefix)
 	}
+
+	ipset, err := ipsetBuilder.IPSet()
+	if err != nil {
+		return 0, []string{}
+	}
+
 	// Only 2 Bit Prefixes are usable, set max bits available 2 less than max in family
-	maxBits := prefix.IP.BitLen() - 2
-	pfxs := ipset.IPSet().Prefixes()
+	maxBits := prefix.IP().BitLen() - 2
+	pfxs := ipset.Prefixes()
 	totalAvailable := uint64(0)
 	availablePrefixes := []string{}
 	for _, pfx := range pfxs {
 		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
-		totalAvailable += 1 << (maxBits - pfx.Bits)
+		totalAvailable += 1 << (maxBits - pfx.Bits())
 		availablePrefixes = append(availablePrefixes, pfx.String())
 	}
 	// we are not reporting more that 2^31 available prefixes

@@ -1,13 +1,17 @@
 package ipam
 
 import (
+	"context"
+	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"errors"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 	"inet.af/netaddr"
 )
 
@@ -148,6 +152,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
 			}
+			t.Logf("Prefix:%#v", p)
 			for _, ipString := range test.fields.existingips {
 				p.ips[ipString] = true
 			}
@@ -1397,7 +1402,7 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 				// Only logs if fails
 				ipprefix, err := netaddr.ParseIPPrefix(pfx)
 				require.NoError(t, err)
-				smallest := 1 << (ipprefix.IP.BitLen() - 2 - ipprefix.Bits)
+				smallest := 1 << (ipprefix.IP().BitLen() - 2 - ipprefix.Bits())
 				t.Logf("available prefix:%s smallest left:%d", pfx, smallest)
 			}
 
@@ -1411,4 +1416,54 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAcquireIPParallel(t *testing.T) {
+	ipsCount := 50
+	g, _ := errgroup.WithContext(context.Background())
+
+	mu := sync.Mutex{}
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		p, err := ipam.NewPrefix("192.169.0.0/20")
+		if err != nil {
+			panic(err)
+		}
+		ips := make(map[string]bool)
+		for n := 0; n < ipsCount; n++ {
+			g.Go(func() error {
+				ip, err := ipam.AcquireIP(p.Cidr)
+				if err != nil {
+					return err
+				}
+				if ip == nil {
+					return fmt.Errorf("ip is nil")
+				}
+
+				mu.Lock()
+				defer mu.Unlock()
+				_, ok := ips[ip.IP.String()]
+				if ok {
+					return fmt.Errorf("duplicate ip:%s allocated", ip.IP.String())
+				}
+				ips[ip.IP.String()] = true
+
+				return nil
+			})
+		}
+
+		err = g.Wait()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for ip := range ips {
+			err := ipam.ReleaseIPFromPrefix(p.Cidr, ip)
+			if err != nil {
+				t.Error(err)
+			}
+		}
+		_, err = ipam.DeletePrefix(p.Cidr)
+		if err != nil {
+			t.Error(err)
+		}
+	})
 }

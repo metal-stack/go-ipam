@@ -2,8 +2,10 @@
 CGO_ENABLED := $(or ${CGO_ENABLED},0)
 GO := go
 GO111MODULE := on
-PG_VERSION := $(or ${PG_VERSION},"13-alpine")
-COCKROACH_VERSION := $(or ${COCKROACH_VERSION},"v20.2.7")
+PG_VERSION := $(or ${PG_VERSION},13-alpine)
+COCKROACH_VERSION := $(or ${COCKROACH_VERSION},v21.1.5)
+
+.EXPORT_ALL_VARIABLES:
 
 all: test bench
 

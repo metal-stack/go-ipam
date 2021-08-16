@@ -1,7 +1,6 @@
 package ipam
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -9,50 +8,6 @@ import (
 
 type sql struct {
 	db *sqlx.DB
-}
-
-type prefixJSON struct {
-	Prefix
-	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
-	// TODO remove this in the next release
-	ChildPrefixLength int             // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
-	IsParent          bool            // set to true if there are child prefixes
-	IPs               map[string]bool // The ips contained in this prefix
-	Version           int64           // Version is used for optimistic locking
-}
-
-func (p prefixJSON) toPrefix() Prefix {
-	// Legacy support only on reading from database, convert to isParent.
-	// TODO remove this in the next release
-	if p.ChildPrefixLength > 0 {
-		p.IsParent = true
-	}
-	return Prefix{
-		Cidr:                   p.Cidr,
-		ParentCidr:             p.ParentCidr,
-		Namespace:              p.Namespace,
-		availableChildPrefixes: p.AvailableChildPrefixes,
-		childPrefixLength:      p.ChildPrefixLength,
-		isParent:               p.IsParent,
-		ips:                    p.IPs,
-		version:                p.Version,
-	}
-}
-
-func (p Prefix) toPrefixJSON() prefixJSON {
-	return prefixJSON{
-		Prefix: Prefix{
-			Cidr:       p.Cidr,
-			ParentCidr: p.ParentCidr,
-			Namespace:  p.Namespace,
-		},
-		AvailableChildPrefixes: p.availableChildPrefixes,
-		IsParent:               p.isParent,
-		// TODO remove this in the next release
-		ChildPrefixLength: p.childPrefixLength,
-		IPs:               p.ips,
-		Version:           p.version,
-	}
 }
 
 func (s *sql) prefixExists(prefix Prefix) (*Prefix, bool) {
@@ -69,9 +24,9 @@ func (s *sql) CreatePrefix(prefix Prefix) (Prefix, error) {
 		return *existingPrefix, nil
 	}
 	prefix.version = int64(0)
-	pj, err := json.Marshal(prefix.toPrefixJSON())
+	pj, err := prefix.toJSON()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to marshal prefix:%w", err)
+		return Prefix{}, err
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -90,12 +45,7 @@ func (s *sql) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
-	var pre prefixJSON
-	err = json.Unmarshal(result, &pre)
-	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%w", err)
-	}
-	return pre.toPrefix(), nil
+	return fromJSON(result)
 }
 
 func (s *sql) ReadPrefixes(namespace string) ([]Prefix, error) {
@@ -121,12 +71,11 @@ func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
 func toPrefixes(prefixes [][]byte) ([]Prefix, error) {
 	result := []Prefix{}
 	for _, v := range prefixes {
-		var pre prefixJSON
-		err := json.Unmarshal(v, &pre)
+		pfx, err := fromJSON(v)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal prefix:%w", err)
+			return nil, err
 		}
-		result = append(result, pre.toPrefix())
+		result = append(result, pfx)
 	}
 	return result, nil
 }
@@ -146,9 +95,9 @@ func (s *sql) ReadAllPrefixCidrs(namespace string) ([]string, error) {
 func (s *sql) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
-	pn, err := json.Marshal(prefix.toPrefixJSON())
+	pn, err := prefix.toJSON()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to marshal prefix:%w", err)
+		return Prefix{}, err
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
