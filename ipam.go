@@ -32,7 +32,7 @@ type Ipamer interface {
 	// PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
 	// with one of existingPrefixes
 	PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error
-	// Retrieve all existing Prefix CIDRs from the underlying storage
+	// ReadAllPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
 	ReadAllPrefixCidrs() ([]string, error)
 }
 
