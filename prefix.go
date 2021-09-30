@@ -484,7 +484,7 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 	return p, nil
 }
 
-// Retrieve all existing Prefix CIDRs from the underlying storage
+// ReadAllPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
 func (i *ipamer) ReadAllPrefixCidrs() ([]string, error) {
 	return i.storage.ReadAllPrefixCidrs()
 }
