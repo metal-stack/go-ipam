@@ -33,11 +33,11 @@ func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	pgVersion = os.Getenv("PG_VERSION")
 	if pgVersion == "" {
-		pgVersion = "13"
+		pgVersion = "14"
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "v21.1.5"
+		cockroachVersion = "v21.1.9"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
