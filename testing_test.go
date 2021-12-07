@@ -3,8 +3,7 @@ package ipam
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"io"
 	"os"
 	"sync"
 	"testing"
@@ -33,19 +32,19 @@ func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	pgVersion = os.Getenv("PG_VERSION")
 	if pgVersion == "" {
-		pgVersion = "13"
+		pgVersion = "14"
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "v21.1.5"
+		cockroachVersion = "v21.2.2"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
-		redisVersion = "6-alpine"
+		redisVersion = "6.2-alpine"
 	}
 	keyDBVersion = os.Getenv("KEYDB_VERSION")
 	if keyDBVersion == "" {
-		keyDBVersion = "alpine_x86_64_v6.0.18"
+		keyDBVersion = "alpine_x86_64_v6.2.1"
 	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
@@ -54,7 +53,7 @@ func TestMain(m *testing.M) {
 		fmt.Printf("only test %s\n", backend)
 	}
 	// prevent testcontainer logging mangle test and benchmark output
-	log.SetOutput(ioutil.Discard)
+	testcontainers.Logger.SetOutput(io.Discard)
 	os.Exit(m.Run())
 }
 
