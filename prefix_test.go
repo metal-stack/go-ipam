@@ -1457,6 +1457,7 @@ func TestAcquireIPParallel(t *testing.T) {
 }
 
 func Test_ipamer_DumpAndLoad(t *testing.T) {
+	
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/24")
 		require.Nil(t, err)
@@ -1474,5 +1475,21 @@ func Test_ipamer_DumpAndLoad(t *testing.T) {
 		newPrefix := ipam.PrefixFrom(prefix.Cidr)
 
 		require.Equal(t, prefix, newPrefix)
+	})
+}
+func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		const cidr = "192.168.0.0/20"
+
+		prefix, err := ipam.NewPrefix(cidr)
+		require.Nil(t, err)
+		require.NotNil(t, prefix)
+
+		cidrs, err := ipam.ReadAllPrefixCidrs()
+		require.Nil(t, err)
+		require.NotNil(t, cidrs)
+		require.Equal(t, 1, len(cidrs))
+		require.Equal(t, cidr, cidrs[0])
 	})
 }

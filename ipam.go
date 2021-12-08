@@ -36,6 +36,8 @@ type Ipamer interface {
 	Dump() (string, error)
 	// Load a previously created json formatted dump, deletes all prefixes before loading
 	Load(dump string) error
+	// ReadAllPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
+	ReadAllPrefixCidrs() ([]string, error)
 }
 
 type ipamer struct {

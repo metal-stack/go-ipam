@@ -516,6 +516,11 @@ func (i *ipamer) Load(dump string) error {
 	return nil
 }
 
+// ReadAllPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
+func (i *ipamer) ReadAllPrefixCidrs() ([]string, error) {
+	return i.storage.ReadAllPrefixCidrs()
+}
+
 func (p *Prefix) String() string {
 	return p.Cidr
 }

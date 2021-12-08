@@ -1,7 +1,7 @@
 package ipam
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -13,7 +13,7 @@ func TestIntegration(t *testing.T) {
 	_, storage, err := startPostgres()
 	require.NoError(t, err)
 	defer storage.db.Close()
-	dump, err := ioutil.ReadFile("testdata/ipamt.dump.sql")
+	dump, err := os.ReadFile("testdata/ipamt.dump.sql")
 	require.NoError(t, err)
 	require.NotNil(t, dump)
 	storage.db.MustExec(string(dump))
@@ -140,7 +140,7 @@ func TestIntegrationP(t *testing.T) {
 	_, storage, err := startPostgres()
 	require.NoError(t, err)
 	defer storage.db.Close()
-	dump, err := ioutil.ReadFile("testdata/ipamp.dump.sql")
+	dump, err := os.ReadFile("testdata/ipamp.dump.sql")
 	require.NoError(t, err)
 	require.NotNil(t, dump)
 	storage.db.MustExec(string(dump))
