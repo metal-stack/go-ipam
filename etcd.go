@@ -1,0 +1,172 @@
+package ipam
+
+import (
+	"context"
+	"crypto/tls"
+	"fmt"
+
+	"log"
+	"time"
+
+	// redigo "github.com/go-redis/redis/v8"
+	clientv3 "go.etcd.io/etcd/client/v3"
+)
+
+type etcd struct {
+	etcdDB *clientv3.Client
+}
+
+// NewRedis create a redis storage for ipam
+func NewEtcd(ip, port string, cert, key []byte) Storage {
+	return newEtcd(ip, port, cert, key)
+}
+
+func newEtcd(ip, port string, cert, key []byte) *etcd {
+	etcdConfig := clientv3.Config{
+		Endpoints:   []string{fmt.Sprintf("%s:%s", ip, port)},
+		DialTimeout: 5 * time.Second,
+		Context:     context.Background(),
+	}
+
+	if cert != nil && key != nil {
+		// SSL
+		clientCert, err := tls.X509KeyPair(cert, key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		tls := &tls.Config{
+			Certificates:       []tls.Certificate{clientCert},
+			InsecureSkipVerify: true,
+		}
+		etcdConfig.TLS = tls
+	}
+	cli, err := clientv3.New(etcdConfig)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &etcd{
+		etcdDB: cli,
+	}
+}
+
+func (e *etcd) CreatePrefix(prefix Prefix) (Prefix, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	get, err := e.etcdDB.Get(ctx, prefix.Cidr)
+	defer cancel()
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+	}
+
+	if get.Count != 0 {
+		return Prefix{}, fmt.Errorf("prefix already exists:%v", prefix)
+	}
+
+	pfx, err := prefix.toJSON()
+	if err != nil {
+		return Prefix{}, err
+	}
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	_, err = e.etcdDB.Put(ctx, prefix.Cidr, string(pfx))
+	defer cancel()
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to create prefix:%v, error:%w", prefix, err)
+	}
+
+	return prefix, nil
+}
+
+func (e *etcd) ReadPrefix(prefix string) (Prefix, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	get, err := e.etcdDB.Get(ctx, prefix)
+	defer cancel()
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+	}
+
+	return fromJSON(get.Kvs[0].Value)
+}
+func (e *etcd) ReadAllPrefixes() ([]Prefix, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
+	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
+	defer cancel()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
+	}
+
+	result := []Prefix{}
+	for _, pfx := range pfxs.Kvs {
+		v, err := e.etcdDB.Get(ctx, string(pfx.Key))
+		if err != nil {
+			return nil, err
+		}
+		pfx, err := fromJSON(v.Kvs[0].Value)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, pfx)
+	}
+	return []Prefix{}, nil
+}
+func (e *etcd) ReadAllPrefixCidrs() ([]string, error) {
+	allPrefix := []string{}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
+	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
+	defer cancel()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
+	}
+
+	for _, pfx := range pfxs.Kvs {
+		allPrefix = append(allPrefix, string(pfx.Key))
+	}
+
+	return allPrefix, nil
+}
+func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
+	oldVersion := prefix.version
+	prefix.version = oldVersion + 1
+	pn, err := prefix.toJSON()
+	if err != nil {
+		return Prefix{}, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	p, err := e.etcdDB.Get(ctx, prefix.Cidr)
+	defer cancel()
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to get all prefix cidrs:%w", err)
+	}
+
+	oldPrefix, err := fromJSON([]byte(p.Kvs[0].Value))
+	if err != nil {
+		return Prefix{}, err
+	}
+
+	// Actual operation (local in optimistic lock).
+	if oldPrefix.version != oldVersion {
+		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+	}
+
+	// Operation is committed only if the watched keys remain unchanged.
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	_, err = e.etcdDB.Put(ctx, prefix.Cidr, string(pn))
+	defer cancel()
+	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to update prefix:%s, error:%w", prefix.Cidr, err)
+	}
+
+	return prefix, nil
+}
+func (e *etcd) DeletePrefix(prefix Prefix) (Prefix, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, err := e.etcdDB.Delete(ctx, prefix.Cidr)
+	defer cancel()
+	if err != nil {
+		return *prefix.deepCopy(), err
+	}
+	return *prefix.deepCopy(), nil
+}

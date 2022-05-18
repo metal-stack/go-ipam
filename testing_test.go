@@ -10,6 +10,7 @@ import (
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 var (
@@ -24,6 +25,9 @@ var (
 	redisVersion     string
 	keyDBVersion     string
 	keyDBContainer   testcontainers.Container
+	etcdContainer    testcontainers.Container
+	etcdVersion      string
+	etcdOnce         sync.Once
 
 	backend string
 )
@@ -46,9 +50,13 @@ func TestMain(m *testing.M) {
 	if keyDBVersion == "" {
 		keyDBVersion = "alpine_x86_64_v6.2.2"
 	}
+	etcdVersion = os.Getenv("ETCD_VERSION")
+	if etcdVersion == "" {
+		etcdVersion = "v3.5.4"
+	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
-		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion)
+		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s, etcd:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion, etcdVersion)
 	} else {
 		fmt.Printf("only test %s\n", backend)
 	}
@@ -162,6 +170,37 @@ func startRedis() (container testcontainers.Container, s *redis, err error) {
 
 	return redisContainer, db, nil
 }
+
+func startEtcd() (container testcontainers.Container, s *etcd, err error) {
+	ctx := context.Background()
+	etcdOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        "quay.io/coreos/etcd:" + etcdVersion,
+			ExposedPorts: []string{"2379:2379", "2380:2380"},
+			Cmd:          []string{"etcd", "--name", "etcd", "--advertise-client-urls", "http://0.0.0.0:2379", "--initial-advertise-peer-urls", "http://0.0.0.0:2380", "--listen-client-urls", "http://0.0.0.0:2379", "--listen-peer-urls", "http://0.0.0.0:2380"},
+		}
+		etcdContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := etcdContainer.Host(ctx)
+	if err != nil {
+		return etcdContainer, nil, err
+	}
+	port, err := etcdContainer.MappedPort(ctx, "2379")
+	if err != nil {
+		return etcdContainer, nil, err
+	}
+	db := newEtcd(ip, port.Port(), nil, nil)
+
+	return etcdContainer, db, nil
+}
+
 func startKeyDB() (container testcontainers.Container, s *redis, err error) {
 	ctx := context.Background()
 	redisOnce.Do(func() {
@@ -220,6 +259,10 @@ type kvStorage struct {
 	*redis
 	c testcontainers.Container
 }
+type kvEtcdStorage struct {
+	*etcd
+	c testcontainers.Container
+}
 
 func newPostgresWithCleanup() (*extendedSQL, error) {
 	c, s, err := startPostgres()
@@ -260,6 +303,20 @@ func newRedisWithCleanup() (*kvStorage, error) {
 
 	return kv, nil
 }
+func newEtcdWithCleanup() (*kvEtcdStorage, error) {
+	c, r, err := startEtcd()
+	if err != nil {
+		return nil, err
+	}
+
+	kv := &kvEtcdStorage{
+		etcd: r,
+		c:    c,
+	}
+
+	return kv, nil
+}
+
 func newKeyDBWithCleanup() (*kvStorage, error) {
 	c, r, err := startKeyDB()
 	if err != nil {
@@ -287,6 +344,15 @@ func (e *extendedSQL) cleanup() error {
 // cleanup database before test
 func (kv *kvStorage) cleanup() error {
 	_, err := kv.redis.rdb.FlushAll(context.Background()).Result()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// cleanup database before test
+func (kv *kvEtcdStorage) cleanup() error {
+	_, err := kv.etcdDB.Delete(context.Background(), "", clientv3.WithPrefix())
 	if err != nil {
 		return err
 	}
@@ -439,6 +505,19 @@ func storageProviders() []storageProvider {
 				s, err := newRedisWithCleanup()
 				if err != nil {
 					panic(fmt.Sprintf("unable to start redis:%s", err))
+				}
+				return s
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "Etcd",
+			provide: func() Storage {
+				s, err := newEtcdWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf("unable to start etcd:%s", err))
 				}
 				return s
 			},
