@@ -107,7 +107,7 @@ BenchmarkPrefixOverlapping-4             4306106       274.4 ns/op        0 B/op
 
 It is possible to test a individual backend only to speed up development roundtrip.
 
-`backend` can be one of `Memory`, `Postgres`, `Cockroach` and `Redis`.
+`backend` can be one of `Memory`, `Postgres`, `Cockroach`, `Etcd` and `Redis`.
 
 ```bash
 BACKEND=backend make test
