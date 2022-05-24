@@ -36,6 +36,8 @@ func newEtcd(ip, port string, cert, key []byte, insecureskip bool) *etcd {
 		}
 		tls := &tls.Config{
 			Certificates:       []tls.Certificate{clientCert},
+			// nolint:gosec
+			// #nosec G402
 			InsecureSkipVerify: insecureskip,
 		}
 		etcdConfig.TLS = tls
