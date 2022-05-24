@@ -282,7 +282,6 @@ func TestIntegrationP(t *testing.T) {
 	require.EqualError(t, err, "NoIPAvailableError: no more ips in prefix: 1.2.3.0/25 left, length of prefix.ips: 128")
 
 }
-
 func TestIntegrationEtcd(t *testing.T) {
 	_, storage, err := startEtcd()
 	require.NoError(t, err)

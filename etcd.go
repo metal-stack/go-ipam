@@ -17,11 +17,11 @@ type etcd struct {
 }
 
 // NewRedis create a redis storage for ipam
-func NewEtcd(ip, port string, cert, key []byte) Storage {
-	return newEtcd(ip, port, cert, key)
+func NewEtcd(ip, port string, cert, key []byte, insecureskip bool) Storage {
+	return newEtcd(ip, port, cert, key, insecureskip)
 }
 
-func newEtcd(ip, port string, cert, key []byte) *etcd {
+func newEtcd(ip, port string, cert, key []byte, insecureskip bool) *etcd {
 	etcdConfig := clientv3.Config{
 		Endpoints:   []string{fmt.Sprintf("%s:%s", ip, port)},
 		DialTimeout: 5 * time.Second,
@@ -36,12 +36,11 @@ func newEtcd(ip, port string, cert, key []byte) *etcd {
 		}
 		tls := &tls.Config{
 			Certificates:       []tls.Certificate{clientCert},
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: insecureskip,
 		}
 		etcdConfig.TLS = tls
 	}
 	cli, err := clientv3.New(etcdConfig)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -108,7 +107,7 @@ func (e *etcd) ReadAllPrefixes() ([]Prefix, error) {
 		}
 		result = append(result, pfx)
 	}
-	return []Prefix{}, nil
+	return result, nil
 }
 func (e *etcd) ReadAllPrefixCidrs() ([]string, error) {
 	allPrefix := []string{}

@@ -196,7 +196,7 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 	if err != nil {
 		return etcdContainer, nil, err
 	}
-	db := newEtcd(ip, port.Port(), nil, nil)
+	db := newEtcd(ip, port.Port(), nil, nil, true)
 
 	return etcdContainer, db, nil
 }
