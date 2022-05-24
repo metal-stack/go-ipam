@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-
+	"sync"
 	"log"
 	"time"
 
@@ -14,6 +14,7 @@ import (
 
 type etcd struct {
 	etcdDB *clientv3.Client
+	lock   sync.RWMutex
 }
 
 // NewRedis create a redis storage for ipam
@@ -35,7 +36,7 @@ func newEtcd(ip, port string, cert, key []byte, insecureskip bool) *etcd {
 			log.Fatal(err)
 		}
 		tls := &tls.Config{
-			Certificates:       []tls.Certificate{clientCert},
+			Certificates: []tls.Certificate{clientCert},
 			// nolint:gosec
 			// #nosec G402
 			InsecureSkipVerify: insecureskip,
@@ -53,6 +54,9 @@ func newEtcd(ip, port string, cert, key []byte, insecureskip bool) *etcd {
 }
 
 func (e *etcd) CreatePrefix(prefix Prefix) (Prefix, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	get, err := e.etcdDB.Get(ctx, prefix.Cidr)
 	defer cancel()
@@ -79,16 +83,26 @@ func (e *etcd) CreatePrefix(prefix Prefix) (Prefix, error) {
 }
 
 func (e *etcd) ReadPrefix(prefix string) (Prefix, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	get, err := e.etcdDB.Get(ctx, prefix)
 	defer cancel()
 	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to read data from ETCD error:%w", err)
+	}
+
+	if get.Count == 0 {
 		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
 	}
 
 	return fromJSON(get.Kvs[0].Value)
 }
 func (e *etcd) ReadAllPrefixes() ([]Prefix, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
 	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
@@ -112,6 +126,9 @@ func (e *etcd) ReadAllPrefixes() ([]Prefix, error) {
 	return result, nil
 }
 func (e *etcd) ReadAllPrefixCidrs() ([]string, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
 	allPrefix := []string{}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
@@ -128,6 +145,9 @@ func (e *etcd) ReadAllPrefixCidrs() ([]string, error) {
 	return allPrefix, nil
 }
 func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
 	pn, err := prefix.toJSON()
@@ -139,6 +159,10 @@ func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	p, err := e.etcdDB.Get(ctx, prefix.Cidr)
 	defer cancel()
 	if err != nil {
+		return Prefix{}, fmt.Errorf("unable to read cidrs from ETCD:%w", err)
+	}
+
+	if p.Count == 0 {
 		return Prefix{}, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
@@ -163,6 +187,9 @@ func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	return prefix, nil
 }
 func (e *etcd) DeletePrefix(prefix Prefix) (Prefix, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	_, err := e.etcdDB.Delete(ctx, prefix.Cidr)
 	defer cancel()
