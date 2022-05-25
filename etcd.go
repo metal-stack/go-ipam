@@ -4,11 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"sync"
 	"log"
+	"sync"
 	"time"
 
-	// redigo "github.com/go-redis/redis/v8"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -17,7 +16,7 @@ type etcd struct {
 	lock   sync.RWMutex
 }
 
-// NewRedis create a redis storage for ipam
+// NewEtcd create a etcd storage for ipam
 func NewEtcd(ip, port string, cert, key []byte, insecureskip bool) Storage {
 	return newEtcd(ip, port, cert, key, insecureskip)
 }
@@ -189,7 +188,7 @@ func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
 func (e *etcd) DeletePrefix(prefix Prefix) (Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	_, err := e.etcdDB.Delete(ctx, prefix.Cidr)
 	defer cancel()
