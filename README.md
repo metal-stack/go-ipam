@@ -71,15 +71,14 @@ func main() {
     fmt.Printf("got IP: %s\n", ip21.IP)
 }
 ```
-
 ## Supported Databases
 
-|                              | Postgres | CockroachDB | Redis   | KeyDB   | Memory     |
-|------------------------------|----------|-------------|---------|---------|------------|
-| Production ready             | Y        | Y           | Y       | Y       | N          |
-| geo redundant setup possible | N        | Y           | N       | Y       | N          |
-| AcquireIP/sec                | ~100/s   | ~60/s       | ~1400/s | ~1400/s | >200.000/s |
-| AcquireChildPrefix/sec       | ~40/s    | ~35/s       | ~1000/s | ~1000/s | >100.000/s |
+|                              | Postgres | CockroachDB | Redis   | KeyDB   | Etcd       | Memory     |
+|------------------------------|----------|-------------|---------|---------|------------|------------|
+| Production ready             | Y        | Y           | Y       | Y       | Y          | N          |
+| geo redundant setup possible | N        | Y           | N       | Y       | N          | N          |
+| AcquireIP/sec                | ~100/s   | ~60/s       | ~1400/s | ~1400/s |            | >200.000/s |
+| AcquireChildPrefix/sec       | ~40/s    | ~35/s       | ~1000/s | ~1000/s |            | >100.000/s |
 
 Test were run on a Intel(R) Core(TM) i5-6600 CPU @ 3.30GHz
 
@@ -108,7 +107,7 @@ BenchmarkPrefixOverlapping-4             4306106       274.4 ns/op        0 B/op
 
 It is possible to test a individual backend only to speed up development roundtrip.
 
-`backend` can be one of `Memory`, `Postgres`, `Cockroach` and `Redis`.
+`backend` can be one of `Memory`, `Postgres`, `Cockroach`, `Etcd` and `Redis`.
 
 ```bash
 BACKEND=backend make test
