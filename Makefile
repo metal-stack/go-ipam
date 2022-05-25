@@ -3,7 +3,7 @@ CGO_ENABLED := $(or ${CGO_ENABLED},0)
 GO := go
 GO111MODULE := on
 PG_VERSION := $(or ${PG_VERSION},14-alpine)
-COCKROACH_VERSION := $(or ${COCKROACH_VERSION},v21.2.2)
+COCKROACH_VERSION := $(or ${COCKROACH_VERSION},v22.1.0)
 
 .EXPORT_ALL_VARIABLES:
 
@@ -11,7 +11,7 @@ all: test bench
 
 .PHONY: bench
 bench:
-	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem
+	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem -timeout 20m
 
 .PHONY: benchstat
 benchstat:
@@ -31,7 +31,7 @@ golangcicheck:
 
 .PHONY: lint
 lint: golangcicheck
-	golangci-lint run
+	golangci-lint run -p bugs -p unused
 
 .PHONY: postgres-up
 postgres-up: postgres-rm
