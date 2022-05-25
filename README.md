@@ -71,14 +71,15 @@ func main() {
     fmt.Printf("got IP: %s\n", ip21.IP)
 }
 ```
+
 ## Supported Databases
 
 |                              | Postgres | CockroachDB | Redis   | KeyDB   | Etcd       | Memory     |
 |------------------------------|----------|-------------|---------|---------|------------|------------|
 | Production ready             | Y        | Y           | Y       | Y       | Y          | N          |
 | geo redundant setup possible | N        | Y           | N       | Y       | N          | N          |
-| AcquireIP/sec                | ~100/s   | ~60/s       | ~1400/s | ~1400/s |            | >200.000/s |
-| AcquireChildPrefix/sec       | ~40/s    | ~35/s       | ~1000/s | ~1000/s |            | >100.000/s |
+| AcquireIP/sec                | ~100/s   | ~60/s       | ~1400/s | ~1400/s | ~110/s     | >200.000/s |
+| AcquireChildPrefix/sec       | ~40/s    | ~35/s       | ~1000/s | ~1000/s | ~70/s      | >100.000/s |
 
 Test were run on a Intel(R) Core(TM) i5-6600 CPU @ 3.30GHz
 

@@ -3,7 +3,6 @@ package ipam
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"sync"
 	"testing"
@@ -40,11 +39,11 @@ func TestMain(m *testing.M) {
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "v21.2.7"
+		cockroachVersion = "v22.1.0"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
-		redisVersion = "6.2-alpine"
+		redisVersion = "7.0-alpine"
 	}
 	keyDBVersion = os.Getenv("KEYDB_VERSION")
 	if keyDBVersion == "" {
@@ -60,8 +59,6 @@ func TestMain(m *testing.M) {
 	} else {
 		fmt.Printf("only test %s\n", backend)
 	}
-	// prevent testcontainer logging mangle test and benchmark output
-	testcontainers.Logger.SetOutput(io.Discard)
 	os.Exit(m.Run())
 }
 
@@ -114,7 +111,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 				wait.ForListeningPort("8080/tcp"),
 				wait.ForListeningPort("26257/tcp"),
 			),
-			Cmd: []string{"start-single-node", "--insecure", "--listen-addr=0.0.0.0", "--store=type=mem,size=70%"},
+			Cmd: []string{"start-single-node", "--insecure", "--store=type=mem,size=70%"},
 		}
 		crContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
@@ -178,12 +175,12 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 		req := testcontainers.ContainerRequest{
 			Image:        "quay.io/coreos/etcd:" + etcdVersion,
 			ExposedPorts: []string{"2379:2379", "2380:2380"},
-			Cmd:          []string{"etcd", 
-							"--name", "etcd", 
-							"--advertise-client-urls", "http://0.0.0.0:2379", 
-							"--initial-advertise-peer-urls", "http://0.0.0.0:2380", 
-							"--listen-client-urls", "http://0.0.0.0:2379", 
-							"--listen-peer-urls", "http://0.0.0.0:2380",
+			Cmd: []string{"etcd",
+				"--name", "etcd",
+				"--advertise-client-urls", "http://0.0.0.0:2379",
+				"--initial-advertise-peer-urls", "http://0.0.0.0:2380",
+				"--listen-client-urls", "http://0.0.0.0:2379",
+				"--listen-peer-urls", "http://0.0.0.0:2380",
 			},
 		}
 		etcdContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -403,6 +400,8 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {
+	// prevent testcontainer logging mangle test and benchmark output
+	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
 		if backend != "" && backend != storageProvider.name {
 			continue
@@ -428,6 +427,8 @@ func testWithBackends(t *testing.T, fn testMethod) {
 type sqlTestMethod func(t *testing.T, sql *sql)
 
 func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
+	// prevent testcontainer logging mangle test and benchmark output
+	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
 		if backend != "" && backend != storageProvider.name {
 			continue
