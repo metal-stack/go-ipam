@@ -183,7 +183,7 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 							"--advertise-client-urls", "http://0.0.0.0:2379", 
 							"--initial-advertise-peer-urls", "http://0.0.0.0:2380", 
 							"--listen-client-urls", "http://0.0.0.0:2379", 
-							"--listen-peer-urls", "http://0.0.0.0:2380"
+							"--listen-peer-urls", "http://0.0.0.0:2380",
 			},
 		}
 		etcdContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
