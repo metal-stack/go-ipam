@@ -312,13 +312,48 @@ func TestIpamer_AcquireSpecificIP(t *testing.T) {
 	})
 }
 
+func TestIpamer_AcquireReleaseMultipleIPs(t *testing.T) {
+	const blocked = 2 // network and broadcast are blocked
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("192.168.0.0/24")
+		require.Nil(t, err)
+
+		ips, err := ipam.Acquire(prefix.Cidr, []string{"192.168.0.1", "192.168.0.2", "192.168.0.3"}, 8)
+		require.Nil(t, err)
+		require.NotNil(t, ips)
+		require.Equal(t, 11, len(ips))
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(blocked+len(ips)))
+
+		require.True(t, strings.HasPrefix(ips[1].IP.String(), "192.168.0"))
+		require.True(t, strings.HasPrefix(ips[9].IP.String(), "192.168.0"))
+
+		ipsToRelease := []string{"192.168.0.2", "192.168.0.7", "192.168.0.9"}
+		err = ipam.Release(prefix.Cidr, ipsToRelease)
+		require.Nil(t, err)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		remained := len(ips) - len(ipsToRelease)
+		require.Equal(t, 8, remained)
+		require.Equal(t, prefix.acquiredips(), uint64(blocked+remained))
+
+		// already released
+		err = ipam.Release(prefix.Cidr, ipsToRelease)
+		require.NotNil(t, err)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, prefix.availableips(), uint64(256))
+		require.Equal(t, prefix.acquiredips(), uint64(blocked+remained))
+	})
+}
 func TestIpamer_AcquireIPCountsIPv4(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/24")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(256))
-		// network an broadcast are blocked
+		// network and broadcast are blocked
 		require.Equal(t, prefix.acquiredips(), uint64(2))
 		ip1, err := ipam.AcquireIP(prefix.Cidr)
 		require.Nil(t, err)

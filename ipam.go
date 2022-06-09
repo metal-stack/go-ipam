@@ -23,12 +23,20 @@ type Ipamer interface {
 	AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error)
 	// AcquireIP will return the next unused IP from this Prefix.
 	AcquireIP(prefixCidr string) (*IP, error)
+	// Acquire will attempt to acquire specified IPs by privided arguments.
+	// specificIPs shows how many specific IPs to return. In case any of them overlaps an ErrAlreadyAllocated is returned.
+	// dynamicIPs shows how many of any available IPs to retrun.
+	// If there is no free IP an NoIPAvailableError is returned.
+	Acquire(prefixCidr string, specificIPs []string, dynamicIPs uint64) ([]*IP, error)
 	// ReleaseIP will release the given IP for later usage and returns the updated Prefix.
 	// If the IP is not found an NotFoundError is returned.
 	ReleaseIP(ip *IP) (*Prefix, error)
 	// ReleaseIPFromPrefix will release the given IP for later usage.
 	// If the Prefix or the IP is not found an NotFoundError is returned.
 	ReleaseIPFromPrefix(prefixCidr, ip string) error
+	// Release will release the given IP array from prefix for later usage.
+	// If the Prefix or any IP are not found an NotFoundError is returned.
+	Release(prefixCidr string, ips []string) error
 	// PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
 	// with one of existingPrefixes
 	PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error
