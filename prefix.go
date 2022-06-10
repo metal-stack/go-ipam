@@ -361,7 +361,7 @@ func (i *ipamer) Acquire(prefixCidr string, specificIPs []string, dynamicIPs uin
 
 // acquireIPInternal will attempt to acquire specificIPs or range of dynamicIPs and mark them as used.
 // specificIPs shows how many specific IPs to return. In case any of them overlaps an ErrAlreadyAllocated is returned.
-// dynamicIPs shows how many of any available IPs to retrun.
+// dynamicIPs shows how many of any available IPs to return.
 // If there is no free/specific IP to acquire an NoIPAvailableError is returned.
 // If the Prefix is not found an NotFoundError is returned.
 func (i *ipamer) acquireIPInternal(prefixCidr string, specificIPs []string, dynamicIPs uint64) ([]*IP, error) {

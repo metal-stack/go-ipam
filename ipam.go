@@ -23,9 +23,9 @@ type Ipamer interface {
 	AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error)
 	// AcquireIP will return the next unused IP from this Prefix.
 	AcquireIP(prefixCidr string) (*IP, error)
-	// Acquire will attempt to acquire specified IPs by privided arguments.
+	// Acquire will attempt to acquire specified IPs by provided arguments.
 	// specificIPs shows how many specific IPs to return. In case any of them overlaps an ErrAlreadyAllocated is returned.
-	// dynamicIPs shows how many of any available IPs to retrun.
+	// dynamicIPs shows how many of any available IPs to return.
 	// If there is no free IP an NoIPAvailableError is returned.
 	Acquire(prefixCidr string, specificIPs []string, dynamicIPs uint64) ([]*IP, error)
 	// ReleaseIP will release the given IP for later usage and returns the updated Prefix.
