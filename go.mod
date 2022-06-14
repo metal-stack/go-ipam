@@ -1,4 +1,4 @@
-module github.com/1NCE-GmbH/go-ipam
+module github.com/metal-stack/go-ipam
 
 go 1.18
 
