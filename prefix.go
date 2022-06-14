@@ -128,7 +128,7 @@ type Usage struct {
 	// AvailableIPs the number of available IPs if this is not a parent prefix
 	// No more than 2^31 available IPs are reported
 	AvailableIPs uint64
-	// AcquiredIPs the number of acquire IPs if this is not a parent prefix
+	// AcquiredIPs the number of acquired IPs if this is not a parent prefix
 	AcquiredIPs uint64
 	// AvailableSmallestPrefixes is the count of available Prefixes with 2 countable Bits
 	// No more than 2^31 available Prefixes are reported
@@ -335,19 +335,36 @@ func (i *ipamer) PrefixFrom(cidr string) *Prefix {
 }
 
 func (i *ipamer) AcquireSpecificIP(prefixCidr, specificIP string) (*IP, error) {
-	var ip *IP
-	return ip, retryOnOptimisticLock(func() error {
+	ips, err := i.Acquire(prefixCidr, []string{specificIP}, 0)
+	if err == nil {
+		return ips[0], nil
+	}
+	return nil, err
+}
+
+func (i *ipamer) AcquireIP(prefixCidr string) (*IP, error) {
+	ips, err := i.Acquire(prefixCidr, nil, 1)
+	if err == nil {
+		return ips[0], nil
+	}
+	return nil, err
+}
+
+func (i *ipamer) Acquire(prefixCidr string, specificIPs []string, dynamicIPs uint64) ([]*IP, error) {
+	var ips []*IP
+	return ips, retryOnOptimisticLock(func() error {
 		var err error
-		ip, err = i.acquireSpecificIPInternal(prefixCidr, specificIP)
+		ips, err = i.acquireIPInternal(prefixCidr, specificIPs, dynamicIPs)
 		return err
 	})
 }
 
-// acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
-// If specificIP is empty, the next free IP is returned.
-// If there is no free IP an NoIPAvailableError is returned.
+// acquireIPInternal will attempt to acquire specificIPs or range of dynamicIPs and mark them as used.
+// specificIPs shows how many specific IPs to return. In case any of them overlaps an ErrAlreadyAllocated is returned.
+// dynamicIPs shows how many of any available IPs to return.
+// If there is no free/specific IP to acquire an NoIPAvailableError is returned.
 // If the Prefix is not found an NotFoundError is returned.
-func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, error) {
+func (i *ipamer) acquireIPInternal(prefixCidr string, specificIPs []string, dynamicIPs uint64) ([]*IP, error) {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
 		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
@@ -360,46 +377,64 @@ func (i *ipamer) acquireSpecificIPInternal(prefixCidr, specificIP string) (*IP, 
 		return nil, err
 	}
 
-	var specificIPnet netaddr.IP
-	if specificIP != "" {
-		specificIPnet, err = netaddr.ParseIP(specificIP)
+	staticIPs := uint64(len(specificIPs))
+	usage := prefix.Usage()
+	if usage.AcquiredIPs+dynamicIPs+staticIPs > usage.AvailableIPs {
+		return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
+	}
+
+	specificIPnet := map[string]netaddr.IP{}
+	for _, specificIP := range specificIPs {
+		_, exists := specificIPnet[specificIP]
+		if exists {
+			return nil, fmt.Errorf("%w: given ip:%s is already requested", ErrAlreadyAllocated, specificIPnet)
+		}
+		ip, err := netaddr.ParseIP(specificIP)
 		if err != nil {
 			return nil, fmt.Errorf("given ip:%s in not valid", specificIP)
 		}
-		if !ipnet.Contains(specificIPnet) {
+		if !ipnet.Contains(ip) {
 			return nil, fmt.Errorf("given ip:%s is not in %s", specificIP, prefixCidr)
 		}
-		_, ok := prefix.ips[specificIPnet.String()]
-		if ok {
-			return nil, fmt.Errorf("%w: given ip:%s is already allocated", ErrAlreadyAllocated, specificIPnet)
+		_, exists = prefix.ips[ip.String()]
+		if exists {
+			return nil, fmt.Errorf("%w: given ip:%s is already allocated", ErrAlreadyAllocated, ip.String())
 		}
+		specificIPnet[ip.String()] = ip
 	}
 
-	for ip := ipnet.Range().From(); ipnet.Contains(ip); ip = ip.Next() {
+	ret := []*IP{}
+	for ip := ipnet.Range().From(); ipnet.Contains(ip) && (dynamicIPs > 0 || len(specificIPnet) > 0); ip = ip.Next() {
 		ipstring := ip.String()
 		_, ok := prefix.ips[ipstring]
 		if ok {
 			continue
 		}
-		if specificIP == "" || specificIPnet.Compare(ip) == 0 {
-			acquired := &IP{
+		if dynamicIPs > 0 || specificIPnet[ipstring].Compare(ip) == 0 {
+			ret = append(ret, &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
-			}
+			})
 			prefix.ips[ipstring] = true
-			_, err := i.storage.UpdatePrefix(*prefix)
-			if err != nil {
-				return nil, fmt.Errorf("unable to persist acquired ip:%v error:%w", prefix, err)
+
+			if _, ok := specificIPnet[ipstring]; ok {
+				delete(specificIPnet, ipstring)
+			} else {
+				dynamicIPs--
 			}
-			return acquired, nil
 		}
 	}
 
-	return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
-}
+	if dynamicIPs > 0 || len(specificIPnet) > 0 {
+		return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
+	}
 
-func (i *ipamer) AcquireIP(prefixCidr string) (*IP, error) {
-	return i.AcquireSpecificIP(prefixCidr, "")
+	_, err = i.storage.UpdatePrefix(*prefix)
+	if err != nil {
+		return nil, fmt.Errorf("unable to persist acquired ip:%v error:%w", prefix, err)
+	}
+	return ret, nil
+
 }
 
 func (i *ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
@@ -409,25 +444,31 @@ func (i *ipamer) ReleaseIP(ip *IP) (*Prefix, error) {
 }
 
 func (i *ipamer) ReleaseIPFromPrefix(prefixCidr, ip string) error {
+	return i.Release(prefixCidr, []string{ip})
+}
+
+func (i *ipamer) Release(prefixCidr string, ips []string) error {
 	return retryOnOptimisticLock(func() error {
-		return i.releaseIPFromPrefixInternal(prefixCidr, ip)
+		return i.releaseInternal(prefixCidr, ips)
 	})
 }
 
-// releaseIPFromPrefixInternal will release the given IP for later usage.
-func (i *ipamer) releaseIPFromPrefixInternal(prefixCidr, ip string) error {
+// releaseInternal will release the given IPs for later usage.
+func (i *ipamer) releaseInternal(prefixCidr string, ips []string) error {
 	prefix := i.PrefixFrom(prefixCidr)
 	if prefix == nil {
 		return fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
 	}
-	_, ok := prefix.ips[ip]
-	if !ok {
-		return fmt.Errorf("%w: unable to release ip:%s because it is not allocated in prefix:%s", ErrNotFound, ip, prefixCidr)
+	for _, ip := range ips {
+		_, ok := prefix.ips[ip]
+		if !ok {
+			return fmt.Errorf("%w: unable to release ip:%s because it is not allocated in prefix:%s", ErrNotFound, ip, prefixCidr)
+		}
+		delete(prefix.ips, ip)
 	}
-	delete(prefix.ips, ip)
 	_, err := i.storage.UpdatePrefix(*prefix)
 	if err != nil {
-		return fmt.Errorf("unable to release ip %v:%w", ip, err)
+		return fmt.Errorf("unable to release ip %v:%w", ips, err)
 	}
 	return nil
 }

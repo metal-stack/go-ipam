@@ -1,4 +1,4 @@
-module github.com/metal-stack/go-ipam
+module github.com/1NCE-GmbH/go-ipam
 
 go 1.18
 
@@ -59,5 +59,6 @@ require (
 	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3 // indirect
 	google.golang.org/grpc v1.46.2 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20220512140231-539c8e751b99 // indirect
 )

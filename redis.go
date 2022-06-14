@@ -4,12 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	redigo "github.com/go-redis/redis/v8"
 )
 
 var ctx = context.Background()
+
+const redisPrefix = "GOIPAM"
+
+func key(prefix string) string {
+	return strings.Join([]string{redisPrefix, prefix}, "_")
+}
+
+func prefixFromKey(key string) string {
+	return strings.TrimPrefix(key, redisPrefix+"_")
+}
 
 type redis struct {
 	rdb  *redigo.Client
@@ -38,7 +49,7 @@ func (r *redis) CreatePrefix(prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	existing, err := r.rdb.Exists(ctx, prefix.Cidr).Result()
+	existing, err := r.rdb.Exists(ctx, key(prefix.Cidr)).Result()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
 	}
@@ -49,14 +60,14 @@ func (r *redis) CreatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, err
 	}
-	err = r.rdb.Set(ctx, prefix.Cidr, pfx, 0).Err()
+	err = r.rdb.Set(ctx, key(prefix.Cidr), pfx, 0).Err()
 	return prefix, err
 }
 func (r *redis) ReadPrefix(prefix string) (Prefix, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	result, err := r.rdb.Get(ctx, prefix).Result()
+	result, err := r.rdb.Get(ctx, key(prefix)).Result()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
 	}
@@ -66,33 +77,37 @@ func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	pfxs, err := r.rdb.Keys(ctx, "*").Result()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
-	}
+	prefixes := r.rdb.Scan(ctx, 0, key("*"), 0).Iterator()
 
 	result := []Prefix{}
-	for _, pfx := range pfxs {
-		v, err := r.rdb.Get(ctx, pfx).Bytes()
+	for prefixes.Next(ctx) {
+		v, err := r.rdb.Get(ctx, prefixes.Val()).Bytes()
 		if err != nil {
 			return nil, err
 		}
-		pfx, err := fromJSON(v)
+		prefix, err := fromJSON(v)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, pfx)
+		result = append(result, prefix)
+	}
+	if err := prefixes.Err(); err != nil {
+		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 	return result, nil
 }
 func (r *redis) ReadAllPrefixCidrs() ([]string, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	pfxs, err := r.rdb.Keys(ctx, "*").Result()
-	if err != nil {
+	prefixes := r.rdb.Scan(ctx, 0, key("*"), 0).Iterator()
+	result := []string{}
+	for prefixes.Next(ctx) {
+		result = append(result, prefixFromKey(prefixes.Val()))
+	}
+	if err := prefixes.Err(); err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
-	return pfxs, nil
+	return result, nil
 }
 func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
@@ -107,7 +122,7 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 
 	txf := func(tx *redigo.Tx) error {
 		// Get current value or zero.
-		p, err := tx.Get(ctx, prefix.Cidr).Result()
+		p, err := tx.Get(ctx, key(prefix.Cidr)).Result()
 		if err != nil && !errors.Is(err, redigo.Nil) {
 			return err
 		}
@@ -122,12 +137,12 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 
 		// Operation is committed only if the watched keys remain unchanged.
 		_, err = tx.TxPipelined(ctx, func(pipe redigo.Pipeliner) error {
-			pipe.Set(ctx, prefix.Cidr, pn, 0)
+			pipe.Set(ctx, key(prefix.Cidr), pn, 0)
 			return nil
 		})
 		return err
 	}
-	err = r.rdb.Watch(ctx, txf, prefix.Cidr)
+	err = r.rdb.Watch(ctx, txf, key(prefix.Cidr))
 	if err != nil {
 		return Prefix{}, err
 	}
@@ -138,7 +153,7 @@ func (r *redis) DeletePrefix(prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	_, err := r.rdb.Del(ctx, prefix.Cidr).Result()
+	_, err := r.rdb.Del(ctx, key(prefix.Cidr)).Result()
 	if err != nil {
 		return *prefix.deepCopy(), err
 	}
