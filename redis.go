@@ -77,7 +77,7 @@ func (r *redis) ReadAllPrefixes() (Prefixes, error) {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
-	result := []Prefix{}
+	result := Prefixes{}
 	for _, pfx := range pfxs {
 		v, err := r.rdb.Get(ctx, pfx).Bytes()
 		if err != nil {

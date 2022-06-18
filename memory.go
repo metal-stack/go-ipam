@@ -50,7 +50,7 @@ func (m *memory) ReadAllPrefixes() (Prefixes, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	ps := make([]Prefix, 0, len(m.prefixes))
+	ps := make(Prefixes, 0, len(m.prefixes))
 	for _, v := range m.prefixes {
 		ps = append(ps, *v.deepCopy())
 	}

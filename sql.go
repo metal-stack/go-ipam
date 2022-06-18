@@ -61,7 +61,7 @@ func (s *sql) ReadAllPrefixes() (Prefixes, error) {
 		return nil, fmt.Errorf("unable to read prefixes:%w", err)
 	}
 
-	result := []Prefix{}
+	result := Prefixes{}
 	for _, v := range prefixes {
 		pfx, err := fromJSON(v)
 		if err != nil {
