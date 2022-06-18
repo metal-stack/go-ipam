@@ -102,12 +102,21 @@ func (e *etcd) ReadPrefix(prefix string) (Prefix, error) {
 func (e *etcd) DeleteAllPrefixes() error {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Minute)
+	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
+	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
 	defer cancel()
+	if err != nil {
+		return fmt.Errorf("unable to get all prefix cidrs:%w", err)
+	}
 
-	// FIXME check if this deletes all, probably need to fetch all prefixes before and iterate
-	_, err := e.etcdDB.Delete(ctx, "")
-	return err
+	for _, pfx := range pfxs.Kvs {
+		_, err := e.etcdDB.Delete(ctx, string(pfx.Key))
+		if err != nil {
+			return fmt.Errorf("unable to delete prefix:%w", err)
+		}
+	}
+	return nil
 }
 
 func (e *etcd) ReadAllPrefixes() (Prefixes, error) {
