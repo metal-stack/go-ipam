@@ -1,0 +1,10 @@
+version: v1
+plugins:
+  # generate go structs for protocol buffer defination
+  - remote: buf.build/library/plugins/go:v1.27.1-1
+    out: ../api
+  # generate gRPC stubs in golang
+  - remote: buf.build/library/plugins/go-grpc:v1.1.0-2
+    out: ../api
+    opt:
+      - require_unimplemented_servers=false
