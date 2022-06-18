@@ -98,7 +98,19 @@ func (e *etcd) ReadPrefix(prefix string) (Prefix, error) {
 
 	return fromJSON(get.Kvs[0].Value)
 }
-func (e *etcd) ReadAllPrefixes() ([]Prefix, error) {
+
+func (e *etcd) DeleteAllPrefixes() error {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// FIXME check if this deletes all, probably need to fetch all prefixes before and iterate
+	_, err := e.etcdDB.Delete(ctx, "")
+	return err
+}
+
+func (e *etcd) ReadAllPrefixes() (Prefixes, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -110,7 +122,7 @@ func (e *etcd) ReadAllPrefixes() ([]Prefix, error) {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
-	result := []Prefix{}
+	result := Prefixes{}
 	for _, pfx := range pfxs.Kvs {
 		v, err := e.etcdDB.Get(ctx, string(pfx.Key))
 		if err != nil {
