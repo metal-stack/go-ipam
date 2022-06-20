@@ -1473,7 +1473,8 @@ func Test_ipamer_DumpAndLoad(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "prefixes exist, please drop existing data before loading", err.Error())
 
-		ipam.storage.DeleteAllPrefixes()
+		err = ipam.storage.DeleteAllPrefixes()
+		require.NoError(t, err)
 		err = ipam.Load(data)
 		require.NoError(t, err)
 
