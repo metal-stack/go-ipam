@@ -130,7 +130,7 @@ type Usage struct {
 	// AvailableIPs the number of available IPs if this is not a parent prefix
 	// No more than 2^31 available IPs are reported
 	AvailableIPs uint64
-	// AcquiredIPs the number of acquire IPs if this is not a parent prefix
+	// AcquiredIPs the number of acquired IPs if this is not a parent prefix
 	AcquiredIPs uint64
 	// AvailableSmallestPrefixes is the count of available Prefixes with 2 countable Bits
 	// No more than 2^31 available Prefixes are reported
