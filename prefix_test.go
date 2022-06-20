@@ -1470,7 +1470,12 @@ func Test_ipamer_DumpAndLoad(t *testing.T) {
 		t.Log(data)
 
 		err = ipam.Load(data)
-		require.Nil(t, err)
+		require.Error(t, err)
+		require.Equal(t, "prefixes exist, please drop existing data before loading", err.Error())
+
+		ipam.storage.DeleteAllPrefixes()
+		err = ipam.Load(data)
+		require.NoError(t, err)
 
 		newPrefix := ipam.PrefixFrom(prefix.Cidr)
 

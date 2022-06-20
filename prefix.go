@@ -499,6 +499,13 @@ func (i *ipamer) Dump() (string, error) {
 }
 
 func (i *ipamer) Load(dump string) error {
+	existingpfxs, err := i.storage.ReadAllPrefixes()
+	if err != nil {
+		return err
+	}
+	if len(existingpfxs) > 0 {
+		return fmt.Errorf("prefixes exist, please drop existing data before loading")
+	}
 	pfxs, err := fromJSONs([]byte(dump))
 	if err != nil {
 		return err
