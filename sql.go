@@ -48,15 +48,20 @@ func (s *sql) ReadPrefix(prefix string) (Prefix, error) {
 	return fromJSON(result)
 }
 
+func (s *sql) DeleteAllPrefixes() error {
+	_, err := s.db.Exec("DELETE FROM prefixes")
+	return err
+}
+
 // ReadAllPrefixes returns all known prefixes.
-func (s *sql) ReadAllPrefixes() ([]Prefix, error) {
+func (s *sql) ReadAllPrefixes() (Prefixes, error) {
 	var prefixes [][]byte
 	err := s.db.Select(&prefixes, "SELECT prefix FROM prefixes")
 	if err != nil {
 		return nil, fmt.Errorf("unable to read prefixes:%w", err)
 	}
 
-	result := []Prefix{}
+	result := Prefixes{}
 	for _, v := range prefixes {
 		pfx, err := fromJSON(v)
 		if err != nil {

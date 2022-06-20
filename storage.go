@@ -4,7 +4,8 @@ package ipam
 type Storage interface {
 	CreatePrefix(prefix Prefix) (Prefix, error)
 	ReadPrefix(prefix string) (Prefix, error)
-	ReadAllPrefixes() ([]Prefix, error)
+	DeleteAllPrefixes() error
+	ReadAllPrefixes() (Prefixes, error)
 	ReadAllPrefixCidrs() ([]string, error)
 	UpdatePrefix(prefix Prefix) (Prefix, error)
 	DeletePrefix(prefix Prefix) (Prefix, error)
