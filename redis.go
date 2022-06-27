@@ -62,12 +62,6 @@ func (r *redis) ReadPrefix(prefix string) (Prefix, error) {
 	}
 	return fromJSON([]byte(result))
 }
-func (r *redis) DeleteAllPrefixes() error {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
-	_, err := r.rdb.FlushAll(ctx).Result()
-	return err
-}
 func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
