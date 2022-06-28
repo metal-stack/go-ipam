@@ -342,6 +342,13 @@ func TestIpamer_AcquireReleaseMultipleIPs(t *testing.T) {
 		prefix = ipam.PrefixFrom(prefix.Cidr)
 		require.Equal(t, uint64(blocked+5), prefix.acquiredips())
 
+		// release IP from prefix and one that is not, prefix unchanged
+		ipsToRelease = []string{ips[3].IP.String(), "1.2.3.4"}
+		err = ipam.ReleaseIPsFromPrefix(prefix.Cidr, ipsToRelease)
+		require.NotNil(t, err)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
+		require.Equal(t, uint64(blocked+5), prefix.acquiredips())
+
 		// exceeding amount for acquire, prefix unchanged
 		ips, err = ipam.AcquireIPs(prefix.Cidr, 500)
 		require.NotNil(t, err)
