@@ -40,11 +40,17 @@ func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
 	}
 	return *result.deepCopy(), nil
 }
-func (m *memory) ReadAllPrefixes() ([]Prefix, error) {
+func (m *memory) DeleteAllPrefixes() error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	m.prefixes = make(map[string]Prefix)
+	return nil
+}
+func (m *memory) ReadAllPrefixes() (Prefixes, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	ps := make([]Prefix, 0, len(m.prefixes))
+	ps := make(Prefixes, 0, len(m.prefixes))
 	for _, v := range m.prefixes {
 		ps = append(ps, *v.deepCopy())
 	}
