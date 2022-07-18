@@ -74,16 +74,16 @@ func main() {
 
 ## Supported Databases & Performance
 
-| Database    | AcquireChildPrefix/sec | AcquireIP/sec | NewPrefix/sec | PrefixOverlap/sec | Production Ready | Geo-Redundant Possible |
-|-------------|------------------------|---------------|---------------|-------------------|------------------|------------------------|
-| In-Memory   | 106861                 | 196687        | 330578        |                   | N                | N                      |
-| KeyDB       | 777                    | 975           | 2271          |                   | Y                | Y                      |
-| Redis       | 773                    | 958           | 2349          |                   | Y                | N                      |
-| MongoDB     | 415                    | 682           | 772           |                   | Y                | Y                      |
-| Etcd        | 258                    | 368           | 533           |                   | Y                | N                      |
-| Postgres    | 203                    | 331           | 472           |                   | Y                | N                      |
-| CockroachDB | 40                     | 37            | 46            |                   | Y                | Y                      |
-|             |                        |               |               | 248               |                  |                        |
+| Database    | AcquireChildPrefix | AcquireIP   | NewPrefix   | PrefixOverlap | Production Ready | Geo-Redundant Possible |
+|-------------|--------------------|-------------|-------------|---------------|------------------|------------------------|
+| In-Memory   | 106,861/sec        | 196,687/sec | 330,578/sec |               | N                | N                      |
+| KeyDB       | 777/sec            | 975/sec     | 2,271/sec   |               | Y                | Y                      |
+| Redis       | 773/sec            | 958/sec     | 2,349/sec   |               | Y                | N                      |
+| MongoDB     | 415/sec            | 682/sec     | 772/sec     |               | Y                | Y                      |
+| Etcd        | 258/sec            | 368/sec     | 533/sec     |               | Y                | N                      |
+| Postgres    | 203/sec            | 331/sec     | 472/sec     |               | Y                | N                      |
+| CockroachDB | 40/sec             | 37/sec      | 46/sec      |               | Y                | Y                      |
+|             |                    |             |             | 248/sec       |                  |                        |
 
 The benchmarks above were performed using:
  * cpu: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
