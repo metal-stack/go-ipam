@@ -3,13 +3,14 @@ package ipam
 import (
 	"context"
 	"fmt"
+	"os"
+	"sync"
+	"testing"
+
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
-	"sync"
-	"testing"
 )
 
 var (
