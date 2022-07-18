@@ -72,43 +72,43 @@ func main() {
 }
 ```
 
-## Supported Databases
+## Supported Databases & Performance
 
-|                              | Postgres | CockroachDB | Redis   | KeyDB   | Etcd       | Memory     |
-|------------------------------|----------|-------------|---------|---------|------------|------------|
-| Production ready             | Y        | Y           | Y       | Y       | Y          | N          |
-| geo redundant setup possible | N        | Y           | N       | Y       | N          | N          |
-| AcquireIP/sec                | ~100/s   | ~60/s       | ~1400/s | ~1400/s | ~110/s     | >200.000/s |
-| AcquireChildPrefix/sec       | ~40/s    | ~35/s       | ~1000/s | ~1000/s | ~70/s      | >100.000/s |
+| Database    | AcquireChildPrefix/sec | AcquireIP/sec | NewPrefix/sec | PrefixOverlap/sec | Production Ready | Geo-Redundant Possible |
+|-------------|------------------------|---------------|---------------|-------------------|------------------|------------------------|
+| In-Memory   | 106861                 | 196687        | 330578        |                   | N                | N                      |
+| KeyDB       | 777                    | 975           | 2271          |                   | Y                | Y                      |
+| Redis       | 773                    | 958           | 2349          |                   | Y                | N                      |
+| MongoDB     | 415                    | 682           | 772           |                   | Y                | Y                      |
+| Etcd        | 258                    | 368           | 533           |                   | Y                | N                      |
+| Postgres    | 203                    | 331           | 472           |                   | Y                | N                      |
+| CockroachDB | 40                     | 37            | 46            |                   | Y                | Y                      |
+|             |                        |               |               | 248               |                  |                        |
 
-Test were run on a Intel(R) Core(TM) i5-6600 CPU @ 3.30GHz
+The benchmarks above were performed using:
+ * cpu: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
+ * postgres:14-alpine 
+ * cockroach:v22.1.0 
+ * redis:7.0-alpine 
+ * keydb:alpine_x86_64_v6.2.2
+ * etcd:v3.5.4 
+ * mongodb:5.0.9-focal
 
-## Performance
-
-```bash
-BenchmarkNewPrefix/Memory-4               464994        2675 ns/op     1728 B/op     27 allocs/op
-BenchmarkNewPrefix/Postgres-4                126    11775448 ns/op     6259 B/op    144 allocs/op
-BenchmarkNewPrefix/Cockroach-4               100    25558820 ns/op     6250 B/op    144 allocs/op
-BenchmarkNewPrefix/Redis-4                  3854      308122 ns/op     3930 B/op     78 allocs/op
-BenchmarkNewPrefix/KeyDB-4                  3907      307655 ns/op     3930 B/op     78 allocs/op
-BenchmarkAcquireIP/Memory-4               229524        4508 ns/op     2680 B/op     56 allocs/op
-BenchmarkAcquireIP/Postgres-4                 98    14918027 ns/op    10684 B/op    263 allocs/op
-BenchmarkAcquireIP/Cockroach-4                51    19688920 ns/op    10728 B/op    264 allocs/op
-BenchmarkAcquireIP/Redis-4                  1734      695545 ns/op    12113 B/op    268 allocs/op
-BenchmarkAcquireIP/KeyDB-4                  1476      751854 ns/op    12110 B/op    268 allocs/op
-BenchmarkAcquireChildPrefix/Memory-4      128704        8453 ns/op     5201 B/op     94 allocs/op
-BenchmarkAcquireChildPrefix/Postgres-4        70    21220704 ns/op    15663 B/op    378 allocs/op
-BenchmarkAcquireChildPrefix/Cockroach-4       32    37638608 ns/op    15774 B/op    381 allocs/op
-BenchmarkAcquireChildPrefix/Redis-4         1280      925054 ns/op    16016 B/op    349 allocs/op
-BenchmarkAcquireChildPrefix/KeyDB-4         1143      953056 ns/op    16018 B/op    349 allocs/op
-BenchmarkPrefixOverlapping-4             4306106       274.4 ns/op        0 B/op      0 allocs/op
-```
+### Database Version Compatability
+| Database    | Details                                                                                       |
+|-------------|-----------------------------------------------------------------------------------------------|
+| KeyDB       |                                                                                               |
+| Redis       |                                                                                               |
+| MongoDB     | https://www.mongodb.com/docs/drivers/go/current/compatibility/#std-label-golang-compatibility |
+| Etcd        |                                                                                               |
+| Postgres    |                                                                                               |
+| CockroachDB |                                                                                               |
 
 ## Testing individual Backends
 
 It is possible to test a individual backend only to speed up development roundtrip.
 
-`backend` can be one of `Memory`, `Postgres`, `Cockroach`, `Etcd` and `Redis`.
+`backend` can be one of `Memory`, `Postgres`, `Cockroach`, `Etcd`, `Redis`, and `MongoDB`.
 
 ```bash
 BACKEND=backend make test
