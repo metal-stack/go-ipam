@@ -10,6 +10,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
@@ -27,6 +28,9 @@ var (
 	etcdContainer    testcontainers.Container
 	etcdVersion      string
 	etcdOnce         sync.Once
+	mdbOnce          sync.Once
+	mdbContainer     testcontainers.Container
+	mdbVersion       string
 
 	backend string
 )
@@ -53,9 +57,13 @@ func TestMain(m *testing.M) {
 	if etcdVersion == "" {
 		etcdVersion = "v3.5.4"
 	}
+	mdbVersion = os.Getenv("MONGODB_VERSION")
+	if mdbVersion == "" {
+		mdbVersion = "5.0.9-focal"
+	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
-		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s, etcd:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion, etcdVersion)
+		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s, etcd:%s mongodb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion, etcdVersion, mdbVersion)
 	} else {
 		fmt.Printf("only test %s\n", backend)
 	}
@@ -204,6 +212,59 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 	return etcdContainer, db, nil
 }
 
+func startMongodb() (container testcontainers.Container, s *mongodb, err error) {
+	ctx := context.Background()
+
+	mdbOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        `mongo:` + mdbVersion,
+			ExposedPorts: []string{`27017/tcp`},
+			Env: map[string]string{
+				`MONGO_INITDB_ROOT_USERNAME`: `testuser`,
+				`MONGO_INITDB_ROOT_PASSWORD`: `testuser`,
+			},
+			WaitingFor: wait.ForAll(
+				wait.ForLog(`Waiting for connections`),
+				wait.ForListeningPort(`27017/tcp`),
+			),
+			Cmd: []string{`mongod`},
+		}
+		mdbContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := mdbContainer.Host(ctx)
+	if err != nil {
+		return mdbContainer, nil, err
+	}
+	port, err := mdbContainer.MappedPort(ctx, `27017`)
+	if err != nil {
+		return mdbContainer, nil, err
+	}
+
+	opts := options.Client()
+	opts.ApplyURI(fmt.Sprintf(`mongodb://%s:%s`, ip, port.Port()))
+	opts.Auth = &options.Credential{
+		AuthMechanism: `SCRAM-SHA-1`,
+		Username:      `testuser`,
+		Password:      `testuser`,
+	}
+
+	c := MongoConfig{
+		DatabaseName:       `go-ipam`,
+		CollectionName:     `prefixes`,
+		MongoClientOptions: opts,
+	}
+	db, err := newMongo(ctx, c)
+
+	return mdbContainer, db, err
+}
+
 func startKeyDB() (container testcontainers.Container, s *redis, err error) {
 	ctx := context.Background()
 	redisOnce.Do(func() {
@@ -264,6 +325,11 @@ type kvStorage struct {
 }
 type kvEtcdStorage struct {
 	*etcd
+	c testcontainers.Container
+}
+
+type docStorage struct {
+	*mongodb
 	c testcontainers.Container
 }
 
@@ -334,6 +400,19 @@ func newKeyDBWithCleanup() (*kvStorage, error) {
 	return kv, nil
 }
 
+func newMongodbWithCleanup() (*docStorage, error) {
+	c, s, err := startMongodb()
+	if err != nil {
+		return nil, err
+	}
+
+	x := &docStorage{
+		mongodb: s,
+		c:       c,
+	}
+	return x, nil
+}
+
 // cleanup database before test
 func (e *extendedSQL) cleanup() error {
 	tx := e.sql.db.MustBegin()
@@ -370,6 +449,12 @@ func (sql *sql) cleanup() error {
 		return err
 	}
 	return tx.Commit()
+}
+
+func (ds *docStorage) cleanup() error {
+	ds.mongodb.lock.Lock()
+	defer ds.mongodb.lock.Unlock()
+	return ds.mongodb.c.Drop(context.TODO())
 }
 
 type benchMethod func(b *testing.B, ipam *ipamer)
@@ -540,6 +625,19 @@ func storageProviders() []storageProvider {
 					panic(fmt.Sprintf("unable to start keydb:%s", err))
 				}
 				return s
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "MongoDB",
+			provide: func() Storage {
+				storage, err := newMongodbWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf(`error getting mongodb storage, error: %s`, err))
+				}
+				return storage
 			},
 			providesql: func() *sql {
 				return nil
