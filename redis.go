@@ -62,7 +62,13 @@ func (r *redis) ReadPrefix(prefix string) (Prefix, error) {
 	}
 	return fromJSON([]byte(result))
 }
-func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
+func (r *redis) DeleteAllPrefixes() error {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	_, err := r.rdb.FlushAll(ctx).Result()
+	return err
+}
+func (r *redis) ReadAllPrefixes() (Prefixes, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -71,7 +77,7 @@ func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
-	result := []Prefix{}
+	result := Prefixes{}
 	for _, pfx := range pfxs {
 		v, err := r.rdb.Get(ctx, pfx).Bytes()
 		if err != nil {

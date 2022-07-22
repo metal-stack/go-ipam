@@ -2,13 +2,12 @@ package ipam
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
-
-	"errors"
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
@@ -318,7 +317,7 @@ func TestIpamer_AcquireIPCountsIPv4(t *testing.T) {
 		prefix, err := ipam.NewPrefix("192.168.0.0/24")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(256))
-		// network an broadcast are blocked
+		// network and broadcast are blocked
 		require.Equal(t, prefix.acquiredips(), uint64(2))
 		ip1, err := ipam.AcquireIP(prefix.Cidr)
 		require.Nil(t, err)
@@ -1457,6 +1456,33 @@ func TestAcquireIPParallel(t *testing.T) {
 	})
 }
 
+func Test_ipamer_DumpAndLoad(t *testing.T) {
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		prefix, err := ipam.NewPrefix("192.168.0.0/24")
+		require.Nil(t, err)
+		require.NotNil(t, prefix)
+
+		data, err := ipam.Dump()
+		require.Nil(t, err)
+		require.NotEmpty(t, data)
+
+		t.Log(data)
+
+		err = ipam.Load(data)
+		require.Error(t, err)
+		require.Equal(t, "prefixes exist, please drop existing data before loading", err.Error())
+
+		err = ipam.storage.DeleteAllPrefixes()
+		require.NoError(t, err)
+		err = ipam.Load(data)
+		require.NoError(t, err)
+
+		newPrefix := ipam.PrefixFrom(prefix.Cidr)
+
+		require.Equal(t, prefix, newPrefix)
+	})
+}
 func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
