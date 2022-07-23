@@ -5,4 +5,4 @@ protolint:
 
 .PHONY: protoc
 protoc: protolint
-	buf generate -v
+	buf generate

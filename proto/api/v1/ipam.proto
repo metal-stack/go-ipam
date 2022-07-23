@@ -4,7 +4,7 @@ package api.v1;
 
 import "google/protobuf/wrappers.proto";
 
-option go_package = "./v1";
+option go_package = "v1;v1";
 
 service IpamService {
   rpc CreatePrefix(CreatePrefixRequest) returns (CreatePrefixResponse);

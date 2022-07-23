@@ -1,9 +1,16 @@
 .ONESHELL:
+SHA := $(shell git rev-parse --short=8 HEAD)
+GITVERSION := $(shell git describe --long --all)
+BUILDDATE := $(shell date -Iseconds)
+VERSION := $(or ${VERSION},devel)
+
 CGO_ENABLED := $(or ${CGO_ENABLED},0)
 GO := go
 GO111MODULE := on
 PG_VERSION := $(or ${PG_VERSION},14-alpine)
 COCKROACH_VERSION := $(or ${COCKROACH_VERSION},v22.1.0)
+LINKMODE := -extldflags '-static -s -w'
+
 
 .EXPORT_ALL_VARIABLES:
 
@@ -32,6 +39,20 @@ golangcicheck:
 .PHONY: lint
 lint: golangcicheck
 	golangci-lint run -p bugs -p unused
+
+.PHONY: proto
+proto:
+	$(MAKE) -C proto protoc
+
+.PHONY: server
+server:
+	go build -tags netgo,osusergo,urfave_cli_no_docs \
+		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
+								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
+	   -o bin/server github.com/metal-stack/go-ipam/cmd/server
+	strip bin/server
 
 .PHONY: postgres-up
 postgres-up: postgres-rm

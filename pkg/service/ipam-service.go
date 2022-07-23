@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	connect_go "github.com/bufbuild/connect-go"
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 )
 
@@ -13,24 +14,24 @@ func New() *IPAMService {
 	return &IPAMService{}
 }
 
-func (i *IPAMService) CreatePrefix(ctx context.Context, in *v1.CreatePrefixRequest) (*v1.CreatePrefixResponse, error) {
+func (i *IPAMService) CreatePrefix(context.Context, *connect_go.Request[v1.CreatePrefixRequest]) (*connect_go.Response[v1.CreatePrefixResponse], error) {
 	return nil, nil
 }
-func (i *IPAMService) DeletePrefix(ctx context.Context, in *v1.DeletePrefixRequest) (*v1.DeletePrefixResponse, error) {
+func (i *IPAMService) DeletePrefix(context.Context, *connect_go.Request[v1.DeletePrefixRequest]) (*connect_go.Response[v1.DeletePrefixResponse], error) {
 	return nil, nil
 }
-func (i *IPAMService) GetPrefix(ctx context.Context, in *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error) {
+func (i *IPAMService) GetPrefix(context.Context, *connect_go.Request[v1.GetPrefixRequest]) (*connect_go.Response[v1.GetPrefixResponse], error) {
 	return nil, nil
 }
-func (i *IPAMService) AcquireChildPrefix(ctx context.Context, in *v1.AcquireChildPrefixRequest) (*v1.AcquireChildPrefixResponse, error) {
+func (i *IPAMService) AcquireChildPrefix(context.Context, *connect_go.Request[v1.AcquireChildPrefixRequest]) (*connect_go.Response[v1.AcquireChildPrefixResponse], error) {
 	return nil, nil
 }
-func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, in *v1.ReleaseChildPrefixRequest) (*v1.ReleaseChildPrefixResponse, error) {
+func (i *IPAMService) ReleaseChildPrefix(context.Context, *connect_go.Request[v1.ReleaseChildPrefixRequest]) (*connect_go.Response[v1.ReleaseChildPrefixResponse], error) {
 	return nil, nil
 }
-func (i *IPAMService) AcquireIP(ctx context.Context, in *v1.AcquireIPRequest) (*v1.AcquireIPResponse, error) {
+func (i *IPAMService) AcquireIP(context.Context, *connect_go.Request[v1.AcquireIPRequest]) (*connect_go.Response[v1.AcquireIPResponse], error) {
 	return nil, nil
 }
-func (i *IPAMService) ReleaseIP(ctx context.Context, in *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error) {
+func (i *IPAMService) ReleaseIP(context.Context, *connect_go.Request[v1.ReleaseIPRequest]) (*connect_go.Response[v1.ReleaseIPResponse], error) {
 	return nil, nil
 }
