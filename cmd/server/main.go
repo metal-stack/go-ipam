@@ -101,6 +101,97 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:    "redis",
+				Aliases: []string{"rd"},
+				Usage:   "start redis backend",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "host",
+						Value:   "localhost",
+						Usage:   "redis db hostname",
+						EnvVars: []string{"GOIPAM_REDIS_HOST"},
+					},
+					&cli.StringFlag{
+						Name:    "port",
+						Value:   "6379",
+						Usage:   "redis db port",
+						EnvVars: []string{"GOIPAM_REDIS_PORT"},
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					c := getConfig(ctx)
+					s := newServer(c)
+					host := ctx.String("host")
+					port := ctx.String("port")
+
+					c.Ipamer = goipam.NewWithStorage(goipam.NewRedis(host, port))
+					if err := s.Run(); err != nil {
+						log.Fatal(err)
+					}
+					return nil
+				},
+			},
+			{
+				Name:    "etcd",
+				Aliases: []string{"et"},
+				Usage:   "start etcd backend",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "host",
+						Value:   "localhost",
+						Usage:   "etcd db hostname",
+						EnvVars: []string{"GOIPAM_ETCD_HOST"},
+					},
+					&cli.StringFlag{
+						Name:    "port",
+						Value:   "2379",
+						Usage:   "etcd db port",
+						EnvVars: []string{"GOIPAM_ETCD_PORT"},
+					},
+					&cli.StringFlag{
+						Name:    "cert-file",
+						Value:   "cert.pem",
+						Usage:   "etcd cert file",
+						EnvVars: []string{"GOIPAM_ETCD_CERT_FILE"},
+					},
+					&cli.StringFlag{
+						Name:    "key-file",
+						Value:   "key.pem",
+						Usage:   "etcd key file",
+						EnvVars: []string{"GOIPAM_ETCD_KEY_FILE"},
+					},
+					&cli.BoolFlag{
+						Name:    "insecure-skip-verify",
+						Value:   false,
+						Usage:   "skip tls certification verification",
+						EnvVars: []string{"GOIPAM_ETCD_INSECURE_SKIP_VERIFY"},
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					c := getConfig(ctx)
+					s := newServer(c)
+					host := ctx.String("host")
+					port := ctx.String("port")
+					certFile := ctx.String("cert-file")
+					keyFile := ctx.String("key-file")
+					cert, err := os.ReadFile(certFile)
+					if err != nil {
+						return err
+					}
+					key, err := os.ReadFile(keyFile)
+					if err != nil {
+						return err
+					}
+					insecureSkip := ctx.Bool("insecure-skip-verify")
+
+					c.Ipamer = goipam.NewWithStorage(goipam.NewEtcd(host, port, cert, key, insecureSkip))
+					if err := s.Run(); err != nil {
+						log.Fatal(err)
+					}
+					return nil
+				},
+			},
 		},
 		Action: func(ctx *cli.Context) error {
 			c := getConfig(ctx)
