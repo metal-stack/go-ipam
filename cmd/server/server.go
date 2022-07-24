@@ -1,9 +1,9 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
+	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
 
@@ -15,30 +15,32 @@ import (
 type config struct {
 	GrpcServerEndpoint string
 	Log                *zap.SugaredLogger
+	Ipamer             goipam.Ipamer
 }
 type server struct {
-	c    config
-	port int
-	log  *zap.SugaredLogger
+	c      config
+	ipamer goipam.Ipamer
+	log    *zap.SugaredLogger
 }
 
 func newServer(c config) *server {
 	return &server{
-		c:   c,
-		log: c.Log,
+		c:      c,
+		ipamer: c.Ipamer,
+		log:    c.Log,
 	}
 }
 func (s *server) Run() error {
 	mux := http.NewServeMux()
 	// The generated constructors return a path and a plain net/http
 	// handler.
-	mux.Handle(apiv1connect.NewIpamServiceHandler(service.New()))
+	mux.Handle(apiv1connect.NewIpamServiceHandler(service.New(s.log, s.ipamer)))
 	err := http.ListenAndServe(
-		"localhost:8080",
+		s.c.GrpcServerEndpoint,
 		// For gRPC clients, it's convenient to support HTTP/2 without TLS. You can
 		// avoid x/net/http2 by using http.ListenAndServeTLS.
 		h2c.NewHandler(mux, &http2.Server{}),
 	)
-	log.Fatalf("listen failed: %v", err)
+	s.log.Fatalf("listen failed: %v", err)
 	return nil
 }
