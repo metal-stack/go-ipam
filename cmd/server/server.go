@@ -6,6 +6,11 @@ import (
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
+	"github.com/metal-stack/v"
+
+	"github.com/bufbuild/connect-go"
+	grpchealth "github.com/bufbuild/connect-grpchealth-go"
+	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
 
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -34,11 +39,22 @@ func newServer(c config) *server {
 	}
 }
 func (s *server) Run() error {
-	s.log.Infow("starting go-ipam", "backend", s.storage.Name())
+	s.log.Infow("starting go-ipam", "version", v.V, "backend", s.storage.Name())
 	mux := http.NewServeMux()
 	// The generated constructors return a path and a plain net/http
 	// handler.
 	mux.Handle(apiv1connect.NewIpamServiceHandler(service.New(s.log, s.ipamer)))
+
+	compress1KB := connect.WithCompressMinBytes(1024)
+	mux.Handle(grpchealth.NewHandler(
+		grpchealth.NewStaticChecker(apiv1connect.IpamServiceName),
+		compress1KB,
+	))
+	mux.Handle(grpcreflect.NewHandlerV1(
+		grpcreflect.NewStaticReflector(apiv1connect.IpamServiceName),
+		compress1KB,
+	))
+
 	err := http.ListenAndServe(
 		s.c.GrpcServerEndpoint,
 		// For gRPC clients, it's convenient to support HTTP/2 without TLS. You can

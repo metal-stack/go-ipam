@@ -24,7 +24,7 @@ func New(log *zap.SugaredLogger, ipamer goipam.Ipamer) *IPAMService {
 }
 
 func (i *IPAMService) CreatePrefix(_ context.Context, req *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error) {
-	i.log.Infow("createprefix", "req", req)
+	i.log.Debugw("createprefix", "req", req)
 	// FIXME context must be passed here
 	resp, err := i.ipamer.NewPrefix(req.Msg.Cidr)
 	if err != nil {
@@ -40,7 +40,7 @@ func (i *IPAMService) CreatePrefix(_ context.Context, req *connect.Request[v1.Cr
 	}, nil
 }
 func (i *IPAMService) DeletePrefix(_ context.Context, req *connect.Request[v1.DeletePrefixRequest]) (*connect.Response[v1.DeletePrefixResponse], error) {
-	i.log.Infow("deleteprefix", "req", req)
+	i.log.Debugw("deleteprefix", "req", req)
 	resp, err := i.ipamer.DeletePrefix(req.Msg.Cidr)
 	if err != nil {
 		return nil, err
@@ -56,11 +56,11 @@ func (i *IPAMService) DeletePrefix(_ context.Context, req *connect.Request[v1.De
 	}, nil
 }
 func (i *IPAMService) GetPrefix(_ context.Context, req *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error) {
-	i.log.Infow("getprefix", "req", req)
+	i.log.Debugw("getprefix", "req", req)
 
 	resp := i.ipamer.PrefixFrom(req.Msg.Cidr)
 	if resp == nil {
-		return &connect.Response[v1.GetPrefixResponse]{}, nil
+		return &connect.Response[v1.GetPrefixResponse]{}, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not found", req.Msg.Cidr))
 	}
 
 	return &connect.Response[v1.GetPrefixResponse]{
@@ -73,7 +73,7 @@ func (i *IPAMService) GetPrefix(_ context.Context, req *connect.Request[v1.GetPr
 	}, nil
 }
 func (i *IPAMService) AcquireChildPrefix(_ context.Context, req *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error) {
-	i.log.Infow("acquirechildprefix", "req", req)
+	i.log.Debugw("acquirechildprefix", "req", req)
 	resp, err := i.ipamer.AcquireChildPrefix(req.Msg.Cidr, uint8(req.Msg.Length))
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (i *IPAMService) AcquireChildPrefix(_ context.Context, req *connect.Request
 }
 
 func (i *IPAMService) ReleaseChildPrefix(_ context.Context, req *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error) {
-	i.log.Infow("releasechildprefix", "req", req)
+	i.log.Debugw("releasechildprefix", "req", req)
 
 	prefix := i.ipamer.PrefixFrom(req.Msg.Cidr)
 	if prefix == nil {
@@ -110,7 +110,7 @@ func (i *IPAMService) ReleaseChildPrefix(_ context.Context, req *connect.Request
 	}, nil
 }
 func (i *IPAMService) AcquireIP(_ context.Context, req *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error) {
-	i.log.Infow("acquireip", "req", req)
+	i.log.Debugw("acquireip", "req", req)
 
 	resp, err := i.ipamer.AcquireIP(req.Msg.PrefixCidr)
 	if err != nil {
@@ -126,7 +126,7 @@ func (i *IPAMService) AcquireIP(_ context.Context, req *connect.Request[v1.Acqui
 	}, nil
 }
 func (i *IPAMService) ReleaseIP(_ context.Context, req *connect.Request[v1.ReleaseIPRequest]) (*connect.Response[v1.ReleaseIPResponse], error) {
-	i.log.Infow("releaseip", "req", req)
+	i.log.Debugw("releaseip", "req", req)
 	netip, err := netaddr.ParseIP(req.Msg.Ip)
 	if err != nil {
 		return nil, err

@@ -5,6 +5,8 @@ go 1.18
 require (
 	github.com/avast/retry-go/v4 v4.1.0
 	github.com/bufbuild/connect-go v0.2.0
+	github.com/bufbuild/connect-grpchealth-go v0.1.0
+	github.com/bufbuild/connect-grpcreflect-go v0.1.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.6
@@ -25,6 +27,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/Microsoft/hcsshim v0.9.3 // indirect
+	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/cgroups v1.0.4 // indirect
