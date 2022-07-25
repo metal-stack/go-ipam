@@ -1,7 +1,6 @@
 package ipam
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -48,19 +47,18 @@ const (
 )
 
 // NewPostgresStorage creates a new Storage which uses postgres.
-func NewPostgresStorage(ctx context.Context, host, port, user, password, dbname string, sslmode SSLMode) (Storage, error) {
-	return newPostgres(ctx, host, port, user, password, dbname, sslmode)
+func NewPostgresStorage(host, port, user, password, dbname string, sslmode SSLMode) (Storage, error) {
+	return newPostgres(host, port, user, password, dbname, sslmode)
 }
 
-func newPostgres(ctx context.Context, host, port, user, password, dbname string, sslmode SSLMode) (*sql, error) {
+func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*sql, error) {
 	db, err := sqlx.Connect("postgres", dataSource(host, port, user, password, dbname, sslmode))
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database:%w", err)
 	}
 	db.MustExec(postgresSchema)
 	return &sql{
-		db:  db,
-		ctx: ctx,
+		db: db,
 	}, nil
 }
 
