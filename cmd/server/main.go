@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/v"
@@ -90,7 +92,9 @@ func main() {
 					user := ctx.String("user")
 					password := ctx.String("password")
 					dbname := ctx.String("dbname")
-					pgStorage, err := goipam.NewPostgresStorage(host, port, user, password, dbname, goipam.SSLModePrefer)
+					timeOutctx, cancel := context.WithTimeout(context.Background(), 3*time.Second) // FIXME variable
+					defer cancel()
+					pgStorage, err := goipam.NewPostgresStorage(timeOutctx, host, port, user, password, dbname, goipam.SSLModePrefer)
 					if err != nil {
 						return err
 					}

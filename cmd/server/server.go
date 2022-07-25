@@ -41,6 +41,5 @@ func (s *server) Run() error {
 		// avoid x/net/http2 by using http.ListenAndServeTLS.
 		h2c.NewHandler(mux, &http2.Server{}),
 	)
-	s.log.Fatalf("listen failed: %v", err)
-	return nil
+	return err
 }

@@ -101,7 +101,7 @@ func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 		return pgContainer, nil, err
 	}
 	dbname := "postgres"
-	db, err := newPostgres(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
+	db, err := newPostgres(context.Background(), ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
 
 	return pgContainer, db, err
 }
@@ -138,7 +138,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 		return crContainer, nil, err
 	}
 	dbname := "defaultdb"
-	db, err := newPostgres(ip, port.Port(), "root", "password", dbname, SSLModeDisable)
+	db, err := newPostgres(context.Background(), ip, port.Port(), "root", "password", dbname, SSLModeDisable)
 
 	return crContainer, db, err
 }

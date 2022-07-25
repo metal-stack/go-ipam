@@ -23,6 +23,7 @@ func New(log *zap.SugaredLogger, ipamer goipam.Ipamer) *IPAMService {
 
 func (i *IPAMService) CreatePrefix(_ context.Context, req *connect_go.Request[v1.CreatePrefixRequest]) (*connect_go.Response[v1.CreatePrefixResponse], error) {
 	i.log.Infow("createprefix", "req", req)
+	// FIXME context must be passed here
 	resp, err := i.ipamer.NewPrefix(req.Msg.Cidr)
 	if err != nil {
 		return nil, err

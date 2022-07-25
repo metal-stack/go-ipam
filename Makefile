@@ -14,7 +14,7 @@ LINKMODE := -extldflags '-static -s -w'
 
 .EXPORT_ALL_VARIABLES:
 
-all: test bench
+all: proto server test bench
 
 .PHONY: bench
 bench:
@@ -45,7 +45,7 @@ proto:
 	$(MAKE) -C proto protoc
 
 .PHONY: server
-server:
+server: proto
 	go build -tags netgo,osusergo,urfave_cli_no_docs \
 		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
 								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
