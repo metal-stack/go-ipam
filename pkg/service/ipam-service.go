@@ -28,6 +28,7 @@ func (i *IPAMService) CreatePrefix(_ context.Context, req *connect.Request[v1.Cr
 	// FIXME context must be passed here
 	resp, err := i.ipamer.NewPrefix(req.Msg.Cidr)
 	if err != nil {
+		i.log.Errorw("createprefix", "error", err)
 		return nil, err
 	}
 	return &connect.Response[v1.CreatePrefixResponse]{
@@ -43,6 +44,7 @@ func (i *IPAMService) DeletePrefix(_ context.Context, req *connect.Request[v1.De
 	i.log.Debugw("deleteprefix", "req", req)
 	resp, err := i.ipamer.DeletePrefix(req.Msg.Cidr)
 	if err != nil {
+		i.log.Errorw("deleteprefix", "error", err)
 		return nil, err
 	}
 
@@ -76,6 +78,7 @@ func (i *IPAMService) AcquireChildPrefix(_ context.Context, req *connect.Request
 	i.log.Debugw("acquirechildprefix", "req", req)
 	resp, err := i.ipamer.AcquireChildPrefix(req.Msg.Cidr, uint8(req.Msg.Length))
 	if err != nil {
+		i.log.Errorw("acquirechildprefix", "error", err)
 		return nil, err
 	}
 	return &connect.Response[v1.AcquireChildPrefixResponse]{
@@ -98,6 +101,7 @@ func (i *IPAMService) ReleaseChildPrefix(_ context.Context, req *connect.Request
 
 	err := i.ipamer.ReleaseChildPrefix(prefix)
 	if err != nil {
+		i.log.Errorw("releasechildprefix", "error", err)
 		return nil, err
 	}
 	return &connect.Response[v1.ReleaseChildPrefixResponse]{
@@ -114,6 +118,7 @@ func (i *IPAMService) AcquireIP(_ context.Context, req *connect.Request[v1.Acqui
 
 	resp, err := i.ipamer.AcquireIP(req.Msg.PrefixCidr)
 	if err != nil {
+		i.log.Errorw("acquireip", "error", err)
 		return nil, err
 	}
 	return &connect.Response[v1.AcquireIPResponse]{
@@ -129,6 +134,7 @@ func (i *IPAMService) ReleaseIP(_ context.Context, req *connect.Request[v1.Relea
 	i.log.Debugw("releaseip", "req", req)
 	netip, err := netaddr.ParseIP(req.Msg.Ip)
 	if err != nil {
+		i.log.Errorw("releaseip", "error", err)
 		return nil, err
 	}
 	ip := &goipam.IP{
@@ -137,6 +143,7 @@ func (i *IPAMService) ReleaseIP(_ context.Context, req *connect.Request[v1.Relea
 	}
 	resp, err := i.ipamer.ReleaseIP(ip)
 	if err != nil {
+		i.log.Errorw("releaseip", "error", err)
 		return nil, err
 	}
 	return &connect.Response[v1.ReleaseIPResponse]{
