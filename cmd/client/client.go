@@ -55,6 +55,52 @@ func main() {
 						},
 					},
 					{
+						Name:  "acquire",
+						Usage: "acquire a child prefix",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name: "parent",
+							},
+							&cli.UintFlag{
+								Name: "length",
+							},
+						},
+						Action: func(ctx *cli.Context) error {
+							c := client(ctx)
+							result, err := c.AcquireChildPrefix(context.Background(), connect.NewRequest(&v1.AcquireChildPrefixRequest{
+								Cidr:   ctx.String("parent"),
+								Length: uint32(ctx.Uint("length")),
+							}))
+
+							if err != nil {
+								return err
+							}
+							fmt.Printf("child prefix:%q from %q created\n", result.Msg.Prefix.Cidr, result.Msg.Prefix.ParentCidr)
+							return nil
+						},
+					},
+					{
+						Name:  "release",
+						Usage: "release a child prefix",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name: "cidr",
+							},
+						},
+						Action: func(ctx *cli.Context) error {
+							c := client(ctx)
+							result, err := c.ReleaseChildPrefix(context.Background(), connect.NewRequest(&v1.ReleaseChildPrefixRequest{
+								Cidr: ctx.String("cidr"),
+							}))
+
+							if err != nil {
+								return err
+							}
+							fmt.Printf("child prefix:%q from %q released\n", result.Msg.Prefix.Cidr, result.Msg.Prefix.ParentCidr)
+							return nil
+						},
+					},
+					{
 						Name:  "list",
 						Usage: "list all prefixes",
 						Flags: []cli.Flag{
