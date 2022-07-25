@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/v"
 	"github.com/urfave/cli/v2"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -174,6 +177,79 @@ func main() {
 					insecureSkip := ctx.Bool("insecure-skip-verify")
 
 					c.Storage = goipam.NewEtcd(host, port, cert, key, insecureSkip)
+					s := newServer(c)
+					return s.Run()
+				},
+			},
+			{
+				Name:  "mongodb",
+				Usage: "start with mongodb backend",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "host",
+						Value:   "localhost",
+						Usage:   "mongodb db hostname",
+						EnvVars: []string{"GOIPAM_MONGODB_HOST"},
+					},
+					&cli.StringFlag{
+						Name:    "port",
+						Value:   "27017",
+						Usage:   "mongodb db port",
+						EnvVars: []string{"GOIPAM_MONGODB_PORT"},
+					},
+					&cli.StringFlag{
+						Name:    "db-name",
+						Value:   "go-ipam",
+						Usage:   "mongodb db name",
+						EnvVars: []string{"GOIPAM_MONGODB_DB_NAME"},
+					},
+					&cli.StringFlag{
+						Name:    "collection-name",
+						Value:   "prefixes",
+						Usage:   "mongodb db collection name",
+						EnvVars: []string{"GOIPAM_MONGODB_COLLECTION_NAME"},
+					},
+					&cli.StringFlag{
+						Name:    "user",
+						Value:   "mongodb",
+						Usage:   "mongodb db user",
+						EnvVars: []string{"GOIPAM_MONGODB_USER"},
+					},
+					&cli.StringFlag{
+						Name:    "password",
+						Value:   "mongodb",
+						Usage:   "mongodb db password",
+						EnvVars: []string{"GOIPAM_MONGODB_PASSWORD"},
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					c := getConfig(ctx)
+					host := ctx.String("host")
+					port := ctx.String("port")
+					user := ctx.String("user")
+					password := ctx.String("password")
+					dbname := ctx.String("db-name")
+					collectionname := ctx.String("collection-name")
+
+					opts := options.Client()
+					opts.ApplyURI(fmt.Sprintf(`mongodb://%s:%s`, host, port))
+					opts.Auth = &options.Credential{
+						AuthMechanism: `SCRAM-SHA-1`,
+						Username:      user,
+						Password:      password,
+					}
+
+					mongocfg := goipam.MongoConfig{
+						DatabaseName:       dbname,
+						CollectionName:     collectionname,
+						MongoClientOptions: opts,
+					}
+					db, err := goipam.NewMongo(context.Background(), mongocfg)
+					if err != nil {
+						return err
+					}
+					c.Storage = db
+
 					s := newServer(c)
 					return s.Run()
 				},
