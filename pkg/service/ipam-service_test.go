@@ -59,7 +59,7 @@ func TestIpamService(t *testing.T) {
 			require.Nil(t, err)
 			assert.Equal(t, deleteresult.Msg.Prefix.Cidr, fmt.Sprintf("192.169.%d.0/24", counter))
 
-			getresult, err = client.GetPrefix(context.Background(), connect.NewRequest(&v1.GetPrefixRequest{
+			_, err = client.GetPrefix(context.Background(), connect.NewRequest(&v1.GetPrefixRequest{
 				Cidr: fmt.Sprintf("192.169.%d.0/24", counter),
 			}))
 			require.Error(t, err, fmt.Errorf("prefix:'192.169.%d.0/24' not found", counter))
