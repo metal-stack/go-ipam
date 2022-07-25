@@ -11,7 +11,7 @@ RUN apk add \
 WORKDIR /work
 COPY --from=buf /usr/local/bin/buf /usr/local/bin/buf
 COPY . .
-RUN make
+RUN make server
 
 FROM alpine:3.16
 COPY --from=builder /work/bin/server /
