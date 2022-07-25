@@ -14,7 +14,7 @@ LINKMODE := -extldflags '-static -s -w'
 
 .EXPORT_ALL_VARIABLES:
 
-all: proto server test bench
+all: proto server client test bench
 
 .PHONY: bench
 bench:
@@ -45,7 +45,7 @@ proto:
 	$(MAKE) -C proto protoc
 
 .PHONY: server
-server: proto
+server:
 	go build -tags netgo,osusergo,urfave_cli_no_docs \
 		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
 								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
@@ -53,6 +53,16 @@ server: proto
 								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
 	   -o bin/server github.com/metal-stack/go-ipam/cmd/server
 	strip bin/server
+
+.PHONY: client
+client:
+	go build -tags netgo,osusergo,urfave_cli_no_docs \
+		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
+								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
+	   -o bin/cli github.com/metal-stack/go-ipam/cmd/client
+	strip bin/cli
 
 .PHONY: postgres-up
 postgres-up: postgres-rm

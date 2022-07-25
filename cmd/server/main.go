@@ -17,8 +17,8 @@ import (
 func main() {
 
 	app := &cli.App{
-		Name:    "api-server",
-		Usage:   "cli for metal cloud",
+		Name:    "go-ipam server",
+		Usage:   "grpc server for go ipam",
 		Version: v.V.String(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{

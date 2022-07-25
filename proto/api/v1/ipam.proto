@@ -8,6 +8,7 @@ service IpamService {
   rpc CreatePrefix(CreatePrefixRequest) returns (CreatePrefixResponse);
   rpc DeletePrefix(DeletePrefixRequest) returns (DeletePrefixResponse);
   rpc GetPrefix(GetPrefixRequest) returns (GetPrefixResponse);
+  rpc ListPrefixes(ListPrefixesRequest) returns (ListPrefixesResponse);
   rpc AcquireChildPrefix(AcquireChildPrefixRequest) returns (AcquireChildPrefixResponse);
   rpc ReleaseChildPrefix(ReleaseChildPrefixRequest) returns (ReleaseChildPrefixResponse);
   rpc AcquireIP(AcquireIPRequest) returns (AcquireIPResponse);
@@ -46,6 +47,13 @@ message GetPrefixRequest {
   string cidr = 1;
   string namespace = 2;
 }
+message ListPrefixesRequest {
+  string namespace = 1;
+}
+message ListPrefixesResponse {
+  repeated Prefix prefixes = 1;
+}
+
 message AcquireChildPrefixRequest {
   string cidr = 1;
   uint32 length = 2;
