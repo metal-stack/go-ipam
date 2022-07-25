@@ -35,21 +35,18 @@ func main() {
 			{
 				Name:    "memory",
 				Aliases: []string{"m"},
-				Usage:   "start memory backend",
+				Usage:   "start with memory backend",
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
-					c.Ipamer = goipam.New()
+					c.Storage = goipam.NewMemory()
 					s := newServer(c)
-					if err := s.Run(); err != nil {
-						log.Fatal(err)
-					}
-					return nil
+					return s.Run()
 				},
 			},
 			{
 				Name:    "postgres",
 				Aliases: []string{"pg"},
-				Usage:   "start postgres backend",
+				Usage:   "start with postgres backend",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "host",
@@ -84,7 +81,6 @@ func main() {
 				},
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
-					s := newServer(c)
 					host := ctx.String("host")
 					port := ctx.String("port")
 					user := ctx.String("user")
@@ -94,17 +90,14 @@ func main() {
 					if err != nil {
 						return err
 					}
-					c.Ipamer = goipam.NewWithStorage(pgStorage)
-					if err := s.Run(); err != nil {
-						log.Fatal(err)
-					}
-					return nil
+					c.Storage = pgStorage
+					s := newServer(c)
+					return s.Run()
 				},
 			},
 			{
-				Name:    "redis",
-				Aliases: []string{"rd"},
-				Usage:   "start redis backend",
+				Name:  "redis",
+				Usage: "start with redis backend",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "host",
@@ -121,21 +114,17 @@ func main() {
 				},
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
-					s := newServer(c)
 					host := ctx.String("host")
 					port := ctx.String("port")
+					c.Storage = goipam.NewRedis(host, port)
 
-					c.Ipamer = goipam.NewWithStorage(goipam.NewRedis(host, port))
-					if err := s.Run(); err != nil {
-						log.Fatal(err)
-					}
-					return nil
+					s := newServer(c)
+					return s.Run()
 				},
 			},
 			{
-				Name:    "etcd",
-				Aliases: []string{"et"},
-				Usage:   "start etcd backend",
+				Name:  "etcd",
+				Usage: "start with etcd backend",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "host",
@@ -170,7 +159,6 @@ func main() {
 				},
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
-					s := newServer(c)
 					host := ctx.String("host")
 					port := ctx.String("port")
 					certFile := ctx.String("cert-file")
@@ -185,21 +173,11 @@ func main() {
 					}
 					insecureSkip := ctx.Bool("insecure-skip-verify")
 
-					c.Ipamer = goipam.NewWithStorage(goipam.NewEtcd(host, port, cert, key, insecureSkip))
-					if err := s.Run(); err != nil {
-						log.Fatal(err)
-					}
-					return nil
+					c.Storage = goipam.NewEtcd(host, port, cert, key, insecureSkip)
+					s := newServer(c)
+					return s.Run()
 				},
 			},
-		},
-		Action: func(ctx *cli.Context) error {
-			c := getConfig(ctx)
-			s := newServer(c)
-			if err := s.Run(); err != nil {
-				log.Fatal(err)
-			}
-			return nil
 		},
 	}
 

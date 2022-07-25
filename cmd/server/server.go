@@ -15,22 +15,26 @@ import (
 type config struct {
 	GrpcServerEndpoint string
 	Log                *zap.SugaredLogger
-	Ipamer             goipam.Ipamer
+	Storage            goipam.Storage
 }
 type server struct {
-	c      config
-	ipamer goipam.Ipamer
-	log    *zap.SugaredLogger
+	c       config
+	ipamer  goipam.Ipamer
+	storage goipam.Storage
+	log     *zap.SugaredLogger
 }
 
 func newServer(c config) *server {
+
 	return &server{
-		c:      c,
-		ipamer: c.Ipamer,
-		log:    c.Log,
+		c:       c,
+		ipamer:  goipam.NewWithStorage(c.Storage),
+		storage: c.Storage,
+		log:     c.Log,
 	}
 }
 func (s *server) Run() error {
+	s.log.Infow("starting go-ipam", "backend", s.storage.Name())
 	mux := http.NewServeMux()
 	// The generated constructors return a path and a plain net/http
 	// handler.
