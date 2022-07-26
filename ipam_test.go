@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 func ExampleIpamer_NewPrefix() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	ipamer := New()
 	prefix, err := ipamer.NewPrefix(ctx, "192.168.0.0/24")
