@@ -135,3 +135,6 @@ func (s *sql) DeletePrefix(prefix Prefix) (Prefix, error) {
 	}
 	return prefix, tx.Commit()
 }
+func (s *sql) Name() string {
+	return "postgres"
+}

@@ -2,6 +2,7 @@ package ipam
 
 // Storage is a interface to store ipam objects.
 type Storage interface {
+	Name() string
 	CreatePrefix(prefix Prefix) (Prefix, error)
 	ReadPrefix(prefix string) (Prefix, error)
 	DeleteAllPrefixes() error

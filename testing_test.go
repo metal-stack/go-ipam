@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "v22.1.0"
+		cockroachVersion = "latest-v22.1"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
@@ -51,7 +51,7 @@ func TestMain(m *testing.M) {
 	}
 	keyDBVersion = os.Getenv("KEYDB_VERSION")
 	if keyDBVersion == "" {
-		keyDBVersion = "alpine_x86_64_v6.2.2"
+		keyDBVersion = "alpine_x86_64_v6.3.1"
 	}
 	etcdVersion = os.Getenv("ETCD_VERSION")
 	if etcdVersion == "" {

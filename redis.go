@@ -20,6 +20,9 @@ type redis struct {
 func NewRedis(ip, port string) Storage {
 	return newRedis(ip, port)
 }
+func (r *redis) Name() string {
+	return "redis"
+}
 
 func newRedis(ip, port string) *redis {
 	rdb := redigo.NewClient(&redigo.Options{

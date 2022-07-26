@@ -18,7 +18,9 @@ func NewMemory() Storage {
 		lock:     sync.RWMutex{},
 	}
 }
-
+func (m *memory) Name() string {
+	return "memory"
+}
 func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

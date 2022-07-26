@@ -1,17 +1,24 @@
 .ONESHELL:
+SHA := $(shell git rev-parse --short=8 HEAD)
+GITVERSION := $(shell git describe --long --all)
+BUILDDATE := $(shell date -Iseconds)
+VERSION := $(or ${VERSION},devel)
+
 CGO_ENABLED := $(or ${CGO_ENABLED},0)
 GO := go
 GO111MODULE := on
 PG_VERSION := $(or ${PG_VERSION},14-alpine)
-COCKROACH_VERSION := $(or ${COCKROACH_VERSION},v22.1.0)
+COCKROACH_VERSION := $(or ${COCKROACH_VERSION},latest-v22.1)
+LINKMODE := -extldflags '-static -s -w'
+
 
 .EXPORT_ALL_VARIABLES:
 
-all: test bench
+all: proto server client test bench
 
 .PHONY: bench
 bench:
-	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem -timeout 20m
+	CGO_ENABLED=1 $(GO) test -bench ./... -run=- -benchmem -timeout 20m
 
 .PHONY: benchstat
 benchstat:
@@ -32,6 +39,30 @@ golangcicheck:
 .PHONY: lint
 lint: golangcicheck
 	golangci-lint run -p bugs -p unused
+
+.PHONY: proto
+proto:
+	$(MAKE) -C proto protoc
+
+.PHONY: server
+server:
+	go build -tags netgo,osusergo,urfave_cli_no_docs \
+		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
+								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
+	   -o bin/server github.com/metal-stack/go-ipam/cmd/server
+	strip bin/server
+
+.PHONY: client
+client:
+	go build -tags netgo,osusergo,urfave_cli_no_docs \
+		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
+								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
+	   -o bin/cli github.com/metal-stack/go-ipam/cmd/client
+	strip bin/cli
 
 .PHONY: postgres-up
 postgres-up: postgres-rm
@@ -60,3 +91,11 @@ cockroach-up-cluster: cockroach-rm
 cockroach-rm:
 	docker rm -f roach1 roach2 roach3 || true
 	docker network rm roachnet || true
+
+.PHONY: redis-up
+redis-up: redis-rm
+	docker run -d --name ipamredis -p 6379:6379 redis
+
+.PHONY: redis-rm
+redis-rm:
+	docker rm -f ipamredis || true

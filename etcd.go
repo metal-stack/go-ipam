@@ -21,6 +21,10 @@ func NewEtcd(ip, port string, cert, key []byte, insecureskip bool) Storage {
 	return newEtcd(ip, port, cert, key, insecureskip)
 }
 
+func (e *etcd) Name() string {
+	return "etcd"
+}
+
 func newEtcd(ip, port string, cert, key []byte, insecureskip bool) *etcd {
 	etcdConfig := clientv3.Config{
 		Endpoints:   []string{fmt.Sprintf("%s:%s", ip, port)},

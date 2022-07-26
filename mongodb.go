@@ -29,6 +29,10 @@ func NewMongo(ctx context.Context, config MongoConfig) (Storage, error) {
 	return newMongo(ctx, config)
 }
 
+func (m *mongodb) Name() string {
+	return "mongodb"
+}
+
 func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 	m, err := mongo.NewClient(config.MongoClientOptions)
 	if err != nil {

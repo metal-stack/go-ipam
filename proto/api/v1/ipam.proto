@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package api.v1;
+
+option go_package = "v1;v1";
+
+service IpamService {
+  rpc CreatePrefix(CreatePrefixRequest) returns (CreatePrefixResponse);
+  rpc DeletePrefix(DeletePrefixRequest) returns (DeletePrefixResponse);
+  rpc GetPrefix(GetPrefixRequest) returns (GetPrefixResponse);
+  rpc ListPrefixes(ListPrefixesRequest) returns (ListPrefixesResponse);
+  rpc AcquireChildPrefix(AcquireChildPrefixRequest) returns (AcquireChildPrefixResponse);
+  rpc ReleaseChildPrefix(ReleaseChildPrefixRequest) returns (ReleaseChildPrefixResponse);
+  rpc AcquireIP(AcquireIPRequest) returns (AcquireIPResponse);
+  rpc ReleaseIP(ReleaseIPRequest) returns (ReleaseIPResponse);
+  rpc Dump(DumpRequest) returns (DumpResponse);
+  rpc Load(LoadRequest) returns (LoadResponse);
+}
+
+message Prefix {
+  string cidr = 1;
+  string parent_cidr = 2;
+}
+message CreatePrefixResponse {
+  Prefix prefix = 1;
+}
+message DeletePrefixResponse {
+  Prefix prefix = 1;
+}
+message GetPrefixResponse {
+  Prefix prefix = 1;
+}
+message AcquireChildPrefixResponse {
+  Prefix prefix = 1;
+}
+message ReleaseChildPrefixResponse {
+  Prefix prefix = 1;
+}
+message CreatePrefixRequest {
+  string cidr = 1;
+}
+message DeletePrefixRequest {
+  string cidr = 1;
+}
+message GetPrefixRequest {
+  string cidr = 1;
+}
+message ListPrefixesRequest {}
+message ListPrefixesResponse {
+  repeated Prefix prefixes = 1;
+}
+
+message AcquireChildPrefixRequest {
+  string cidr = 1;
+  uint32 length = 2;
+}
+message ReleaseChildPrefixRequest {
+  string cidr = 1;
+}
+
+message IP {
+  string ip = 1;
+  string parent_prefix = 2;
+}
+message AcquireIPResponse {
+  IP ip = 1;
+}
+message ReleaseIPResponse {
+  IP ip = 1;
+}
+message AcquireIPRequest {
+  string prefix_cidr = 1;
+  optional string ip = 2;
+}
+message ReleaseIPRequest {
+  string prefix_cidr = 1;
+  string ip = 2;
+}
+message DumpRequest {}
+message DumpResponse {
+  string dump = 1;
+}
+message LoadRequest {
+  string dump = 1;
+}
+message LoadResponse {}

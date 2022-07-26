@@ -57,14 +57,8 @@ func BenchmarkAcquireChildPrefix(b *testing.B) {
 		childLength  uint8
 	}{
 		{name: "8/14", parentLength: 8, childLength: 14},
-		{name: "8/16", parentLength: 8, childLength: 16},
-		{name: "8/20", parentLength: 8, childLength: 20},
-		{name: "8/22", parentLength: 8, childLength: 22},
 		{name: "8/24", parentLength: 8, childLength: 24},
 		{name: "16/18", parentLength: 16, childLength: 18},
-		{name: "16/20", parentLength: 16, childLength: 20},
-		{name: "16/22", parentLength: 16, childLength: 22},
-		{name: "16/24", parentLength: 16, childLength: 24},
 		{name: "16/26", parentLength: 16, childLength: 26},
 	}
 	for _, bm := range benchmarks {
