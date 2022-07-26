@@ -98,7 +98,7 @@ import (
 )
 func main() {
 
-    grpcClient := apiv1connect.NewIpamServiceClient(
+    c := apiv1connect.NewIpamServiceClient(
             http.DefaultClient,
             "http://localhost:9090",
             connect.WithGRPC(),
