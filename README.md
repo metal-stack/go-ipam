@@ -74,7 +74,7 @@ func main() {
 }
 ```
 
-## grpc service
+## GRPC Service
 
 First start the go-ipam container with the database backend of your choice already up and running. For example if you have a postgres database for storing the ipam data, you could run the grpc service like so:
 
