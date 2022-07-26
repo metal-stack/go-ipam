@@ -110,7 +110,14 @@ func main() {
     }
     fmt.Println("Prefix:%q created", result.Msg.Prefix.Cidr)
 }
+```
 
+## GRPC client
+
+There is also a `cli` provided in the container which can be used to make calls to the grpc endpoint manually:
+
+```bash
+docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
 ```
 
 ## Supported Databases & Performance
