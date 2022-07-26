@@ -9,6 +9,7 @@ require (
 	github.com/bufbuild/connect-grpcreflect-go v0.1.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/klauspost/connect-compress v0.1.1
 	github.com/lib/pq v1.10.6
 	github.com/metal-stack/v v1.0.3
 	github.com/stretchr/testify v1.8.0
@@ -46,7 +47,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/klauspost/compress v1.15.9 // indirect
+	github.com/klauspost/compress v1.15.6 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/moby/sys/mount v0.3.3 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect

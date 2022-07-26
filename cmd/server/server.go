@@ -3,12 +3,12 @@ package main
 import (
 	"net/http"
 
+	compress "github.com/klauspost/connect-compress"
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
 	"github.com/metal-stack/v"
 
-	"github.com/bufbuild/connect-go"
 	grpchealth "github.com/bufbuild/connect-grpchealth-go"
 	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
 
@@ -45,14 +45,14 @@ func (s *server) Run() error {
 	// handler.
 	mux.Handle(apiv1connect.NewIpamServiceHandler(service.New(s.log, s.ipamer)))
 
-	compress1KB := connect.WithCompressMinBytes(1024)
+	_, serverOpts := compress.All(compress.LevelBalanced)
 	mux.Handle(grpchealth.NewHandler(
 		grpchealth.NewStaticChecker(apiv1connect.IpamServiceName),
-		compress1KB,
+		serverOpts,
 	))
 	mux.Handle(grpcreflect.NewHandlerV1(
 		grpcreflect.NewStaticReflector(apiv1connect.IpamServiceName),
-		compress1KB,
+		serverOpts,
 	))
 
 	err := http.ListenAndServe(
