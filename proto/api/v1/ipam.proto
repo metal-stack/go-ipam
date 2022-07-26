@@ -17,8 +17,7 @@ service IpamService {
 
 message Prefix {
   string cidr = 1;
-  string namespace = 2;
-  string parent_cidr = 3;
+  string parent_cidr = 2;
 }
 message CreatePrefixResponse {
   Prefix prefix = 1;
@@ -37,19 +36,14 @@ message ReleaseChildPrefixResponse {
 }
 message CreatePrefixRequest {
   string cidr = 1;
-  string namespace = 2;
 }
 message DeletePrefixRequest {
   string cidr = 1;
-  string namespace = 2;
 }
 message GetPrefixRequest {
   string cidr = 1;
-  string namespace = 2;
 }
-message ListPrefixesRequest {
-  string namespace = 1;
-}
+message ListPrefixesRequest {}
 message ListPrefixesResponse {
   repeated Prefix prefixes = 1;
 }
@@ -57,17 +51,14 @@ message ListPrefixesResponse {
 message AcquireChildPrefixRequest {
   string cidr = 1;
   uint32 length = 2;
-  string namespace = 3;
 }
 message ReleaseChildPrefixRequest {
   string cidr = 1;
-  string namespace = 2;
 }
 
 message IP {
   string ip = 1;
-  string namespace = 2;
-  string parent_prefix = 3;
+  string parent_prefix = 2;
 }
 message AcquireIPResponse {
   IP ip = 1;
@@ -77,11 +68,9 @@ message ReleaseIPResponse {
 }
 message AcquireIPRequest {
   string prefix_cidr = 1;
-  string namespace = 2;
-  optional string ip = 3;
+  optional string ip = 2;
 }
 message ReleaseIPRequest {
   string prefix_cidr = 1;
-  string namespace = 2;
-  string ip = 3;
+  string ip = 2;
 }

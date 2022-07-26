@@ -103,17 +103,9 @@ func main() {
 					{
 						Name:  "list",
 						Usage: "list all prefixes",
-						Flags: []cli.Flag{
-							&cli.StringFlag{
-								// FIXME not implemented
-								Name: "namespace",
-							},
-						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.ListPrefixes(context.Background(), connect.NewRequest(&v1.ListPrefixesRequest{
-								Namespace: ctx.String("namespace"),
-							}))
+							result, err := c.ListPrefixes(context.Background(), connect.NewRequest(&v1.ListPrefixesRequest{}))
 
 							if err != nil {
 								return err

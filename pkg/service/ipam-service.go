@@ -89,7 +89,7 @@ func (i *IPAMService) ListPrefixes(_ context.Context, req *connect.Request[v1.Li
 		if p == nil {
 			continue
 		}
-		result = append(result, &v1.Prefix{Cidr: cidr, Namespace: req.Msg.Namespace, ParentCidr: p.ParentCidr})
+		result = append(result, &v1.Prefix{Cidr: cidr, ParentCidr: p.ParentCidr})
 	}
 	return &connect.Response[v1.ListPrefixesResponse]{
 		Msg: &v1.ListPrefixesResponse{
