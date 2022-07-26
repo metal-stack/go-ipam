@@ -192,6 +192,50 @@ func main() {
 					},
 				},
 			},
+			{
+				Name:  "backup",
+				Usage: "create and restore a backup",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "create",
+						Usage: "create a json file of the whole ipam db for backup purpose",
+						Action: func(ctx *cli.Context) error {
+							c := client(ctx)
+							result, err := c.Dump(context.Background(), connect.NewRequest(&v1.DumpRequest{}))
+							if err != nil {
+								return err
+							}
+							fmt.Println(result.Msg.Dump)
+							return nil
+						},
+					},
+					{
+						Name:  "restore",
+						Usage: "load the whole ipam db from json file, previously created, only works if database is already empty",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name: "file",
+							},
+						},
+						Action: func(ctx *cli.Context) error {
+							c := client(ctx)
+							json, err := os.ReadFile(ctx.String("file"))
+							if err != nil {
+								return err
+							}
+							_, err = c.Load(context.Background(), connect.NewRequest(&v1.LoadRequest{
+								Dump: string(json),
+							}))
+
+							if err != nil {
+								return err
+							}
+							fmt.Printf("database restored\n")
+							return nil
+						},
+					},
+				},
+			},
 		},
 	}
 	err := app.Run(os.Args)

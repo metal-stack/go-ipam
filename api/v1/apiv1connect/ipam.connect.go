@@ -35,6 +35,8 @@ type IpamServiceClient interface {
 	ReleaseChildPrefix(context.Context, *connect_go.Request[v1.ReleaseChildPrefixRequest]) (*connect_go.Response[v1.ReleaseChildPrefixResponse], error)
 	AcquireIP(context.Context, *connect_go.Request[v1.AcquireIPRequest]) (*connect_go.Response[v1.AcquireIPResponse], error)
 	ReleaseIP(context.Context, *connect_go.Request[v1.ReleaseIPRequest]) (*connect_go.Response[v1.ReleaseIPResponse], error)
+	Dump(context.Context, *connect_go.Request[v1.DumpRequest]) (*connect_go.Response[v1.DumpResponse], error)
+	Load(context.Context, *connect_go.Request[v1.LoadRequest]) (*connect_go.Response[v1.LoadResponse], error)
 }
 
 // NewIpamServiceClient constructs a client for the api.v1.IpamService service. By default, it uses
@@ -87,6 +89,16 @@ func NewIpamServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/api.v1.IpamService/ReleaseIP",
 			opts...,
 		),
+		dump: connect_go.NewClient[v1.DumpRequest, v1.DumpResponse](
+			httpClient,
+			baseURL+"/api.v1.IpamService/Dump",
+			opts...,
+		),
+		load: connect_go.NewClient[v1.LoadRequest, v1.LoadResponse](
+			httpClient,
+			baseURL+"/api.v1.IpamService/Load",
+			opts...,
+		),
 	}
 }
 
@@ -100,6 +112,8 @@ type ipamServiceClient struct {
 	releaseChildPrefix *connect_go.Client[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse]
 	acquireIP          *connect_go.Client[v1.AcquireIPRequest, v1.AcquireIPResponse]
 	releaseIP          *connect_go.Client[v1.ReleaseIPRequest, v1.ReleaseIPResponse]
+	dump               *connect_go.Client[v1.DumpRequest, v1.DumpResponse]
+	load               *connect_go.Client[v1.LoadRequest, v1.LoadResponse]
 }
 
 // CreatePrefix calls api.v1.IpamService.CreatePrefix.
@@ -142,6 +156,16 @@ func (c *ipamServiceClient) ReleaseIP(ctx context.Context, req *connect_go.Reque
 	return c.releaseIP.CallUnary(ctx, req)
 }
 
+// Dump calls api.v1.IpamService.Dump.
+func (c *ipamServiceClient) Dump(ctx context.Context, req *connect_go.Request[v1.DumpRequest]) (*connect_go.Response[v1.DumpResponse], error) {
+	return c.dump.CallUnary(ctx, req)
+}
+
+// Load calls api.v1.IpamService.Load.
+func (c *ipamServiceClient) Load(ctx context.Context, req *connect_go.Request[v1.LoadRequest]) (*connect_go.Response[v1.LoadResponse], error) {
+	return c.load.CallUnary(ctx, req)
+}
+
 // IpamServiceHandler is an implementation of the api.v1.IpamService service.
 type IpamServiceHandler interface {
 	CreatePrefix(context.Context, *connect_go.Request[v1.CreatePrefixRequest]) (*connect_go.Response[v1.CreatePrefixResponse], error)
@@ -152,6 +176,8 @@ type IpamServiceHandler interface {
 	ReleaseChildPrefix(context.Context, *connect_go.Request[v1.ReleaseChildPrefixRequest]) (*connect_go.Response[v1.ReleaseChildPrefixResponse], error)
 	AcquireIP(context.Context, *connect_go.Request[v1.AcquireIPRequest]) (*connect_go.Response[v1.AcquireIPResponse], error)
 	ReleaseIP(context.Context, *connect_go.Request[v1.ReleaseIPRequest]) (*connect_go.Response[v1.ReleaseIPResponse], error)
+	Dump(context.Context, *connect_go.Request[v1.DumpRequest]) (*connect_go.Response[v1.DumpResponse], error)
+	Load(context.Context, *connect_go.Request[v1.LoadRequest]) (*connect_go.Response[v1.LoadResponse], error)
 }
 
 // NewIpamServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -201,6 +227,16 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect_go.HandlerOpt
 		svc.ReleaseIP,
 		opts...,
 	))
+	mux.Handle("/api.v1.IpamService/Dump", connect_go.NewUnaryHandler(
+		"/api.v1.IpamService/Dump",
+		svc.Dump,
+		opts...,
+	))
+	mux.Handle("/api.v1.IpamService/Load", connect_go.NewUnaryHandler(
+		"/api.v1.IpamService/Load",
+		svc.Load,
+		opts...,
+	))
 	return "/api.v1.IpamService/", mux
 }
 
@@ -237,4 +273,12 @@ func (UnimplementedIpamServiceHandler) AcquireIP(context.Context, *connect_go.Re
 
 func (UnimplementedIpamServiceHandler) ReleaseIP(context.Context, *connect_go.Request[v1.ReleaseIPRequest]) (*connect_go.Response[v1.ReleaseIPResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.ReleaseIP is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) Dump(context.Context, *connect_go.Request[v1.DumpRequest]) (*connect_go.Response[v1.DumpResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.Dump is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) Load(context.Context, *connect_go.Request[v1.LoadRequest]) (*connect_go.Response[v1.LoadResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.Load is not implemented"))
 }

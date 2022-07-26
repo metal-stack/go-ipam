@@ -13,6 +13,8 @@ service IpamService {
   rpc ReleaseChildPrefix(ReleaseChildPrefixRequest) returns (ReleaseChildPrefixResponse);
   rpc AcquireIP(AcquireIPRequest) returns (AcquireIPResponse);
   rpc ReleaseIP(ReleaseIPRequest) returns (ReleaseIPResponse);
+  rpc Dump(DumpRequest) returns (DumpResponse);
+  rpc Load(LoadRequest) returns (LoadResponse);
 }
 
 message Prefix {
@@ -74,3 +76,11 @@ message ReleaseIPRequest {
   string prefix_cidr = 1;
   string ip = 2;
 }
+message DumpRequest {}
+message DumpResponse {
+  string dump = 1;
+}
+message LoadRequest {
+  string dump = 1;
+}
+message LoadResponse {}

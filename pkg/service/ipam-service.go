@@ -179,3 +179,26 @@ func (i *IPAMService) ReleaseIP(_ context.Context, req *connect.Request[v1.Relea
 		},
 	}, nil
 }
+func (i *IPAMService) Dump(_ context.Context, req *connect.Request[v1.DumpRequest]) (*connect.Response[v1.DumpResponse], error) {
+	i.log.Debugw("dump", "req", req)
+	dump, err := i.ipamer.Dump()
+	if err != nil {
+		i.log.Errorw("dump", "error", err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	return &connect.Response[v1.DumpResponse]{
+		Msg: &v1.DumpResponse{
+			Dump: dump,
+		},
+	}, nil
+}
+
+func (i *IPAMService) Load(_ context.Context, req *connect.Request[v1.LoadRequest]) (*connect.Response[v1.LoadResponse], error) {
+	i.log.Debugw("load", "req", req)
+	err := i.ipamer.Load(req.Msg.Dump)
+	if err != nil {
+		i.log.Errorw("dump", "error", err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	return &connect.Response[v1.LoadResponse]{}, nil
+}
