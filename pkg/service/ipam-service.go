@@ -25,7 +25,6 @@ func New(log *zap.SugaredLogger, ipamer goipam.Ipamer) *IPAMService {
 
 func (i *IPAMService) CreatePrefix(_ context.Context, req *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error) {
 	i.log.Debugw("createprefix", "req", req)
-	// FIXME context must be passed here
 	resp, err := i.ipamer.NewPrefix(req.Msg.Cidr)
 	if err != nil {
 		i.log.Errorw("createprefix", "error", err)
@@ -87,6 +86,7 @@ func (i *IPAMService) ListPrefixes(_ context.Context, req *connect.Request[v1.Li
 	for _, cidr := range resp {
 		p := i.ipamer.PrefixFrom(cidr)
 		if p == nil {
+			i.log.Warnw("skipping nil prefix of cidr:%q", cidr)
 			continue
 		}
 		result = append(result, &v1.Prefix{Cidr: cidr, ParentCidr: p.ParentCidr})

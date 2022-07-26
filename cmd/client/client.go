@@ -97,6 +97,9 @@ func main() {
 							if err != nil {
 								return err
 							}
+							if result.Msg == nil || result.Msg.Prefix == nil {
+								return fmt.Errorf("result contains no prefix")
+							}
 							fmt.Printf("child prefix:%q from %q released\n", result.Msg.Prefix.Cidr, result.Msg.Prefix.ParentCidr)
 							return nil
 						},
