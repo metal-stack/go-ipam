@@ -108,6 +108,7 @@ func BenchmarkGrpcImpact(b *testing.B) {
 	}
 
 	for _, bm := range benchmarks {
+		bm := bm
 		b.Run(bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				bm.f()
