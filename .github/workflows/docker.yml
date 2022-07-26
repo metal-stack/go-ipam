@@ -2,13 +2,13 @@ name: Docker Build Action
 on:
   pull_request:
     branches:
-      - main
+      - master
   release:
     types:
       - published
   push:
     branches:
-      - main
+      - master
 
 env:
   REGISTRY: ghcr.io
