@@ -1,21 +1,23 @@
 package ipam
 
 import (
+	"context"
 	"fmt"
 	"testing"
 )
 
 func BenchmarkNewPrefix(b *testing.B) {
+	ctx := context.Background()
 	benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
 		for n := 0; n < b.N; n++ {
-			p, err := ipam.NewPrefix("192.168.0.0/24")
+			p, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
 			if err != nil {
 				panic(err)
 			}
 			if p == nil {
 				panic("Prefix nil")
 			}
-			_, err = ipam.DeletePrefix(p.Cidr)
+			_, err = ipam.DeletePrefix(ctx, p.Cidr)
 			if err != nil {
 				panic(err)
 			}
@@ -24,26 +26,27 @@ func BenchmarkNewPrefix(b *testing.B) {
 }
 
 func BenchmarkAcquireIP(b *testing.B) {
+	ctx := context.Background()
 	testCidr := "10.0.0.0/16"
 	benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
-		p, err := ipam.NewPrefix(testCidr)
+		p, err := ipam.NewPrefix(ctx, testCidr)
 		if err != nil {
 			panic(err)
 		}
 		for n := 0; n < b.N; n++ {
-			ip, err := ipam.AcquireIP(p.Cidr)
+			ip, err := ipam.AcquireIP(ctx, p.Cidr)
 			if err != nil {
 				panic(err)
 			}
 			if ip == nil {
 				panic("IP nil")
 			}
-			p, err = ipam.ReleaseIP(ip)
+			p, err = ipam.ReleaseIP(ctx, ip)
 			if err != nil {
 				panic(err)
 			}
 		}
-		_, err = ipam.DeletePrefix(testCidr)
+		_, err = ipam.DeletePrefix(ctx, testCidr)
 		if err != nil {
 			b.Fatalf("error deleting prefix:%v", err)
 		}
@@ -51,6 +54,7 @@ func BenchmarkAcquireIP(b *testing.B) {
 }
 
 func BenchmarkAcquireChildPrefix(b *testing.B) {
+	ctx := context.Background()
 	benchmarks := []struct {
 		name         string
 		parentLength uint8
@@ -64,21 +68,21 @@ func BenchmarkAcquireChildPrefix(b *testing.B) {
 	for _, bm := range benchmarks {
 		test := bm
 		benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
-			p, err := ipam.NewPrefix(fmt.Sprintf("192.168.0.0/%d", test.parentLength))
+			p, err := ipam.NewPrefix(ctx, fmt.Sprintf("192.168.0.0/%d", test.parentLength))
 			if err != nil {
 				panic(err)
 			}
 			for n := 0; n < b.N; n++ {
-				p, err := ipam.AcquireChildPrefix(p.Cidr, test.childLength)
+				p, err := ipam.AcquireChildPrefix(ctx, p.Cidr, test.childLength)
 				if err != nil {
 					panic(err)
 				}
-				err = ipam.ReleaseChildPrefix(p)
+				err = ipam.ReleaseChildPrefix(ctx, p)
 				if err != nil {
 					panic(err)
 				}
 			}
-			_, err = ipam.DeletePrefix(p.Cidr)
+			_, err = ipam.DeletePrefix(ctx, p.Cidr)
 			if err != nil {
 				b.Fatalf("error deleting prefix:%v", err)
 			}

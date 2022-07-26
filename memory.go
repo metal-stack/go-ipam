@@ -1,6 +1,7 @@
 package ipam
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
@@ -21,7 +22,7 @@ func NewMemory() Storage {
 func (m *memory) Name() string {
 	return "memory"
 }
-func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) CreatePrefix(_ context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -32,7 +33,7 @@ func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
 	m.prefixes[prefix.Cidr] = *prefix.deepCopy()
 	return prefix, nil
 }
-func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
+func (m *memory) ReadPrefix(_ context.Context, prefix string) (Prefix, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -42,13 +43,13 @@ func (m *memory) ReadPrefix(prefix string) (Prefix, error) {
 	}
 	return *result.deepCopy(), nil
 }
-func (m *memory) DeleteAllPrefixes() error {
+func (m *memory) DeleteAllPrefixes(_ context.Context) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	m.prefixes = make(map[string]Prefix)
 	return nil
 }
-func (m *memory) ReadAllPrefixes() (Prefixes, error) {
+func (m *memory) ReadAllPrefixes(_ context.Context) (Prefixes, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -58,7 +59,7 @@ func (m *memory) ReadAllPrefixes() (Prefixes, error) {
 	}
 	return ps, nil
 }
-func (m *memory) ReadAllPrefixCidrs() ([]string, error) {
+func (m *memory) ReadAllPrefixCidrs(_ context.Context) ([]string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -68,7 +69,7 @@ func (m *memory) ReadAllPrefixCidrs() ([]string, error) {
 	}
 	return ps, nil
 }
-func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) UpdatePrefix(_ context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -88,7 +89,7 @@ func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	m.prefixes[prefix.Cidr] = *prefix.deepCopy()
 	return prefix, nil
 }
-func (m *memory) DeletePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) DeletePrefix(_ context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

@@ -1,13 +1,15 @@
 package ipam
 
+import "context"
+
 // Storage is a interface to store ipam objects.
 type Storage interface {
 	Name() string
-	CreatePrefix(prefix Prefix) (Prefix, error)
-	ReadPrefix(prefix string) (Prefix, error)
-	DeleteAllPrefixes() error
-	ReadAllPrefixes() (Prefixes, error)
-	ReadAllPrefixCidrs() ([]string, error)
-	UpdatePrefix(prefix Prefix) (Prefix, error)
-	DeletePrefix(prefix Prefix) (Prefix, error)
+	CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error)
+	ReadPrefix(ctx context.Context, prefix string) (Prefix, error)
+	DeleteAllPrefixes(ctx context.Context) error
+	ReadAllPrefixes(ctx context.Context) (Prefixes, error)
+	ReadAllPrefixCidrs(ctx context.Context) ([]string, error)
+	UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error)
+	DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error)
 }

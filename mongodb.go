@@ -50,7 +50,7 @@ func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 
 	c := m.Database(config.DatabaseName).Collection(config.CollectionName)
 
-	_, err = c.Indexes().CreateMany(context.TODO(), []mongo.IndexModel{{
+	_, err = c.Indexes().CreateMany(ctx, []mongo.IndexModel{{
 		Keys:    bson.M{dbIndex: 1},
 		Options: options.Index().SetUnique(true),
 	}})
@@ -60,12 +60,12 @@ func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 	return &mongodb{c, sync.RWMutex{}}, nil
 }
 
-func (m *mongodb) CreatePrefix(prefix Prefix) (Prefix, error) {
+func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}}
-	r := m.c.FindOne(context.TODO(), f)
+	r := m.c.FindOne(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() == nil {
@@ -82,12 +82,12 @@ func (m *mongodb) CreatePrefix(prefix Prefix) (Prefix, error) {
 	return prefix, nil
 }
 
-func (m *mongodb) ReadPrefix(prefix string) (Prefix, error) {
+func (m *mongodb) ReadPrefix(ctx context.Context, prefix string) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	f := bson.D{{Key: dbIndex, Value: prefix}}
-	r := m.c.FindOne(context.TODO(), f)
+	r := m.c.FindOne(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() != nil && errors.Is(r.Err(), mongo.ErrNoDocuments) {
@@ -104,29 +104,29 @@ func (m *mongodb) ReadPrefix(prefix string) (Prefix, error) {
 	return j.toPrefix(), nil
 }
 
-func (m *mongodb) DeleteAllPrefixes() error {
+func (m *mongodb) DeleteAllPrefixes(ctx context.Context) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	f := bson.D{{}} // match all documents
-	_, err := m.c.DeleteMany(context.TODO(), f)
+	_, err := m.c.DeleteMany(ctx, f)
 	if err != nil {
 		return fmt.Errorf(`error deleting all prefixes: %w`, err)
 	}
 	return nil
 }
 
-func (m *mongodb) ReadAllPrefixes() (Prefixes, error) {
+func (m *mongodb) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	f := bson.D{{}} // match all documents
-	c, err := m.c.Find(context.TODO(), f)
+	c, err := m.c.Find(ctx, f)
 	if err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
 	}
 	var r []prefixJSON
-	if err := c.All(context.TODO(), &r); err != nil {
+	if err := c.All(ctx, &r); err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
 	}
 
@@ -138,8 +138,8 @@ func (m *mongodb) ReadAllPrefixes() (Prefixes, error) {
 	return s, nil
 }
 
-func (m *mongodb) ReadAllPrefixCidrs() ([]string, error) {
-	p, err := m.ReadAllPrefixes()
+func (m *mongodb) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
+	p, err := m.ReadAllPrefixes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (m *mongodb) ReadAllPrefixCidrs() ([]string, error) {
 	return s, nil
 }
 
-func (m *mongodb) UpdatePrefix(prefix Prefix) (Prefix, error) {
+func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -160,7 +160,7 @@ func (m *mongodb) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}, {Key: versionKey, Value: oldVersion}}
 
 	o := options.Replace().SetUpsert(false)
-	r, err := m.c.ReplaceOne(context.TODO(), f, prefix.toPrefixJSON(), o)
+	r, err := m.c.ReplaceOne(ctx, f, prefix.toPrefixJSON(), o)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to update prefix:%s, error: %w", prefix.Cidr, err)
 	}
@@ -175,12 +175,12 @@ func (m *mongodb) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	return prefix, nil
 }
 
-func (m *mongodb) DeletePrefix(prefix Prefix) (Prefix, error) {
+func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}}
-	r := m.c.FindOneAndDelete(context.TODO(), f)
+	r := m.c.FindOneAndDelete(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() != nil && errors.Is(r.Err(), mongo.ErrNoDocuments) {

@@ -17,7 +17,7 @@ import (
 
 // BenchmarkGrpcImpact located in a separate package to prevent import cycles.
 func BenchmarkGrpcImpact(b *testing.B) {
-
+	ctx := context.Background()
 	ipam := goipam.New()
 
 	// Get client and server options for all compressors...
@@ -52,14 +52,14 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		{
 			name: "library",
 			f: func() {
-				p, err := ipam.NewPrefix("192.168.0.0/24")
+				p, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
 				if err != nil {
 					panic(err)
 				}
 				if p == nil {
 					panic("Prefix nil")
 				}
-				_, err = ipam.DeletePrefix(p.Cidr)
+				_, err = ipam.DeletePrefix(ctx, p.Cidr)
 				if err != nil {
 					panic(err)
 				}
@@ -68,7 +68,7 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		{
 			name: "grpc",
 			f: func() {
-				p, err := grpc.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
+				p, err := grpc.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
@@ -77,7 +77,7 @@ func BenchmarkGrpcImpact(b *testing.B) {
 				if p == nil {
 					panic("Prefix nil")
 				}
-				_, err = grpc.DeletePrefix(context.Background(), connect.NewRequest(&v1.DeletePrefixRequest{
+				_, err = grpc.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
@@ -88,7 +88,7 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		{
 			name: "http",
 			f: func() {
-				p, err := httpclient.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
+				p, err := httpclient.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
@@ -97,7 +97,7 @@ func BenchmarkGrpcImpact(b *testing.B) {
 				if p == nil {
 					panic("Prefix nil")
 				}
-				_, err = httpclient.DeletePrefix(context.Background(), connect.NewRequest(&v1.DeletePrefixRequest{
+				_, err = httpclient.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
