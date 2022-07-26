@@ -91,3 +91,11 @@ cockroach-up-cluster: cockroach-rm
 cockroach-rm:
 	docker rm -f roach1 roach2 roach3 || true
 	docker network rm roachnet || true
+
+.PHONY: redis-up
+redis-up: redis-rm
+	docker run -d --name ipamredis -p 6379:6379 redis
+
+.PHONY: redis-rm
+redis-rm:
+	docker rm -f ipamredis || true

@@ -81,6 +81,12 @@ func main() {
 						Usage:   "postgres db name",
 						EnvVars: []string{"GOIPAM_PG_DBNAME"},
 					},
+					&cli.StringFlag{
+						Name:    "sslmode",
+						Value:   "disable",
+						Usage:   "postgres sslmode, possible values: disable|require|verify-ca|verify-full",
+						EnvVars: []string{"GOIPAM_PG_SSLMODE"},
+					},
 				},
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
@@ -89,7 +95,8 @@ func main() {
 					user := ctx.String("user")
 					password := ctx.String("password")
 					dbname := ctx.String("dbname")
-					pgStorage, err := goipam.NewPostgresStorage(host, port, user, password, dbname, goipam.SSLModePrefer)
+					sslmode := ctx.String("sslmode")
+					pgStorage, err := goipam.NewPostgresStorage(host, port, user, password, dbname, goipam.SSLMode(sslmode))
 					if err != nil {
 						return err
 					}
