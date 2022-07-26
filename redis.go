@@ -9,8 +9,6 @@ import (
 	redigo "github.com/go-redis/redis/v8"
 )
 
-var ctx = context.Background()
-
 type redis struct {
 	rdb  *redigo.Client
 	lock sync.RWMutex
@@ -37,7 +35,7 @@ func newRedis(ip, port string) *redis {
 	}
 }
 
-func (r *redis) CreatePrefix(prefix Prefix) (Prefix, error) {
+func (r *redis) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -55,7 +53,7 @@ func (r *redis) CreatePrefix(prefix Prefix) (Prefix, error) {
 	err = r.rdb.Set(ctx, prefix.Cidr, pfx, 0).Err()
 	return prefix, err
 }
-func (r *redis) ReadPrefix(prefix string) (Prefix, error) {
+func (r *redis) ReadPrefix(ctx context.Context, prefix string) (Prefix, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -65,13 +63,13 @@ func (r *redis) ReadPrefix(prefix string) (Prefix, error) {
 	}
 	return fromJSON([]byte(result))
 }
-func (r *redis) DeleteAllPrefixes() error {
+func (r *redis) DeleteAllPrefixes(ctx context.Context) error {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	_, err := r.rdb.FlushAll(ctx).Result()
 	return err
 }
-func (r *redis) ReadAllPrefixes() (Prefixes, error) {
+func (r *redis) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -94,7 +92,7 @@ func (r *redis) ReadAllPrefixes() (Prefixes, error) {
 	}
 	return result, nil
 }
-func (r *redis) ReadAllPrefixCidrs() ([]string, error) {
+func (r *redis) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	pfxs, err := r.rdb.Keys(ctx, "*").Result()
@@ -103,7 +101,7 @@ func (r *redis) ReadAllPrefixCidrs() ([]string, error) {
 	}
 	return pfxs, nil
 }
-func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
+func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -143,7 +141,7 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 
 	return prefix, nil
 }
-func (r *redis) DeletePrefix(prefix Prefix) (Prefix, error) {
+func (r *redis) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

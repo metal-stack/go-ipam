@@ -56,11 +56,11 @@ func newEtcd(ip, port string, cert, key []byte, insecureskip bool) *etcd {
 	}
 }
 
-func (e *etcd) CreatePrefix(prefix Prefix) (Prefix, error) {
+func (e *etcd) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	get, err := e.etcdDB.Get(ctx, prefix.Cidr)
 	defer cancel()
 	if err != nil {
@@ -75,7 +75,7 @@ func (e *etcd) CreatePrefix(prefix Prefix) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, err
 	}
-	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
 	_, err = e.etcdDB.Put(ctx, prefix.Cidr, string(pfx))
 	defer cancel()
 	if err != nil {
@@ -85,11 +85,11 @@ func (e *etcd) CreatePrefix(prefix Prefix) (Prefix, error) {
 	return prefix, nil
 }
 
-func (e *etcd) ReadPrefix(prefix string) (Prefix, error) {
+func (e *etcd) ReadPrefix(ctx context.Context, prefix string) (Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	get, err := e.etcdDB.Get(ctx, prefix)
 	defer cancel()
 	if err != nil {
@@ -103,10 +103,10 @@ func (e *etcd) ReadPrefix(prefix string) (Prefix, error) {
 	return fromJSON(get.Kvs[0].Value)
 }
 
-func (e *etcd) DeleteAllPrefixes() error {
+func (e *etcd) DeleteAllPrefixes(ctx context.Context) error {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 50*time.Minute)
 	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
 	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
 	defer cancel()
@@ -123,11 +123,11 @@ func (e *etcd) DeleteAllPrefixes() error {
 	return nil
 }
 
-func (e *etcd) ReadAllPrefixes() (Prefixes, error) {
+func (e *etcd) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
 	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
 	defer cancel()
@@ -149,12 +149,12 @@ func (e *etcd) ReadAllPrefixes() (Prefixes, error) {
 	}
 	return result, nil
 }
-func (e *etcd) ReadAllPrefixCidrs() ([]string, error) {
+func (e *etcd) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	allPrefix := []string{}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
 	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
 	defer cancel()
@@ -168,7 +168,7 @@ func (e *etcd) ReadAllPrefixCidrs() ([]string, error) {
 
 	return allPrefix, nil
 }
-func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
+func (e *etcd) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -179,7 +179,7 @@ func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
 		return Prefix{}, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	p, err := e.etcdDB.Get(ctx, prefix.Cidr)
 	defer cancel()
 	if err != nil {
@@ -201,7 +201,7 @@ func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	}
 
 	// Operation is committed only if the watched keys remain unchanged.
-	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
 	_, err = e.etcdDB.Put(ctx, prefix.Cidr, string(pn))
 	defer cancel()
 	if err != nil {
@@ -210,11 +210,11 @@ func (e *etcd) UpdatePrefix(prefix Prefix) (Prefix, error) {
 
 	return prefix, nil
 }
-func (e *etcd) DeletePrefix(prefix Prefix) (Prefix, error) {
+func (e *etcd) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	_, err := e.etcdDB.Delete(ctx, prefix.Cidr)
 	defer cancel()
 	if err != nil {
