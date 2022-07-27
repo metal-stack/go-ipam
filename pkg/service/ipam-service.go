@@ -197,8 +197,25 @@ func (i *IPAMService) Load(ctx context.Context, req *connect.Request[v1.LoadRequ
 	i.log.Debugw("load", "req", req)
 	err := i.ipamer.Load(ctx, req.Msg.Dump)
 	if err != nil {
-		i.log.Errorw("dump", "error", err)
+		i.log.Errorw("load", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return &connect.Response[v1.LoadResponse]{}, nil
+}
+func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error) {
+	i.log.Debugw("prefixusage", "req", req)
+	p := i.ipamer.PrefixFrom(ctx, req.Msg.Cidr)
+	if p == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("prefix:%q not found", req.Msg.Cidr))
+	}
+	u := p.Usage()
+	return &connect.Response[v1.PrefixUsageResponse]{
+		Msg: &v1.PrefixUsageResponse{
+			AvailableIps:              u.AvailableIPs,
+			AcquiredIps:               u.AcquiredIPs,
+			AvailableSmallestPrefixes: u.AvailableSmallestPrefixes,
+			AvailablePrefixes:         u.AvailablePrefixes,
+			AcquiredPrefixes:          u.AcquiredPrefixes,
+		},
+	}, nil
 }
