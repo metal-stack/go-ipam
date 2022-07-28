@@ -1013,7 +1013,7 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 					t.Errorf("Newprefix on ExistingPrefix returns nil")
 				}
 			}
-			err := ipam.PrefixesOverlapping(test.existingPrefixes, test.newPrefixes)
+			err := PrefixesOverlapping(test.existingPrefixes, test.newPrefixes)
 			if test.wantErr && err == nil {
 				t.Errorf("Ipamer.PrefixesOverlapping() expected error but err was nil")
 			}
