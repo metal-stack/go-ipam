@@ -27,6 +27,7 @@ package main
 
 import (
     "fmt"
+    "time"
     goipam "github.com/metal-stack/go-ipam"
 )
 
@@ -34,25 +35,27 @@ func main() {
     // create a ipamer with in memory storage
     ipam := goipam.New()
 
-    prefix, err := ipam.NewPrefix("192.168.0.0/24")
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
     if err != nil {
         panic(err)
     }
 
-    ip, err := ipam.AcquireIP(prefix.Cidr)
+    ip, err := ipam.AcquireIP(ctx, prefix.Cidr)
     if err != nil {
         panic(err)
     }
     fmt.Printf("got IP: %s\n", ip.IP)
 
-    prefix, err = ipam.ReleaseIP(ip)
+    prefix, err = ipam.ReleaseIP(ctx, ip)
     if err != nil {
         panic(err)
     }
     fmt.Printf("IP: %s released.\n", ip.IP)
 
     // Now a IPv6 Super Prefix with Child Prefixes
-    prefix, err = ipam.NewPrefix("2001:aabb::/48")
+    prefix, err = ipam.NewPrefix(ctx, "2001:aabb::/48")
     if err != nil {
         panic(err)
     }
@@ -61,12 +64,12 @@ func main() {
         panic(err)
     }
     fmt.Printf("got Prefix: %s\n", cp1)
-    cp2, err := ipam.AcquireChildPrefix(prefix.Cidr, 72)
+    cp2, err := ipam.AcquireChildPrefix(ctx, prefix.Cidr, 72)
     if err != nil {
         panic(err)
     }
     fmt.Printf("got Prefix: %s\n", cp2)
-    ip21, err := ipam.AcquireIP(cp2.Cidr)
+    ip21, err := ipam.AcquireIP(ctx, cp2.Cidr)
     if err != nil {
         panic(err)
     }
