@@ -59,7 +59,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    cp1, err := ipam.AcquireChildPrefix(prefix.Cidr, 64)
+    cp1, err := ipam.AcquireChildPrefix(ctx, prefix.Cidr, 64)
     if err != nil {
         panic(err)
     }
