@@ -18,9 +18,9 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.4
 	go.mongodb.org/mongo-driver v1.10.0
 	go.uber.org/zap v1.21.0
-	golang.org/x/net v0.0.0-20220725212005-46097bf591d3
+	golang.org/x/net v0.0.0-20220728211354-c7608f3a8462
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.28.1
 	inet.af/netaddr v0.0.0-20220617031823-097006376321
 )
 
@@ -74,9 +74,9 @@ require (
 	go4.org/intern v0.0.0-20220617035311-6925f38cc365 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b // indirect
+	google.golang.org/genproto v0.0.0-20220728213248-dd149ef739b9 // indirect
 	google.golang.org/grpc v1.48.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
