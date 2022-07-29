@@ -153,7 +153,7 @@ func (i *ipamer) NewPrefix(ctx context.Context, cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = i.PrefixesOverlapping(existingPrefixes, []string{p.Cidr})
+	err = PrefixesOverlapping(existingPrefixes, []string{p.Cidr})
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +435,9 @@ func (i *ipamer) releaseIPFromPrefixInternal(ctx context.Context, prefixCidr, ip
 	return nil
 }
 
-func (i *ipamer) PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error {
+// PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
+// with one of existingPrefixes
+func PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error {
 	for _, ep := range existingPrefixes {
 		eip, err := netaddr.ParseIPPrefix(ep)
 		if err != nil {

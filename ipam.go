@@ -32,9 +32,6 @@ type Ipamer interface {
 	// ReleaseIPFromPrefix will release the given IP for later usage.
 	// If the Prefix or the IP is not found an NotFoundError is returned.
 	ReleaseIPFromPrefix(ctx context.Context, prefixCidr, ip string) error
-	// PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
-	// with one of existingPrefixes
-	PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error
 	// Dump all stored prefixes as json formatted string
 	Dump(ctx context.Context) (string, error)
 	// Load a previously created json formatted dump, deletes all prefixes before loading

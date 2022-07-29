@@ -31,6 +31,7 @@ type IpamServiceClient interface {
 	DeletePrefix(context.Context, *connect_go.Request[v1.DeletePrefixRequest]) (*connect_go.Response[v1.DeletePrefixResponse], error)
 	GetPrefix(context.Context, *connect_go.Request[v1.GetPrefixRequest]) (*connect_go.Response[v1.GetPrefixResponse], error)
 	ListPrefixes(context.Context, *connect_go.Request[v1.ListPrefixesRequest]) (*connect_go.Response[v1.ListPrefixesResponse], error)
+	PrefixUsage(context.Context, *connect_go.Request[v1.PrefixUsageRequest]) (*connect_go.Response[v1.PrefixUsageResponse], error)
 	AcquireChildPrefix(context.Context, *connect_go.Request[v1.AcquireChildPrefixRequest]) (*connect_go.Response[v1.AcquireChildPrefixResponse], error)
 	ReleaseChildPrefix(context.Context, *connect_go.Request[v1.ReleaseChildPrefixRequest]) (*connect_go.Response[v1.ReleaseChildPrefixResponse], error)
 	AcquireIP(context.Context, *connect_go.Request[v1.AcquireIPRequest]) (*connect_go.Response[v1.AcquireIPResponse], error)
@@ -67,6 +68,11 @@ func NewIpamServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 		listPrefixes: connect_go.NewClient[v1.ListPrefixesRequest, v1.ListPrefixesResponse](
 			httpClient,
 			baseURL+"/api.v1.IpamService/ListPrefixes",
+			opts...,
+		),
+		prefixUsage: connect_go.NewClient[v1.PrefixUsageRequest, v1.PrefixUsageResponse](
+			httpClient,
+			baseURL+"/api.v1.IpamService/PrefixUsage",
 			opts...,
 		),
 		acquireChildPrefix: connect_go.NewClient[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse](
@@ -108,6 +114,7 @@ type ipamServiceClient struct {
 	deletePrefix       *connect_go.Client[v1.DeletePrefixRequest, v1.DeletePrefixResponse]
 	getPrefix          *connect_go.Client[v1.GetPrefixRequest, v1.GetPrefixResponse]
 	listPrefixes       *connect_go.Client[v1.ListPrefixesRequest, v1.ListPrefixesResponse]
+	prefixUsage        *connect_go.Client[v1.PrefixUsageRequest, v1.PrefixUsageResponse]
 	acquireChildPrefix *connect_go.Client[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse]
 	releaseChildPrefix *connect_go.Client[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse]
 	acquireIP          *connect_go.Client[v1.AcquireIPRequest, v1.AcquireIPResponse]
@@ -134,6 +141,11 @@ func (c *ipamServiceClient) GetPrefix(ctx context.Context, req *connect_go.Reque
 // ListPrefixes calls api.v1.IpamService.ListPrefixes.
 func (c *ipamServiceClient) ListPrefixes(ctx context.Context, req *connect_go.Request[v1.ListPrefixesRequest]) (*connect_go.Response[v1.ListPrefixesResponse], error) {
 	return c.listPrefixes.CallUnary(ctx, req)
+}
+
+// PrefixUsage calls api.v1.IpamService.PrefixUsage.
+func (c *ipamServiceClient) PrefixUsage(ctx context.Context, req *connect_go.Request[v1.PrefixUsageRequest]) (*connect_go.Response[v1.PrefixUsageResponse], error) {
+	return c.prefixUsage.CallUnary(ctx, req)
 }
 
 // AcquireChildPrefix calls api.v1.IpamService.AcquireChildPrefix.
@@ -172,6 +184,7 @@ type IpamServiceHandler interface {
 	DeletePrefix(context.Context, *connect_go.Request[v1.DeletePrefixRequest]) (*connect_go.Response[v1.DeletePrefixResponse], error)
 	GetPrefix(context.Context, *connect_go.Request[v1.GetPrefixRequest]) (*connect_go.Response[v1.GetPrefixResponse], error)
 	ListPrefixes(context.Context, *connect_go.Request[v1.ListPrefixesRequest]) (*connect_go.Response[v1.ListPrefixesResponse], error)
+	PrefixUsage(context.Context, *connect_go.Request[v1.PrefixUsageRequest]) (*connect_go.Response[v1.PrefixUsageResponse], error)
 	AcquireChildPrefix(context.Context, *connect_go.Request[v1.AcquireChildPrefixRequest]) (*connect_go.Response[v1.AcquireChildPrefixResponse], error)
 	ReleaseChildPrefix(context.Context, *connect_go.Request[v1.ReleaseChildPrefixRequest]) (*connect_go.Response[v1.ReleaseChildPrefixResponse], error)
 	AcquireIP(context.Context, *connect_go.Request[v1.AcquireIPRequest]) (*connect_go.Response[v1.AcquireIPResponse], error)
@@ -205,6 +218,11 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect_go.HandlerOpt
 	mux.Handle("/api.v1.IpamService/ListPrefixes", connect_go.NewUnaryHandler(
 		"/api.v1.IpamService/ListPrefixes",
 		svc.ListPrefixes,
+		opts...,
+	))
+	mux.Handle("/api.v1.IpamService/PrefixUsage", connect_go.NewUnaryHandler(
+		"/api.v1.IpamService/PrefixUsage",
+		svc.PrefixUsage,
 		opts...,
 	))
 	mux.Handle("/api.v1.IpamService/AcquireChildPrefix", connect_go.NewUnaryHandler(
@@ -257,6 +275,10 @@ func (UnimplementedIpamServiceHandler) GetPrefix(context.Context, *connect_go.Re
 
 func (UnimplementedIpamServiceHandler) ListPrefixes(context.Context, *connect_go.Request[v1.ListPrefixesRequest]) (*connect_go.Response[v1.ListPrefixesResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.ListPrefixes is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) PrefixUsage(context.Context, *connect_go.Request[v1.PrefixUsageRequest]) (*connect_go.Response[v1.PrefixUsageResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.PrefixUsage is not implemented"))
 }
 
 func (UnimplementedIpamServiceHandler) AcquireChildPrefix(context.Context, *connect_go.Request[v1.AcquireChildPrefixRequest]) (*connect_go.Response[v1.AcquireChildPrefixResponse], error) {

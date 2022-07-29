@@ -9,6 +9,7 @@ service IpamService {
   rpc DeletePrefix(DeletePrefixRequest) returns (DeletePrefixResponse);
   rpc GetPrefix(GetPrefixRequest) returns (GetPrefixResponse);
   rpc ListPrefixes(ListPrefixesRequest) returns (ListPrefixesResponse);
+  rpc PrefixUsage(PrefixUsageRequest) returns (PrefixUsageResponse);
   rpc AcquireChildPrefix(AcquireChildPrefixRequest) returns (AcquireChildPrefixResponse);
   rpc ReleaseChildPrefix(ReleaseChildPrefixRequest) returns (ReleaseChildPrefixResponse);
   rpc AcquireIP(AcquireIPRequest) returns (AcquireIPResponse);
@@ -48,6 +49,25 @@ message GetPrefixRequest {
 message ListPrefixesRequest {}
 message ListPrefixesResponse {
   repeated Prefix prefixes = 1;
+}
+
+message PrefixUsageRequest {
+  string cidr = 1;
+}
+
+message PrefixUsageResponse {
+  // AvailableIPs the number of available IPs if this is not a parent prefix
+  // No more than 2^31 available IPs are reported
+  uint64 available_ips = 1;
+  // AcquiredIPs the number of acquired IPs if this is not a parent prefix
+  uint64 acquired_ips = 2;
+  // AvailableSmallestPrefixes is the count of available Prefixes with 2 countable Bits
+  // No more than 2^31 available Prefixes are reported
+  uint64 available_smallest_prefixes = 3;
+  // AvailablePrefixes is a list of prefixes which are available
+  repeated string available_prefixes = 4;
+  // AcquiredPrefixes the number of acquired prefixes if this is a parent prefix
+  uint64 acquired_prefixes = 5;
 }
 
 message AcquireChildPrefixRequest {
