@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/netip"
 	"reflect"
 	"strings"
 	"sync"
@@ -11,11 +12,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
-	"inet.af/netaddr"
 )
 
-func mustIP(s string) netaddr.IP {
-	ip, err := netaddr.ParseIP(s)
+func mustIP(s string) netip.Addr {
+	ip, err := netip.ParseAddr(s)
 	if err != nil {
 		panic(err)
 	}
@@ -1059,7 +1059,7 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			name:        "invalid Prefix",
 			cidr:        "192.168.0.0/33",
 			wantErr:     true,
-			errorString: "unable to parse cidr:192.168.0.0/33 netaddr.ParseIPPrefix(\"33\"): prefix length out of range",
+			errorString: "unable to parse cidr:192.168.0.0/33 netip.ParsePrefix(\"192.168.0.0/33\"): prefix length out of range",
 		},
 		{
 			name:     "valid IPv6 Prefix",
@@ -1077,13 +1077,13 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			name:        "invalid IPv6 Prefix length",
 			cidr:        "2001:0db8:85a3::/129",
 			wantErr:     true,
-			errorString: "unable to parse cidr:2001:0db8:85a3::/129 netaddr.ParseIPPrefix(\"129\"): prefix length out of range",
+			errorString: "unable to parse cidr:2001:0db8:85a3::/129 netip.ParsePrefix(\"2001:0db8:85a3::/129\"): prefix length out of range",
 		},
 		{
 			name:        "invalid IPv6 Prefix length",
 			cidr:        "2001:0db8:85a3:::/120",
 			wantErr:     true,
-			errorString: "unable to parse cidr:2001:0db8:85a3:::/120 netaddr.ParseIPPrefix(\"2001:0db8:85a3:::/120\"): ParseIP(\"2001:0db8:85a3:::\"): each colon-separated field must have at least one digit (at \":\")",
+			errorString: "unable to parse cidr:2001:0db8:85a3:::/120 netip.ParsePrefix(\"2001:0db8:85a3:::/120\"): ParseAddr(\"2001:0db8:85a3:::\"): each colon-separated field must have at least one digit (at \":\")",
 		},
 	}
 	for _, tt := range tests {
@@ -1414,9 +1414,9 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 			got, avpfxs := p.availablePrefixes()
 			for _, pfx := range avpfxs {
 				// Only logs if fails
-				ipprefix, err := netaddr.ParseIPPrefix(pfx)
+				ipprefix, err := netip.ParsePrefix(pfx)
 				require.NoError(t, err)
-				smallest := 1 << (ipprefix.IP().BitLen() - 2 - ipprefix.Bits())
+				smallest := 1 << (ipprefix.Addr().BitLen() - 2 - ipprefix.Bits())
 				t.Logf("available prefix:%s smallest left:%d", pfx, smallest)
 			}
 
