@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	compress "github.com/klauspost/connect-compress"
 	goipam "github.com/metal-stack/go-ipam"
@@ -55,11 +56,14 @@ func (s *server) Run() error {
 		serverOpts,
 	))
 
-	err := http.ListenAndServe(
-		s.c.GrpcServerEndpoint,
+	server := http.Server{
+		Addr: s.c.GrpcServerEndpoint,
 		// For gRPC clients, it's convenient to support HTTP/2 without TLS. You can
 		// avoid x/net/http2 by using http.ListenAndServeTLS.
-		h2c.NewHandler(mux, &http2.Server{}),
-	)
+		Handler:           h2c.NewHandler(mux, &http2.Server{}),
+		ReadHeaderTimeout: 1 * time.Minute,
+	}
+
+	err := server.ListenAndServe()
 	return err
 }
