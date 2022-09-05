@@ -1528,3 +1528,34 @@ func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
 		require.Equal(t, cidr, cidrs[0])
 	})
 }
+
+func TestPrefix_Network(t *testing.T) {
+	tests := []struct {
+		name    string
+		cidr    string
+		want    netip.Addr
+		wantErr bool
+	}{
+		{
+			name:    "simple",
+			cidr:    "192.168.0.0/16",
+			want:    mustIP("192.168.0.0"),
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &Prefix{
+				Cidr: tt.cidr,
+			}
+			got, err := p.Network()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Prefix.Network() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Prefix.Network() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
