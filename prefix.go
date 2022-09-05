@@ -485,7 +485,6 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 	p.ips[iprange.From().String()] = true
 	if ipnet.Addr().Is4() {
 		// broadcast is ipv4 only
-		ipnet.Masked()
 		p.ips[iprange.To().String()] = true
 	}
 
