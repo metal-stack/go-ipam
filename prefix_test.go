@@ -14,15 +14,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func mustIP(s string) netip.Addr {
-	ip, err := netip.ParseAddr(s)
-	if err != nil {
-		panic(err)
-	}
-
-	return ip
-}
-
 // getHostAddresses will return all possible ipadresses a host can get in the given prefix.
 // The IPs will be acquired by this method, so that the prefix has no free IPs afterwards.
 func (i *ipamer) getHostAddresses(ctx context.Context, prefix string) ([]string, error) {
@@ -77,7 +68,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "192.168.1.0/24",
 				existingips: []string{},
 			},
-			want: &IP{IP: mustIP("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
+			want: &IP{IP: netip.MustParseAddr("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
 		},
 		{
 			name: "Acquire next IPv6 regularly",
@@ -85,7 +76,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "2001:0db8:85a3::/124",
 				existingips: []string{},
 			},
-			want: &IP{IP: mustIP("2001:0db8:85a3::1"), ParentPrefix: "2001:0db8:85a3::/124"},
+			want: &IP{IP: netip.MustParseAddr("2001:0db8:85a3::1"), ParentPrefix: "2001:0db8:85a3::/124"},
 		},
 		{
 			name: "Want next IP, network already occupied a little",
@@ -93,7 +84,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "192.168.2.0/30",
 				existingips: []string{"192.168.2.1"},
 			},
-			want: &IP{IP: mustIP("192.168.2.2"), ParentPrefix: "192.168.2.0/30"},
+			want: &IP{IP: netip.MustParseAddr("192.168.2.2"), ParentPrefix: "192.168.2.0/30"},
 		},
 		{
 			name: "Want next IPv6, network already occupied a little",
@@ -101,7 +92,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "2001:0db8:85a3::/124",
 				existingips: []string{"2001:db8:85a3::1"},
 			},
-			want: &IP{IP: mustIP("2001:db8:85a3::2"), ParentPrefix: "2001:0db8:85a3::/124"},
+			want: &IP{IP: netip.MustParseAddr("2001:db8:85a3::2"), ParentPrefix: "2001:0db8:85a3::/124"},
 		},
 		{
 			name: "Want next IP, but network is full",
@@ -1539,7 +1530,7 @@ func TestPrefix_Network(t *testing.T) {
 		{
 			name:    "simple",
 			cidr:    "192.168.0.0/16",
-			want:    mustIP("192.168.0.0"),
+			want:    netip.MustParseAddr("192.168.0.0"),
 			wantErr: false,
 		},
 	}
