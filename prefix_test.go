@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/netip"
 	"reflect"
 	"strings"
 	"sync"
@@ -11,17 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
-	"inet.af/netaddr"
 )
-
-func mustIP(s string) netaddr.IP {
-	ip, err := netaddr.ParseIP(s)
-	if err != nil {
-		panic(err)
-	}
-
-	return ip
-}
 
 // getHostAddresses will return all possible ipadresses a host can get in the given prefix.
 // The IPs will be acquired by this method, so that the prefix has no free IPs afterwards.
@@ -77,7 +68,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "192.168.1.0/24",
 				existingips: []string{},
 			},
-			want: &IP{IP: mustIP("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
+			want: &IP{IP: netip.MustParseAddr("192.168.1.1"), ParentPrefix: "192.168.1.0/24"},
 		},
 		{
 			name: "Acquire next IPv6 regularly",
@@ -85,7 +76,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "2001:0db8:85a3::/124",
 				existingips: []string{},
 			},
-			want: &IP{IP: mustIP("2001:0db8:85a3::1"), ParentPrefix: "2001:0db8:85a3::/124"},
+			want: &IP{IP: netip.MustParseAddr("2001:0db8:85a3::1"), ParentPrefix: "2001:0db8:85a3::/124"},
 		},
 		{
 			name: "Want next IP, network already occupied a little",
@@ -93,7 +84,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "192.168.2.0/30",
 				existingips: []string{"192.168.2.1"},
 			},
-			want: &IP{IP: mustIP("192.168.2.2"), ParentPrefix: "192.168.2.0/30"},
+			want: &IP{IP: netip.MustParseAddr("192.168.2.2"), ParentPrefix: "192.168.2.0/30"},
 		},
 		{
 			name: "Want next IPv6, network already occupied a little",
@@ -101,7 +92,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 				prefixCIDR:  "2001:0db8:85a3::/124",
 				existingips: []string{"2001:db8:85a3::1"},
 			},
-			want: &IP{IP: mustIP("2001:db8:85a3::2"), ParentPrefix: "2001:0db8:85a3::/124"},
+			want: &IP{IP: netip.MustParseAddr("2001:db8:85a3::2"), ParentPrefix: "2001:0db8:85a3::/124"},
 		},
 		{
 			name: "Want next IP, but network is full",
@@ -1059,7 +1050,7 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			name:        "invalid Prefix",
 			cidr:        "192.168.0.0/33",
 			wantErr:     true,
-			errorString: "unable to parse cidr:192.168.0.0/33 netaddr.ParseIPPrefix(\"33\"): prefix length out of range",
+			errorString: "unable to parse cidr:192.168.0.0/33 netip.ParsePrefix(\"192.168.0.0/33\"): prefix length out of range",
 		},
 		{
 			name:     "valid IPv6 Prefix",
@@ -1077,13 +1068,13 @@ func TestIpamer_NewPrefix(t *testing.T) {
 			name:        "invalid IPv6 Prefix length",
 			cidr:        "2001:0db8:85a3::/129",
 			wantErr:     true,
-			errorString: "unable to parse cidr:2001:0db8:85a3::/129 netaddr.ParseIPPrefix(\"129\"): prefix length out of range",
+			errorString: "unable to parse cidr:2001:0db8:85a3::/129 netip.ParsePrefix(\"2001:0db8:85a3::/129\"): prefix length out of range",
 		},
 		{
 			name:        "invalid IPv6 Prefix length",
 			cidr:        "2001:0db8:85a3:::/120",
 			wantErr:     true,
-			errorString: "unable to parse cidr:2001:0db8:85a3:::/120 netaddr.ParseIPPrefix(\"2001:0db8:85a3:::/120\"): ParseIP(\"2001:0db8:85a3:::\"): each colon-separated field must have at least one digit (at \":\")",
+			errorString: "unable to parse cidr:2001:0db8:85a3:::/120 netip.ParsePrefix(\"2001:0db8:85a3:::/120\"): ParseAddr(\"2001:0db8:85a3:::\"): each colon-separated field must have at least one digit (at \":\")",
 		},
 	}
 	for _, tt := range tests {
@@ -1414,9 +1405,9 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 			got, avpfxs := p.availablePrefixes()
 			for _, pfx := range avpfxs {
 				// Only logs if fails
-				ipprefix, err := netaddr.ParseIPPrefix(pfx)
+				ipprefix, err := netip.ParsePrefix(pfx)
 				require.NoError(t, err)
-				smallest := 1 << (ipprefix.IP().BitLen() - 2 - ipprefix.Bits())
+				smallest := 1 << (ipprefix.Addr().BitLen() - 2 - ipprefix.Bits())
 				t.Logf("available prefix:%s smallest left:%d", pfx, smallest)
 			}
 
@@ -1527,4 +1518,36 @@ func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
 		require.Equal(t, 1, len(cidrs))
 		require.Equal(t, cidr, cidrs[0])
 	})
+}
+
+func TestPrefix_Network(t *testing.T) {
+	tests := []struct {
+		name    string
+		cidr    string
+		want    netip.Addr
+		wantErr bool
+	}{
+		{
+			name:    "simple",
+			cidr:    "192.168.0.0/16",
+			want:    netip.MustParseAddr("192.168.0.0"),
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			p := &Prefix{
+				Cidr: tt.cidr,
+			}
+			got, err := p.Network()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Prefix.Network() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Prefix.Network() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

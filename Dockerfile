@@ -1,5 +1,5 @@
-FROM bufbuild/buf:1.6.0 as buf
-FROM golang:1.18-alpine as builder
+FROM bufbuild/buf:1.7.0 as buf
+FROM golang:1.19-alpine as builder
 
 RUN apk add \
     binutils \

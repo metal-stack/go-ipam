@@ -2,12 +2,12 @@ package ipam
 
 import (
 	"context"
+	"net/netip"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"inet.af/netaddr"
 )
 
 func TestIntegration(t *testing.T) {
@@ -63,9 +63,9 @@ func TestIntegration(t *testing.T) {
 	sum := 0
 	for _, pfx := range tenantSuper.Usage().AvailablePrefixes {
 		// Only logs if fails
-		ipprefix, err := netaddr.ParseIPPrefix(pfx)
+		ipprefix, err := netip.ParsePrefix(pfx)
 		require.NoError(t, err)
-		smallest := 1 << (ipprefix.IP().BitLen() - 2 - ipprefix.Bits())
+		smallest := 1 << (ipprefix.Addr().BitLen() - 2 - ipprefix.Bits())
 		sum += smallest
 		t.Logf("available prefix:%s smallest left:%d sum:%d", pfx, smallest, sum)
 	}

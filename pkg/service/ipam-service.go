@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"net/netip"
+
 	"github.com/bufbuild/connect-go"
 	goipam "github.com/metal-stack/go-ipam"
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"go.uber.org/zap"
-	"inet.af/netaddr"
 )
 
 type IPAMService struct {
@@ -156,7 +157,7 @@ func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.Acq
 }
 func (i *IPAMService) ReleaseIP(ctx context.Context, req *connect.Request[v1.ReleaseIPRequest]) (*connect.Response[v1.ReleaseIPResponse], error) {
 	i.log.Debugw("releaseip", "req", req)
-	netip, err := netaddr.ParseIP(req.Msg.Ip)
+	netip, err := netip.ParseAddr(req.Msg.Ip)
 	if err != nil {
 		i.log.Errorw("releaseip", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
