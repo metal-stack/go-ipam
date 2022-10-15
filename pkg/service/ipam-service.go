@@ -87,7 +87,7 @@ func (i *IPAMService) ListPrefixes(ctx context.Context, req *connect.Request[v1.
 	for _, cidr := range resp {
 		p := i.ipamer.PrefixFrom(ctx, cidr)
 		if p == nil {
-			i.log.Warnw("skipping nil prefix of cidr:%q", cidr)
+			i.log.Warnw("skipping nil prefix of cidr", "cidr", cidr)
 			continue
 		}
 		result = append(result, &v1.Prefix{Cidr: cidr, ParentCidr: p.ParentCidr})

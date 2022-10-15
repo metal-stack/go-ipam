@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	pgVersion = os.Getenv("PG_VERSION")
 	if pgVersion == "" {
-		pgVersion = "14"
+		pgVersion = "15-alpine"
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
@@ -55,11 +55,11 @@ func TestMain(m *testing.M) {
 	}
 	etcdVersion = os.Getenv("ETCD_VERSION")
 	if etcdVersion == "" {
-		etcdVersion = "v3.5.4"
+		etcdVersion = "v3.5.5"
 	}
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {
-		mdbVersion = "5.0.9-focal"
+		mdbVersion = "5.0.13-focal"
 	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
