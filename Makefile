@@ -7,8 +7,6 @@ VERSION := $(or ${VERSION},devel)
 CGO_ENABLED := $(or ${CGO_ENABLED},0)
 GO := go
 GO111MODULE := on
-PG_VERSION := $(or ${PG_VERSION},14-alpine)
-COCKROACH_VERSION := $(or ${COCKROACH_VERSION},latest-v22.1)
 LINKMODE := -extldflags '-static -s -w'
 
 
