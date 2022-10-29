@@ -141,10 +141,20 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Reque
 func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error) {
 	i.log.Debugw("acquireip", "req", req)
 
-	resp, err := i.ipamer.AcquireIP(ctx, req.Msg.PrefixCidr)
-	if err != nil {
-		i.log.Errorw("acquireip", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	var resp *goipam.IP
+	var err error
+	if req.Msg.Ip != nil {
+		resp, err = i.ipamer.AcquireSpecificIP(ctx, req.Msg.PrefixCidr, *req.Msg.Ip)
+		if err != nil {
+			i.log.Errorw("acquireip", "error", err)
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+	} else {
+		resp, err = i.ipamer.AcquireIP(ctx, req.Msg.PrefixCidr)
+		if err != nil {
+			i.log.Errorw("acquireip", "error", err)
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
 	}
 	return &connect.Response[v1.AcquireIPResponse]{
 		Msg: &v1.AcquireIPResponse{
