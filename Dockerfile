@@ -1,4 +1,4 @@
-FROM bufbuild/buf:1.7.0 as buf
+FROM bufbuild/buf:1.9.0 as buf
 FROM golang:1.19-alpine as builder
 
 RUN apk add \

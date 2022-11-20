@@ -138,12 +138,12 @@ docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
 The benchmarks above were performed using:
 
 * cpu: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
-* postgres:14-alpine
+* postgres:15-alpine
 * cockroach:v22.1.0
 * redis:7.0-alpine
-* keydb:alpine_x86_64_v6.2.2
-* etcd:v3.5.4
-* mongodb:5.0.9-focal
+* keydb:alpine_x86_64_v6.3.1
+* etcd:v3.5.5
+* mongodb:5.0.13-focal
 
 ### Database Version Compatability
 
