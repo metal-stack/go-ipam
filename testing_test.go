@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 	}
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {
-		mdbVersion = "5.0.13-focal"
+		mdbVersion = "6.0.3-focal"
 	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {

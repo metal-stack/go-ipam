@@ -5,7 +5,7 @@ managed:
     default: github.com/metal-stack/go-ipam
 plugins:
   # generate go structs for protocol buffer defination
-  - remote: buf.build/bufbuild/plugins/connect-go:v0.2.0-1
+  - remote: buf.build/bufbuild/plugins/connect-go:v1.1.0-1
     out: ../
     opt: paths=source_relative
   # generate go structs for protocol buffer defination
