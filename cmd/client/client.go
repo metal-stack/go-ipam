@@ -250,12 +250,11 @@ func main() {
 }
 
 func client(ctx *cli.Context) apiv1connect.IpamServiceClient {
-	clientOpts, _ := compress.All(compress.LevelBalanced)
 
 	return apiv1connect.NewIpamServiceClient(
 		http.DefaultClient,
 		ctx.String("grpc-server-endpoint"),
 		connect.WithGRPC(),
-		clientOpts,
+		compress.WithAll(compress.LevelBalanced),
 	)
 }

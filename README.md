@@ -133,13 +133,13 @@ docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
 | MongoDB     |              415/sec |     682/sec |     772/sec |                | Y                | Y             |
 | Etcd        |              258/sec |     368/sec |     533/sec |                | Y                | N             |
 | Postgres    |              203/sec |     331/sec |     472/sec |                | Y                | N             |
-| CockroachDB |               40/sec |      37/sec |      46/sec |                | Y                | Y             |
+| CockroachDB |              170/sec |     300/sec |     470/sec |                | Y                | Y             |
 
 The benchmarks above were performed using:
 
 * cpu: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
 * postgres:15-alpine
-* cockroach:v22.1.0
+* cockroach:v22.2.0
 * redis:7.0-alpine
 * keydb:alpine_x86_64_v6.3.1
 * etcd:v3.5.5
