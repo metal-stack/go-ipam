@@ -14,27 +14,24 @@ import (
 )
 
 var (
-	pgOnce               sync.Once
-	pgContainer          testcontainers.Container
-	pgVersion            string
-	crOnce               sync.Once
-	crContainer          testcontainers.Container
-	cockroachVersion     string
-	redisOnce            sync.Once
-	redisContainer       testcontainers.Container
-	redisVersion         string
-	keyDBOnce            sync.Once
-	keyDBVersion         string
-	keyDBContainer       testcontainers.Container
-	dragonFlyDBOnce      sync.Once
-	dragonFlyDBVersion   string
-	dragonFlyDBContainer testcontainers.Container
-	etcdContainer        testcontainers.Container
-	etcdVersion          string
-	etcdOnce             sync.Once
-	mdbOnce              sync.Once
-	mdbContainer         testcontainers.Container
-	mdbVersion           string
+	pgOnce           sync.Once
+	pgContainer      testcontainers.Container
+	pgVersion        string
+	crOnce           sync.Once
+	crContainer      testcontainers.Container
+	cockroachVersion string
+	redisOnce        sync.Once
+	redisContainer   testcontainers.Container
+	redisVersion     string
+	keyDBOnce        sync.Once
+	keyDBVersion     string
+	keyDBContainer   testcontainers.Container
+	etcdContainer    testcontainers.Container
+	etcdVersion      string
+	etcdOnce         sync.Once
+	mdbOnce          sync.Once
+	mdbContainer     testcontainers.Container
+	mdbVersion       string
 
 	backend string
 )
@@ -57,10 +54,6 @@ func TestMain(m *testing.M) {
 	if keyDBVersion == "" {
 		keyDBVersion = "latest"
 	}
-	dragonFlyDBVersion = os.Getenv("DRAGONFLYDB_VERSION")
-	if dragonFlyDBVersion == "" {
-		dragonFlyDBVersion = "v0.12.0"
-	}
 	etcdVersion = os.Getenv("ETCD_VERSION")
 	if etcdVersion == "" {
 		etcdVersion = "v3.5.6"
@@ -71,7 +64,7 @@ func TestMain(m *testing.M) {
 	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
-		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s dragonfly:%s etcd:%s mongodb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion, dragonFlyDBVersion, etcdVersion, mdbVersion)
+		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s etcd:%s mongodb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion, etcdVersion, mdbVersion)
 	} else {
 		fmt.Printf("only test %s\n", backend)
 	}
@@ -306,39 +299,6 @@ func startKeyDB() (container testcontainers.Container, s *redis, err error) {
 	return keyDBContainer, db, nil
 }
 
-func startDragonFlyDB() (container testcontainers.Container, s *redis, err error) {
-	ctx := context.Background()
-	dragonFlyDBOnce.Do(func() {
-		var err error
-		req := testcontainers.ContainerRequest{
-			Image:        "docker.dragonflydb.io/dragonflydb/dragonfly:" + keyDBVersion,
-			ExposedPorts: []string{"6379/tcp"},
-			WaitingFor: wait.ForAll(
-				wait.ForLog("AcceptServer - listening on port"),
-				wait.ForListeningPort("6379/tcp"),
-			),
-		}
-		dragonFlyDBContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-		})
-		if err != nil {
-			panic(err.Error())
-		}
-	})
-	ip, err := dragonFlyDBContainer.Host(ctx)
-	if err != nil {
-		return dragonFlyDBContainer, nil, err
-	}
-	port, err := dragonFlyDBContainer.MappedPort(ctx, "6379")
-	if err != nil {
-		return dragonFlyDBContainer, nil, err
-	}
-	db := newRedis(ip, port.Port())
-
-	return dragonFlyDBContainer, db, nil
-}
-
 // func stopDB(c testcontainers.Container) error {
 // 	ctx := context.Background()
 // 	return c.Terminate(ctx)
@@ -429,20 +389,6 @@ func newEtcdWithCleanup() (*kvEtcdStorage, error) {
 
 func newKeyDBWithCleanup() (*kvStorage, error) {
 	c, r, err := startKeyDB()
-	if err != nil {
-		return nil, err
-	}
-
-	kv := &kvStorage{
-		redis: r,
-		c:     c,
-	}
-
-	return kv, nil
-}
-
-func newDragonFlyDBWithCleanup() (*kvStorage, error) {
-	c, r, err := startDragonFlyDB()
 	if err != nil {
 		return nil, err
 	}
@@ -678,19 +624,6 @@ func storageProviders() []storageProvider {
 				s, err := newKeyDBWithCleanup()
 				if err != nil {
 					panic(fmt.Sprintf("unable to start keydb:%s", err))
-				}
-				return s
-			},
-			providesql: func() *sql {
-				return nil
-			},
-		},
-		{
-			name: "DragonFlyDB",
-			provide: func() Storage {
-				s, err := newDragonFlyDBWithCleanup()
-				if err != nil {
-					panic(fmt.Sprintf("unable to start dragonflydb:%s", err))
 				}
 				return s
 			},

@@ -130,7 +130,6 @@ docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
 | In-Memory   |          106,861/sec | 196,687/sec | 330,578/sec |        248/sec | N                | N             |
 | KeyDB       |              777/sec |     975/sec |   2,271/sec |                | Y                | Y             |
 | Redis       |              773/sec |     958/sec |   2,349/sec |                | Y                | N             |
-| DragonFly   |               ??/sec |      ??/sec |      ??/sec |                | ?                | ?             |
 | MongoDB     |              415/sec |     682/sec |     772/sec |                | Y                | Y             |
 | Etcd        |              258/sec |     368/sec |     533/sec |                | Y                | N             |
 | Postgres    |              203/sec |     331/sec |     472/sec |                | Y                | N             |
@@ -145,7 +144,6 @@ The benchmarks above were performed using:
 * keydb:alpine_x86_64_v6.3.1
 * etcd:v3.5.5
 * mongodb:5.0.13-focal
-* dragonfly:v0.12.0
 
 ### Database Version Compatability
 
