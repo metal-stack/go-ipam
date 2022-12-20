@@ -486,6 +486,7 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {
+	t.Helper()
 	// prevent testcontainer logging mangle test and benchmark output
 	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
@@ -513,6 +514,7 @@ func testWithBackends(t *testing.T, fn testMethod) {
 type sqlTestMethod func(t *testing.T, sql *sql)
 
 func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
+	t.Helper()
 	// prevent testcontainer logging mangle test and benchmark output
 	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
