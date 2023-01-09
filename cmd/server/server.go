@@ -46,14 +46,13 @@ func (s *server) Run() error {
 	// handler.
 	mux.Handle(apiv1connect.NewIpamServiceHandler(service.New(s.log, s.ipamer)))
 
-	_, serverOpts := compress.All(compress.LevelBalanced)
 	mux.Handle(grpchealth.NewHandler(
 		grpchealth.NewStaticChecker(apiv1connect.IpamServiceName),
-		serverOpts,
+		compress.WithAll(compress.LevelBalanced),
 	))
 	mux.Handle(grpcreflect.NewHandlerV1(
 		grpcreflect.NewStaticReflector(apiv1connect.IpamServiceName),
-		serverOpts,
+		compress.WithAll(compress.LevelBalanced),
 	))
 
 	server := http.Server{

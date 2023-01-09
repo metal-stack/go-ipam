@@ -20,14 +20,12 @@ func BenchmarkGrpcImpact(b *testing.B) {
 	ctx := context.Background()
 	ipam := goipam.New()
 
-	// Get client and server options for all compressors...
-	clientOpts, serverOpts := compress.All(compress.LevelBalanced)
-
 	mux := http.NewServeMux()
 	mux.Handle(apiv1connect.NewIpamServiceHandler(
 		service.New(zaptest.NewLogger(b).Sugar(), ipam),
-		serverOpts,
+		compress.WithAll(compress.LevelBalanced),
 	))
+
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -37,12 +35,22 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		server.Client(),
 		server.URL,
 		connect.WithGRPC(),
-		clientOpts,
+		compress.WithAll(compress.LevelBalanced),
 	)
 	httpclient := apiv1connect.NewIpamServiceClient(
 		server.Client(),
 		server.URL,
-		clientOpts,
+		compress.WithAll(compress.LevelBalanced),
+	)
+
+	grpcUncompressed := apiv1connect.NewIpamServiceClient(
+		server.Client(),
+		server.URL,
+		connect.WithGRPC(),
+	)
+	httpclientUncompressed := apiv1connect.NewIpamServiceClient(
+		server.Client(),
+		server.URL,
 	)
 
 	benchmarks := []struct {
@@ -86,6 +94,26 @@ func BenchmarkGrpcImpact(b *testing.B) {
 			},
 		},
 		{
+			name: "grpc-no-compression",
+			f: func() {
+				p, err := grpcUncompressed.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
+					Cidr: "192.169.0.0/24",
+				}))
+				if err != nil {
+					panic(err)
+				}
+				if p == nil {
+					panic("Prefix nil")
+				}
+				_, err = grpcUncompressed.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
+					Cidr: "192.169.0.0/24",
+				}))
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
 			name: "http",
 			f: func() {
 				p, err := httpclient.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
@@ -98,6 +126,26 @@ func BenchmarkGrpcImpact(b *testing.B) {
 					panic("Prefix nil")
 				}
 				_, err = httpclient.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
+					Cidr: "192.169.0.0/24",
+				}))
+				if err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			name: "http-no-compression",
+			f: func() {
+				p, err := httpclientUncompressed.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
+					Cidr: "192.169.0.0/24",
+				}))
+				if err != nil {
+					panic(err)
+				}
+				if p == nil {
+					panic("Prefix nil")
+				}
+				_, err = httpclientUncompressed.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {

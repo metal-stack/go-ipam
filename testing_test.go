@@ -23,6 +23,7 @@ var (
 	redisOnce        sync.Once
 	redisContainer   testcontainers.Container
 	redisVersion     string
+	keyDBOnce        sync.Once
 	keyDBVersion     string
 	keyDBContainer   testcontainers.Container
 	etcdContainer    testcontainers.Container
@@ -43,7 +44,7 @@ func TestMain(m *testing.M) {
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "latest-v22.1"
+		cockroachVersion = "latest-v22.2"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
@@ -51,11 +52,11 @@ func TestMain(m *testing.M) {
 	}
 	keyDBVersion = os.Getenv("KEYDB_VERSION")
 	if keyDBVersion == "" {
-		keyDBVersion = "alpine_x86_64_v6.3.1"
+		keyDBVersion = "latest"
 	}
 	etcdVersion = os.Getenv("ETCD_VERSION")
 	if etcdVersion == "" {
-		etcdVersion = "v3.5.5"
+		etcdVersion = "v3.5.6"
 	}
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {
@@ -63,7 +64,7 @@ func TestMain(m *testing.M) {
 	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
-		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s, etcd:%s mongodb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion, etcdVersion, mdbVersion)
+		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s etcd:%s mongodb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion, etcdVersion, mdbVersion)
 	} else {
 		fmt.Printf("only test %s\n", backend)
 	}
@@ -267,10 +268,10 @@ func startMongodb() (container testcontainers.Container, s *mongodb, err error) 
 
 func startKeyDB() (container testcontainers.Container, s *redis, err error) {
 	ctx := context.Background()
-	redisOnce.Do(func() {
+	keyDBOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "eqalpha/keydb" + keyDBVersion,
+			Image:        "eqalpha/keydb:" + keyDBVersion,
 			ExposedPorts: []string{"6379/tcp"},
 			WaitingFor: wait.ForAll(
 				wait.ForLog("Server initialized"),
@@ -285,17 +286,17 @@ func startKeyDB() (container testcontainers.Container, s *redis, err error) {
 			panic(err.Error())
 		}
 	})
-	ip, err := redisContainer.Host(ctx)
+	ip, err := keyDBContainer.Host(ctx)
 	if err != nil {
-		return redisContainer, nil, err
+		return keyDBContainer, nil, err
 	}
-	port, err := redisContainer.MappedPort(ctx, "6379")
+	port, err := keyDBContainer.MappedPort(ctx, "6379")
 	if err != nil {
-		return redisContainer, nil, err
+		return keyDBContainer, nil, err
 	}
 	db := newRedis(ip, port.Port())
 
-	return redisContainer, db, nil
+	return keyDBContainer, db, nil
 }
 
 // func stopDB(c testcontainers.Container) error {
@@ -485,6 +486,7 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {
+	t.Helper()
 	// prevent testcontainer logging mangle test and benchmark output
 	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
@@ -512,6 +514,7 @@ func testWithBackends(t *testing.T, fn testMethod) {
 type sqlTestMethod func(t *testing.T, sql *sql)
 
 func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
+	t.Helper()
 	// prevent testcontainer logging mangle test and benchmark output
 	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
