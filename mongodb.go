@@ -11,7 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const dbIndex = `prefix.cidr`
+const dbCidr = `prefix.cidr`
+const dbNamespace = `prefix.namespace`
 const versionKey = `version`
 
 type MongoConfig struct {
@@ -51,7 +52,7 @@ func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 	c := m.Database(config.DatabaseName).Collection(config.CollectionName)
 
 	_, err = c.Indexes().CreateMany(ctx, []mongo.IndexModel{{
-		Keys:    bson.M{dbIndex: 1},
+		Keys:    bson.D{{Key: dbCidr, Value: 1}, {Key: dbNamespace, Value: 2}},
 		Options: options.Index().SetUnique(true),
 	}})
 	if err != nil {
@@ -64,7 +65,7 @@ func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, erro
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}}
+	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: dbNamespace, Value: dbNamespace}}
 	r := m.c.FindOne(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
@@ -86,7 +87,7 @@ func (m *mongodb) ReadPrefix(ctx context.Context, prefix string, namespace strin
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{Key: dbIndex, Value: prefix}}
+	f := bson.D{{Key: dbCidr, Value: prefix}, {Key: dbNamespace, Value: namespace}}
 	r := m.c.FindOne(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
@@ -142,7 +143,7 @@ func (m *mongodb) ReadPrefixes(ctx context.Context, namespace string) (Prefixes,
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{}} // match all documents
+	f := bson.D{{Key: "namespace", Value: namespace}} // match all documents in namespace
 	c, err := m.c.Find(ctx, f)
 	if err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
@@ -179,7 +180,7 @@ func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, erro
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
 
-	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}, {Key: versionKey, Value: oldVersion}}
+	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: dbNamespace, Value: prefix.Namespace}, {Key: versionKey, Value: oldVersion}}
 
 	o := options.Replace().SetUpsert(false)
 	r, err := m.c.ReplaceOne(ctx, f, prefix.toPrefixJSON(), o)
@@ -201,7 +202,7 @@ func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, erro
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}}
+	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: dbNamespace, Value: prefix.Namespace}}
 	r := m.c.FindOneAndDelete(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist

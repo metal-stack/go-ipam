@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS prefixes (
 	namespace text NOT NULL DEFAULT '',
 	PRIMARY KEY (cidr, namespace)
 );
--- FIXME write primary key migration as well
--- ALTER TABLE prefixes DROP CONSTRAINT IF EXISTS prefixes_pkey;
--- ALTER TABLE prefixes ALTER PRIMARY KEY (cidr, namespace);
+-- TODO test against cockroachdb
+ALTER TABLE prefixes DROP CONSTRAINT IF EXISTS prefixes_pkey;
+ALTER TABLE prefixes ADD CONSTRAINT prefixes_pkey PRIMARY KEY (cidr, namespace);
 ALTER TABLE prefixes ADD COLUMN IF NOT EXISTS namespace text NOT NULL DEFAULT '';
 UPDATE prefixes SET namespace = DEFAULT WHERE namespace IS NULL;
 

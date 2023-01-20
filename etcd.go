@@ -61,7 +61,8 @@ func (e *etcd) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 	defer e.lock.Unlock()
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	get, err := e.etcdDB.Get(ctx, prefix.Cidr)
+	key := prefix.Namespace + "@" + prefix.Cidr
+	get, err := e.etcdDB.Get(ctx, key)
 	defer cancel()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
@@ -76,7 +77,7 @@ func (e *etcd) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 		return Prefix{}, err
 	}
 	ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
-	_, err = e.etcdDB.Put(ctx, prefix.Cidr, string(pfx))
+	_, err = e.etcdDB.Put(ctx, key, string(pfx))
 	defer cancel()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to create prefix:%v, error:%w", prefix, err)
@@ -90,7 +91,8 @@ func (e *etcd) ReadPrefix(ctx context.Context, prefix string, namespace string) 
 	defer e.lock.Unlock()
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	get, err := e.etcdDB.Get(ctx, prefix)
+	key := namespace + "@" + prefix
+	get, err := e.etcdDB.Get(ctx, key)
 	defer cancel()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read data from ETCD error:%w", err)
@@ -156,7 +158,7 @@ func (e *etcd) ReadPrefixes(ctx context.Context, namespace string) (Prefixes, er
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
-	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
+	pfxs, err := e.etcdDB.Get(ctx, namespace, defaultOpts...)
 	defer cancel()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
@@ -184,14 +186,22 @@ func (e *etcd) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]stri
 	allPrefix := []string{}
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
-	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
+	pfxs, err := e.etcdDB.Get(ctx, namespace, defaultOpts...)
 	defer cancel()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
 	for _, pfx := range pfxs.Kvs {
-		allPrefix = append(allPrefix, string(pfx.Key))
+		v, err := e.etcdDB.Get(ctx, string(pfx.Key))
+		if err != nil {
+			return nil, err
+		}
+		pfx, err := fromJSON(v.Kvs[0].Value)
+		if err != nil {
+			return nil, err
+		}
+		allPrefix = append(allPrefix, string(pfx.Cidr))
 	}
 
 	return allPrefix, nil
@@ -208,7 +218,8 @@ func (e *etcd) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	p, err := e.etcdDB.Get(ctx, prefix.Cidr)
+	key := prefix.Namespace + "@" + prefix.Cidr
+	p, err := e.etcdDB.Get(ctx, key)
 	defer cancel()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read cidrs from ETCD:%w", err)
@@ -230,7 +241,7 @@ func (e *etcd) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 
 	// Operation is committed only if the watched keys remain unchanged.
 	ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
-	_, err = e.etcdDB.Put(ctx, prefix.Cidr, string(pn))
+	_, err = e.etcdDB.Put(ctx, key, string(pn))
 	defer cancel()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to update prefix:%s, error:%w", prefix.Cidr, err)
@@ -243,7 +254,8 @@ func (e *etcd) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 	defer e.lock.Unlock()
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	_, err := e.etcdDB.Delete(ctx, prefix.Cidr)
+	key := prefix.Namespace + "@" + prefix.Cidr
+	_, err := e.etcdDB.Delete(ctx, key)
 	defer cancel()
 	if err != nil {
 		return *prefix.deepCopy(), err
