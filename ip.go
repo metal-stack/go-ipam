@@ -1,12 +1,12 @@
 package ipam
 
 import (
-	"inet.af/netaddr"
+	"net/netip"
 )
 
 // IP is a single ipaddress.
 type IP struct {
-	IP           netaddr.IP
+	IP           netip.Addr
 	ParentPrefix string
 	Namespace    string
 }

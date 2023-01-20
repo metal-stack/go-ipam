@@ -10,8 +10,6 @@ import (
 	redigo "github.com/go-redis/redis/v8"
 )
 
-var ctx = context.Background()
-
 type redis struct {
 	rdb  *redigo.Client
 	lock sync.RWMutex
@@ -20,6 +18,9 @@ type redis struct {
 // NewRedis create a redis storage for ipam
 func NewRedis(ip, port string) Storage {
 	return newRedis(ip, port)
+}
+func (r *redis) Name() string {
+	return "redis"
 }
 
 func newRedis(ip, port string) *redis {
@@ -35,7 +36,7 @@ func newRedis(ip, port string) *redis {
 	}
 }
 
-func (r *redis) CreatePrefix(prefix Prefix) (Prefix, error) {
+func (r *redis) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -55,7 +56,7 @@ func (r *redis) CreatePrefix(prefix Prefix) (Prefix, error) {
 	err = r.rdb.Set(ctx, key, pfx, 0).Err()
 	return prefix, err
 }
-func (r *redis) ReadPrefix(prefix, namespace string) (Prefix, error) {
+func (r *redis) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefix, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -67,7 +68,7 @@ func (r *redis) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	return fromJSON([]byte(result))
 }
 
-func (r *redis) ReadPrefixes(namespace string) ([]Prefix, error) {
+func (r *redis) ReadPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -91,7 +92,14 @@ func (r *redis) ReadPrefixes(namespace string) ([]Prefix, error) {
 	return result, nil
 }
 
-func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
+func (r *redis) DeleteAllPrefixes(ctx context.Context) error {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	_, err := r.rdb.FlushAll(ctx).Result()
+	return err
+}
+
+func (r *redis) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -100,7 +108,7 @@ func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
-	result := []Prefix{}
+	result := Prefixes{}
 	for _, pfx := range pfxs {
 		v, err := r.rdb.Get(ctx, pfx).Bytes()
 		if err != nil {
@@ -114,7 +122,7 @@ func (r *redis) ReadAllPrefixes() ([]Prefix, error) {
 	}
 	return result, nil
 }
-func (r *redis) ReadAllPrefixCidrs(namespace string) ([]string, error) {
+func (r *redis) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	pfxs, err := r.rdb.Keys(ctx, "*@"+namespace).Result()
@@ -130,7 +138,7 @@ func (r *redis) ReadAllPrefixCidrs(namespace string) ([]string, error) {
 	}
 	return ps, nil
 }
-func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
+func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -172,7 +180,7 @@ func (r *redis) UpdatePrefix(prefix Prefix) (Prefix, error) {
 
 	return prefix, nil
 }
-func (r *redis) DeletePrefix(prefix Prefix) (Prefix, error) {
+func (r *redis) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	key := prefix.Cidr + "@" + prefix.Namespace

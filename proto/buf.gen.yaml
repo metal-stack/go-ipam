@@ -1,0 +1,14 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/metal-stack/go-ipam
+plugins:
+  # generate go structs for protocol buffer defination
+  - plugin: buf.build/bufbuild/connect-go:v1.4.0
+    out: ../
+    opt: paths=source_relative
+  # generate go structs for protocol buffer defination
+  - plugin: buf.build/protocolbuffers/go:v1.28.1
+    out: ../
+    opt: paths=source_relative

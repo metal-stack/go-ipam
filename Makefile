@@ -1,17 +1,22 @@
 .ONESHELL:
+SHA := $(shell git rev-parse --short=8 HEAD)
+GITVERSION := $(shell git describe --long --all)
+BUILDDATE := $(shell date -Iseconds)
+VERSION := $(or ${VERSION},devel)
+
 CGO_ENABLED := $(or ${CGO_ENABLED},0)
 GO := go
 GO111MODULE := on
-PG_VERSION := $(or ${PG_VERSION},14-alpine)
-COCKROACH_VERSION := $(or ${COCKROACH_VERSION},v21.2.2)
+LINKMODE := -extldflags '-static -s -w'
+
 
 .EXPORT_ALL_VARIABLES:
 
-all: test bench
+all: proto server client test bench
 
 .PHONY: bench
 bench:
-	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem
+	CGO_ENABLED=1 $(GO) test -bench ./... -run=- -benchmem -timeout 20m
 
 .PHONY: benchstat
 benchstat:
@@ -25,13 +30,41 @@ benchstat:
 test:
 	CGO_ENABLED=1 $(GO) test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
 
+.PHONY: fuzz
+fuzz:
+	CGO_ENABLED=1 $(GO) test -fuzz=Fuzz -v -run ^Fuzz github.com/metal-stack/go-ipam 
+
 .PHONY: golangcicheck
 golangcicheck:
 	@/bin/bash -c "type -P golangci-lint;" 2>/dev/null || (echo "golangci-lint is required but not available in current PATH. Install: https://github.com/golangci/golangci-lint#install"; exit 1)
 
 .PHONY: lint
 lint: golangcicheck
-	golangci-lint run
+	golangci-lint run -p bugs -p unused
+
+.PHONY: proto
+proto:
+	$(MAKE) -C proto protoc
+
+.PHONY: server
+server:
+	go build -tags netgo,osusergo,urfave_cli_no_docs \
+		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
+								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
+	   -o bin/server github.com/metal-stack/go-ipam/cmd/server
+	strip bin/server
+
+.PHONY: client
+client:
+	go build -tags netgo,osusergo,urfave_cli_no_docs \
+		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
+								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
+	   -o bin/cli github.com/metal-stack/go-ipam/cmd/client
+	strip bin/cli
 
 .PHONY: postgres-up
 postgres-up: postgres-rm
@@ -60,3 +93,11 @@ cockroach-up-cluster: cockroach-rm
 cockroach-rm:
 	docker rm -f roach1 roach2 roach3 || true
 	docker network rm roachnet || true
+
+.PHONY: redis-up
+redis-up: redis-rm
+	docker run -d --name ipamredis -p 6379:6379 redis
+
+.PHONY: redis-rm
+redis-rm:
+	docker rm -f ipamredis || true

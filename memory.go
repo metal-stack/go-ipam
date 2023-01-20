@@ -1,6 +1,7 @@
 package ipam
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -19,8 +20,10 @@ func NewMemory() Storage {
 		lock:     sync.RWMutex{},
 	}
 }
-
-func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) Name() string {
+	return "memory"
+}
+func (m *memory) CreatePrefix(_ context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	key := prefix.Cidr + "@" + prefix.Namespace
@@ -31,7 +34,7 @@ func (m *memory) CreatePrefix(prefix Prefix) (Prefix, error) {
 	m.prefixes[key] = *prefix.deepCopy()
 	return prefix, nil
 }
-func (m *memory) ReadPrefix(prefix, namespace string) (Prefix, error) {
+func (m *memory) ReadPrefix(_ context.Context, prefix, namespace string) (Prefix, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	key := prefix + "@" + namespace
@@ -42,7 +45,7 @@ func (m *memory) ReadPrefix(prefix, namespace string) (Prefix, error) {
 	return *result.deepCopy(), nil
 }
 
-func (m *memory) ReadPrefixes(namespace string) ([]Prefix, error) {
+func (m *memory) ReadPrefixes(_ context.Context, namespace string) (Prefixes, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -55,17 +58,24 @@ func (m *memory) ReadPrefixes(namespace string) ([]Prefix, error) {
 	return ps, nil
 }
 
-func (m *memory) ReadAllPrefixes() ([]Prefix, error) {
+func (m *memory) DeleteAllPrefixes(_ context.Context) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	m.prefixes = make(map[string]Prefix)
+	return nil
+}
+
+func (m *memory) ReadAllPrefixes(_ context.Context) (Prefixes, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	ps := make([]Prefix, 0, len(m.prefixes))
+	ps := make(Prefixes, 0, len(m.prefixes))
 	for _, v := range m.prefixes {
 		ps = append(ps, *v.deepCopy())
 	}
 	return ps, nil
 }
-func (m *memory) ReadAllPrefixCidrs(namespace string) ([]string, error) {
+func (m *memory) ReadAllPrefixCidrs(_ context.Context, namespace string) ([]string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -78,7 +88,7 @@ func (m *memory) ReadAllPrefixCidrs(namespace string) ([]string, error) {
 	}
 	return ps, nil
 }
-func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) UpdatePrefix(_ context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -103,7 +113,7 @@ func (m *memory) UpdatePrefix(prefix Prefix) (Prefix, error) {
 	m.prefixes[key] = *prefix.deepCopy()
 	return prefix, nil
 }
-func (m *memory) DeletePrefix(prefix Prefix) (Prefix, error) {
+func (m *memory) DeletePrefix(_ context.Context, prefix Prefix) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	key := prefix.Cidr + "@" + prefix.Namespace

@@ -8,6 +8,8 @@
 
 go-ipam is a module to handle IP address management. It can operate on networks, prefixes and IPs.
 
+It also comes as a ready to go microservice which offers a grpc api.
+
 ## IP
 
 Most obvious this library is all about IP management. The main purpose is to acquire and release an IP, or a bunch of
@@ -17,7 +19,7 @@ IP's from prefixes.
 
 A prefix is a network with IP and mask, typically in the form of *192.168.0.0/24*. To be able to manage IPs you have to create a prefix first.
 
-Example usage:
+Library Example usage:
 
 ```go
 
@@ -25,6 +27,7 @@ package main
 
 import (
     "fmt"
+    "time"
     goipam "github.com/metal-stack/go-ipam"
 )
 
@@ -32,39 +35,41 @@ func main() {
     // create a ipamer with in memory storage
     ipam := goipam.New()
 
-    prefix, err := ipam.NewPrefix("192.168.0.0/24")
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
     if err != nil {
         panic(err)
     }
 
-    ip, err := ipam.AcquireIP(prefix.Cidr)
+    ip, err := ipam.AcquireIP(ctx, prefix.Cidr)
     if err != nil {
         panic(err)
     }
     fmt.Printf("got IP: %s\n", ip.IP)
 
-    prefix, err = ipam.ReleaseIP(ip)
+    prefix, err = ipam.ReleaseIP(ctx, ip)
     if err != nil {
         panic(err)
     }
     fmt.Printf("IP: %s released.\n", ip.IP)
 
     // Now a IPv6 Super Prefix with Child Prefixes
-    prefix, err = ipam.NewPrefix("2001:aabb::/48")
+    prefix, err = ipam.NewPrefix(ctx, "2001:aabb::/48")
     if err != nil {
         panic(err)
     }
-    cp1, err := ipam.AcquireChildPrefix(prefix.Cidr, 64)
+    cp1, err := ipam.AcquireChildPrefix(ctx, prefix.Cidr, 64)
     if err != nil {
         panic(err)
     }
     fmt.Printf("got Prefix: %s\n", cp1)
-    cp2, err := ipam.AcquireChildPrefix(prefix.Cidr, 72)
+    cp2, err := ipam.AcquireChildPrefix(ctx, prefix.Cidr, 72)
     if err != nil {
         panic(err)
     }
     fmt.Printf("got Prefix: %s\n", cp2)
-    ip21, err := ipam.AcquireIP(cp2.Cidr)
+    ip21, err := ipam.AcquireIP(ctx, cp2.Cidr)
     if err != nil {
         panic(err)
     }
@@ -72,43 +77,90 @@ func main() {
 }
 ```
 
-## Supported Databases
+## GRPC Service
 
-|                              | Postgres | CockroachDB | Redis   | KeyDB   | Memory     |
-|------------------------------|----------|-------------|---------|---------|------------|
-| Production ready             | Y        | Y           | Y       | Y       | N          |
-| geo redundant setup possible | N        | Y           | N       | Y       | N          |
-| AcquireIP/sec                | ~100/s   | ~60/s       | ~1400/s | ~1400/s | >200.000/s |
-| AcquireChildPrefix/sec       | ~40/s    | ~35/s       | ~1000/s | ~1000/s | >100.000/s |
-
-Test were run on a Intel(R) Core(TM) i5-6600 CPU @ 3.30GHz
-
-## Performance
+First start the go-ipam container with the database backend of your choice already up and running. For example if you have a postgres database for storing the ipam data, you could run the grpc service like so:
 
 ```bash
-BenchmarkNewPrefix/Memory-4               464994        2675 ns/op     1728 B/op     27 allocs/op
-BenchmarkNewPrefix/Postgres-4                126    11775448 ns/op     6259 B/op    144 allocs/op
-BenchmarkNewPrefix/Cockroach-4               100    25558820 ns/op     6250 B/op    144 allocs/op
-BenchmarkNewPrefix/Redis-4                  3854      308122 ns/op     3930 B/op     78 allocs/op
-BenchmarkNewPrefix/KeyDB-4                  3907      307655 ns/op     3930 B/op     78 allocs/op
-BenchmarkAcquireIP/Memory-4               229524        4508 ns/op     2680 B/op     56 allocs/op
-BenchmarkAcquireIP/Postgres-4                 98    14918027 ns/op    10684 B/op    263 allocs/op
-BenchmarkAcquireIP/Cockroach-4                51    19688920 ns/op    10728 B/op    264 allocs/op
-BenchmarkAcquireIP/Redis-4                  1734      695545 ns/op    12113 B/op    268 allocs/op
-BenchmarkAcquireIP/KeyDB-4                  1476      751854 ns/op    12110 B/op    268 allocs/op
-BenchmarkAcquireChildPrefix/Memory-4      128704        8453 ns/op     5201 B/op     94 allocs/op
-BenchmarkAcquireChildPrefix/Postgres-4        70    21220704 ns/op    15663 B/op    378 allocs/op
-BenchmarkAcquireChildPrefix/Cockroach-4       32    37638608 ns/op    15774 B/op    381 allocs/op
-BenchmarkAcquireChildPrefix/Redis-4         1280      925054 ns/op    16016 B/op    349 allocs/op
-BenchmarkAcquireChildPrefix/KeyDB-4         1143      953056 ns/op    16018 B/op    349 allocs/op
-BenchmarkPrefixOverlapping-4             4306106       274.4 ns/op        0 B/op      0 allocs/op
+docker run -it --rm ghcr.io/metal-stack/go-ipam postgres
 ```
+
+From a client perspective you can now talk to this service via grpc.
+
+GRPC Example usage:
+
+```go
+package main
+
+import (
+    "http"
+
+    "github.com/bufbuild/connect-go"
+    v1 "github.com/metal-stack/go-ipam/api/v1"
+    "github.com/metal-stack/go-ipam/api/v1/apiv1connect"
+)
+func main() {
+
+    c := apiv1connect.NewIpamServiceClient(
+            http.DefaultClient,
+            "http://localhost:9090",
+            connect.WithGRPC(),
+    )
+
+    result, err := c.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{Cidr: "192.168.0.0/16",}))
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Prefix:%q created", result.Msg.Prefix.Cidr)
+}
+```
+
+## GRPC client
+
+There is also a `cli` provided in the container which can be used to make calls to the grpc endpoint manually:
+
+```bash
+docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
+```
+
+## Supported Databases & Performance
+
+| Database    | Acquire Child Prefix |  Acquire IP |  New Prefix | Prefix Overlap | Production-Ready | Geo-Redundant |
+|:------------|---------------------:|------------:|------------:|---------------:|:-----------------|:--------------|
+| In-Memory   |          106,861/sec | 196,687/sec | 330,578/sec |        248/sec | N                | N             |
+| KeyDB       |              777/sec |     975/sec |   2,271/sec |                | Y                | Y             |
+| Redis       |              773/sec |     958/sec |   2,349/sec |                | Y                | N             |
+| MongoDB     |              415/sec |     682/sec |     772/sec |                | Y                | Y             |
+| Etcd        |              258/sec |     368/sec |     533/sec |                | Y                | N             |
+| Postgres    |              203/sec |     331/sec |     472/sec |                | Y                | N             |
+| CockroachDB |              170/sec |     300/sec |     470/sec |                | Y                | Y             |
+
+The benchmarks above were performed using:
+
+* cpu: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
+* postgres:15-alpine
+* cockroach:v22.2.0
+* redis:7.0-alpine
+* keydb:alpine_x86_64_v6.3.1
+* etcd:v3.5.5
+* mongodb:5.0.13-focal
+
+### Database Version Compatability
+
+| Database    | Details                                                                                                                   |
+|-------------|---------------------------------------------------------------------------------------------------------------------------|
+| KeyDB       |                                                                                                                           |
+| Redis       |                                                                                                                           |
+| MongoDB     | [mongodb-go compatibility](https://www.mongodb.com/docs/drivers/go/current/compatibility/#std-label-golang-compatibility) |
+| Etcd        |                                                                                                                           |
+| Postgres    |                                                                                                                           |
+| CockroachDB |                                                                                                                           |
 
 ## Testing individual Backends
 
 It is possible to test a individual backend only to speed up development roundtrip.
 
-`backend` can be one of `Memory`, `Postgres`, `Cockroach` and `Redis`.
+`backend` can be one of `Memory`, `Postgres`, `Cockroach`, `Etcd`, `Redis`, and `MongoDB`.
 
 ```bash
 BACKEND=backend make test

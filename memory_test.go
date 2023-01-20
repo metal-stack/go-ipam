@@ -5,39 +5,42 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 )
 
 func Test_ReadPrefix(t *testing.T) {
+	ctx := context.Background()
 	m := NewMemory()
 
 	// Prefix
-	p, err := m.ReadPrefix("12.0.0.0/8", "")
+	p, err := m.ReadPrefix(ctx, "12.0.0.0/8", "")
 	require.NotNil(t, err)
 	require.Equal(t, "prefix 12.0.0.0/8 not found", err.Error())
 	require.Empty(t, p)
 
 	prefix := Prefix{Cidr: "12.0.0.0/16"}
-	p, err = m.CreatePrefix(prefix)
+	p, err = m.CreatePrefix(ctx, prefix)
 	require.Nil(t, err)
 	require.NotNil(t, p)
 
-	p, err = m.ReadPrefix("12.0.0.0/16", "")
+	p, err = m.ReadPrefix(ctx, "12.0.0.0/16", "")
 	require.Nil(t, err)
 	require.NotNil(t, p)
 	require.Equal(t, "12.0.0.0/16", p.Cidr)
 }
 
 func Test_UpdatePrefix(t *testing.T) {
+	ctx := context.Background()
 	m := NewMemory()
 
 	prefix := Prefix{}
-	p, err := m.UpdatePrefix(prefix)
+	p, err := m.UpdatePrefix(ctx, prefix)
 	require.NotNil(t, err)
 	require.Empty(t, p)
 	require.Equal(t, "prefix not present:{   false map[] 0 map[] 1}", err.Error())
 
 	prefix.Cidr = "1.2.3.4/24"
-	p, err = m.UpdatePrefix(prefix)
+	p, err = m.UpdatePrefix(ctx, prefix)
 	require.NotNil(t, err)
 	require.Empty(t, p)
 	require.Equal(t, "prefix not found:1.2.3.4/24", err.Error())
@@ -45,6 +48,7 @@ func Test_UpdatePrefix(t *testing.T) {
 
 // ensure that locks on memory storage work
 func Test_UpdatePrefix_Concurrent(t *testing.T) {
+	ctx := context.Background()
 	m := NewMemory()
 
 	for i := 0; i < 50000; i++ {
@@ -54,23 +58,23 @@ func Test_UpdatePrefix_Concurrent(t *testing.T) {
 			cidr := calcPrefix24(run) + "/24"
 			prefix.Cidr = cidr
 
-			p, err := m.CreatePrefix(prefix)
+			p, err := m.CreatePrefix(ctx, prefix)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.ReadPrefix(cidr, "")
+			p, err = m.ReadPrefix(ctx, cidr, "")
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.UpdatePrefix(p)
+			p, err = m.UpdatePrefix(ctx, p)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.ReadPrefix(cidr, "")
+			p, err = m.ReadPrefix(ctx, cidr, "")
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.DeletePrefix(p)
+			p, err = m.DeletePrefix(ctx, p)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 		}(i)

@@ -3,13 +3,14 @@ package ipam
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"sync"
 	"testing"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
@@ -22,8 +23,15 @@ var (
 	redisOnce        sync.Once
 	redisContainer   testcontainers.Container
 	redisVersion     string
+	keyDBOnce        sync.Once
 	keyDBVersion     string
 	keyDBContainer   testcontainers.Container
+	etcdContainer    testcontainers.Container
+	etcdVersion      string
+	etcdOnce         sync.Once
+	mdbOnce          sync.Once
+	mdbContainer     testcontainers.Container
+	mdbVersion       string
 
 	backend string
 )
@@ -32,28 +40,34 @@ func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	pgVersion = os.Getenv("PG_VERSION")
 	if pgVersion == "" {
-		pgVersion = "14"
+		pgVersion = "15-alpine"
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "v21.2.2"
+		cockroachVersion = "latest-v22.2"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
-		redisVersion = "6.2-alpine"
+		redisVersion = "7.0-alpine"
 	}
 	keyDBVersion = os.Getenv("KEYDB_VERSION")
 	if keyDBVersion == "" {
-		keyDBVersion = "alpine_x86_64_v6.2.1"
+		keyDBVersion = "latest"
+	}
+	etcdVersion = os.Getenv("ETCD_VERSION")
+	if etcdVersion == "" {
+		etcdVersion = "v3.5.6"
+	}
+	mdbVersion = os.Getenv("MONGODB_VERSION")
+	if mdbVersion == "" {
+		mdbVersion = "6.0.3-focal"
 	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
-		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion)
+		fmt.Printf("Using postgres:%s cockroach:%s redis:%s keydb:%s etcd:%s mongodb:%s\n", pgVersion, cockroachVersion, redisVersion, keyDBVersion, etcdVersion, mdbVersion)
 	} else {
 		fmt.Printf("only test %s\n", backend)
 	}
-	// prevent testcontainer logging mangle test and benchmark output
-	testcontainers.Logger.SetOutput(io.Discard)
 	os.Exit(m.Run())
 }
 
@@ -106,7 +120,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 				wait.ForListeningPort("8080/tcp"),
 				wait.ForListeningPort("26257/tcp"),
 			),
-			Cmd: []string{"start-single-node", "--insecure", "--listen-addr=0.0.0.0", "--store=type=mem,size=70%"},
+			Cmd: []string{"start-single-node", "--insecure", "--store=type=mem,size=70%"},
 		}
 		crContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
@@ -162,12 +176,102 @@ func startRedis() (container testcontainers.Container, s *redis, err error) {
 
 	return redisContainer, db, nil
 }
-func startKeyDB() (container testcontainers.Container, s *redis, err error) {
+
+func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 	ctx := context.Background()
-	redisOnce.Do(func() {
+	etcdOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
-			Image:        "eqalpha/keydb" + keyDBVersion,
+			Image:        "quay.io/coreos/etcd:" + etcdVersion,
+			ExposedPorts: []string{"2379:2379", "2380:2380"},
+			Cmd: []string{"etcd",
+				"--name", "etcd",
+				"--advertise-client-urls", "http://0.0.0.0:2379",
+				"--initial-advertise-peer-urls", "http://0.0.0.0:2380",
+				"--listen-client-urls", "http://0.0.0.0:2379",
+				"--listen-peer-urls", "http://0.0.0.0:2380",
+			},
+		}
+		etcdContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := etcdContainer.Host(ctx)
+	if err != nil {
+		return etcdContainer, nil, err
+	}
+	port, err := etcdContainer.MappedPort(ctx, "2379")
+	if err != nil {
+		return etcdContainer, nil, err
+	}
+	db := newEtcd(ip, port.Port(), nil, nil, true)
+
+	return etcdContainer, db, nil
+}
+
+func startMongodb() (container testcontainers.Container, s *mongodb, err error) {
+	ctx := context.Background()
+
+	mdbOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        `mongo:` + mdbVersion,
+			ExposedPorts: []string{`27017/tcp`},
+			Env: map[string]string{
+				`MONGO_INITDB_ROOT_USERNAME`: `testuser`,
+				`MONGO_INITDB_ROOT_PASSWORD`: `testuser`,
+			},
+			WaitingFor: wait.ForAll(
+				wait.ForLog(`Waiting for connections`),
+				wait.ForListeningPort(`27017/tcp`),
+			),
+			Cmd: []string{`mongod`},
+		}
+		mdbContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	ip, err := mdbContainer.Host(ctx)
+	if err != nil {
+		return mdbContainer, nil, err
+	}
+	port, err := mdbContainer.MappedPort(ctx, `27017`)
+	if err != nil {
+		return mdbContainer, nil, err
+	}
+
+	opts := options.Client()
+	opts.ApplyURI(fmt.Sprintf(`mongodb://%s:%s`, ip, port.Port()))
+	opts.Auth = &options.Credential{
+		AuthMechanism: `SCRAM-SHA-1`,
+		Username:      `testuser`,
+		Password:      `testuser`,
+	}
+
+	c := MongoConfig{
+		DatabaseName:       `go-ipam`,
+		CollectionName:     `prefixes`,
+		MongoClientOptions: opts,
+	}
+	db, err := newMongo(ctx, c)
+
+	return mdbContainer, db, err
+}
+
+func startKeyDB() (container testcontainers.Container, s *redis, err error) {
+	ctx := context.Background()
+	keyDBOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        "eqalpha/keydb:" + keyDBVersion,
 			ExposedPorts: []string{"6379/tcp"},
 			WaitingFor: wait.ForAll(
 				wait.ForLog("Server initialized"),
@@ -182,17 +286,17 @@ func startKeyDB() (container testcontainers.Container, s *redis, err error) {
 			panic(err.Error())
 		}
 	})
-	ip, err := redisContainer.Host(ctx)
+	ip, err := keyDBContainer.Host(ctx)
 	if err != nil {
-		return redisContainer, nil, err
+		return keyDBContainer, nil, err
 	}
-	port, err := redisContainer.MappedPort(ctx, "6379")
+	port, err := keyDBContainer.MappedPort(ctx, "6379")
 	if err != nil {
-		return redisContainer, nil, err
+		return keyDBContainer, nil, err
 	}
 	db := newRedis(ip, port.Port())
 
-	return redisContainer, db, nil
+	return keyDBContainer, db, nil
 }
 
 // func stopDB(c testcontainers.Container) error {
@@ -218,6 +322,15 @@ type extendedSQL struct {
 // extendedSQL extended sql interface
 type kvStorage struct {
 	*redis
+	c testcontainers.Container
+}
+type kvEtcdStorage struct {
+	*etcd
+	c testcontainers.Container
+}
+
+type docStorage struct {
+	*mongodb
 	c testcontainers.Container
 }
 
@@ -260,6 +373,20 @@ func newRedisWithCleanup() (*kvStorage, error) {
 
 	return kv, nil
 }
+func newEtcdWithCleanup() (*kvEtcdStorage, error) {
+	c, r, err := startEtcd()
+	if err != nil {
+		return nil, err
+	}
+
+	kv := &kvEtcdStorage{
+		etcd: r,
+		c:    c,
+	}
+
+	return kv, nil
+}
+
 func newKeyDBWithCleanup() (*kvStorage, error) {
 	c, r, err := startKeyDB()
 	if err != nil {
@@ -272,6 +399,19 @@ func newKeyDBWithCleanup() (*kvStorage, error) {
 	}
 
 	return kv, nil
+}
+
+func newMongodbWithCleanup() (*docStorage, error) {
+	c, s, err := startMongodb()
+	if err != nil {
+		return nil, err
+	}
+
+	x := &docStorage{
+		mongodb: s,
+		c:       c,
+	}
+	return x, nil
 }
 
 // cleanup database before test
@@ -294,6 +434,15 @@ func (kv *kvStorage) cleanup() error {
 }
 
 // cleanup database before test
+func (kv *kvEtcdStorage) cleanup() error {
+	_, err := kv.etcdDB.Delete(context.Background(), "", clientv3.WithPrefix())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// cleanup database before test
 func (sql *sql) cleanup() error {
 	tx := sql.db.MustBegin()
 	_, err := sql.db.Exec("TRUNCATE TABLE prefixes")
@@ -301,6 +450,12 @@ func (sql *sql) cleanup() error {
 		return err
 	}
 	return tx.Commit()
+}
+
+func (ds *docStorage) cleanup() error {
+	ds.mongodb.lock.Lock()
+	defer ds.mongodb.lock.Unlock()
+	return ds.mongodb.c.Drop(context.TODO())
 }
 
 type benchMethod func(b *testing.B, ipam *ipamer)
@@ -331,6 +486,9 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 type testMethod func(t *testing.T, ipam *ipamer)
 
 func testWithBackends(t *testing.T, fn testMethod) {
+	t.Helper()
+	// prevent testcontainer logging mangle test and benchmark output
+	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
 		if backend != "" && backend != storageProvider.name {
 			continue
@@ -356,6 +514,9 @@ func testWithBackends(t *testing.T, fn testMethod) {
 type sqlTestMethod func(t *testing.T, sql *sql)
 
 func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
+	t.Helper()
+	// prevent testcontainer logging mangle test and benchmark output
+	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
 		if backend != "" && backend != storageProvider.name {
 			continue
@@ -447,6 +608,19 @@ func storageProviders() []storageProvider {
 			},
 		},
 		{
+			name: "Etcd",
+			provide: func() Storage {
+				s, err := newEtcdWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf("unable to start etcd:%s", err))
+				}
+				return s
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
 			name: "KeyDB",
 			provide: func() Storage {
 				s, err := newKeyDBWithCleanup()
@@ -454,6 +628,19 @@ func storageProviders() []storageProvider {
 					panic(fmt.Sprintf("unable to start keydb:%s", err))
 				}
 				return s
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "MongoDB",
+			provide: func() Storage {
+				storage, err := newMongodbWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf(`error getting mongodb storage, error: %s`, err))
+				}
+				return storage
 			},
 			providesql: func() *sql {
 				return nil

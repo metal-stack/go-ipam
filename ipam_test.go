@@ -1,21 +1,26 @@
 package ipam
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 func ExampleIpamer_NewPrefix() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	ipamer := New()
-	prefix, err := ipamer.NewPrefix("192.168.0.0/24")
+	prefix, err := ipamer.NewPrefix(ctx, "192.168.0.0/24")
 	if err != nil {
 		panic(err)
 	}
-	ip1, err := ipamer.AcquireIP(prefix.Cidr)
+	ip1, err := ipamer.AcquireIP(ctx, prefix.Cidr)
 	if err != nil {
 		panic(err)
 	}
-	ip2, err := ipamer.AcquireIP(prefix.Cidr)
+	ip2, err := ipamer.AcquireIP(ctx, prefix.Cidr)
 	if err != nil {
 		panic(err)
 	}
@@ -32,40 +37,41 @@ func ExampleIpamer_NewPrefix() {
 	// Super Prefix IP2 : 192.168.0.2
 	// Super Prefix IP2 Parent : 192.168.0.0/24
 
-	_, err = ipamer.ReleaseIP(ip2)
+	_, err = ipamer.ReleaseIP(ctx, ip2)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = ipamer.ReleaseIP(ip1)
+	_, err = ipamer.ReleaseIP(ctx, ip1)
 	if err != nil {
 		panic(err)
 	}
-	_, err = ipamer.DeletePrefix(prefix.Cidr)
+	_, err = ipamer.DeletePrefix(ctx, prefix.Cidr)
 	if err != nil {
 		panic(err)
 	}
 
 }
 func ExampleIpamer_AcquireChildPrefix() {
+	ctx := context.Background()
 	ipamer := New()
-	prefix, err := ipamer.NewPrefix("2001:aabb::/48")
+	prefix, err := ipamer.NewPrefix(ctx, "2001:aabb::/48")
 	if err != nil {
 		panic(err)
 	}
-	cp1, err := ipamer.AcquireChildPrefix(prefix.Cidr, 64)
+	cp1, err := ipamer.AcquireChildPrefix(ctx, prefix.Cidr, 64)
 	if err != nil {
 		panic(err)
 	}
-	cp2, err := ipamer.AcquireChildPrefix(prefix.Cidr, 72)
+	cp2, err := ipamer.AcquireChildPrefix(ctx, prefix.Cidr, 72)
 	if err != nil {
 		panic(err)
 	}
-	ip21, err := ipamer.AcquireIP(cp2.Cidr)
+	ip21, err := ipamer.AcquireIP(ctx, cp2.Cidr)
 	if err != nil {
 		panic(err)
 	}
-	prefix = ipamer.PrefixFrom(prefix.Cidr)
+	prefix = ipamer.PrefixFrom(ctx, prefix.Cidr)
 	fmt.Printf("Super Prefix  : %s\n", prefix)
 	fmt.Printf("Child Prefix 1: %s\n", cp1)
 	fmt.Printf("Child Prefix 2: %s\n", cp2)
@@ -79,21 +85,21 @@ func ExampleIpamer_AcquireChildPrefix() {
 	// Child Prefix 2 IP1: 2001:aabb:0:1::1
 	// Super Prefix available child prefixes with 2 bytes: 2147483647
 	// Super Prefix available child prefixes: 2001:aabb:0:1:100::/72,2001:aabb:0:1:200::/71,2001:aabb:0:1:400::/70,2001:aabb:0:1:800::/69,2001:aabb:0:1:1000::/68,2001:aabb:0:1:2000::/67,2001:aabb:0:1:4000::/66,2001:aabb:0:1:8000::/65,2001:aabb:0:2::/63,2001:aabb:0:4::/62,2001:aabb:0:8::/61,2001:aabb:0:10::/60,2001:aabb:0:20::/59,2001:aabb:0:40::/58,2001:aabb:0:80::/57,2001:aabb:0:100::/56,2001:aabb:0:200::/55,2001:aabb:0:400::/54,2001:aabb:0:800::/53,2001:aabb:0:1000::/52,2001:aabb:0:2000::/51,2001:aabb:0:4000::/50,2001:aabb:0:8000::/49
-	err = ipamer.ReleaseChildPrefix(cp1)
+	err = ipamer.ReleaseChildPrefix(ctx, cp1)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = ipamer.ReleaseIP(ip21)
+	_, err = ipamer.ReleaseIP(ctx, ip21)
 	if err != nil {
 		panic(err)
 	}
 
-	err = ipamer.ReleaseChildPrefix(cp2)
+	err = ipamer.ReleaseChildPrefix(ctx, cp2)
 	if err != nil {
 		panic(err)
 	}
-	_, err = ipamer.DeletePrefix(prefix.Cidr)
+	_, err = ipamer.DeletePrefix(ctx, prefix.Cidr)
 	if err != nil {
 		panic(err)
 	}
