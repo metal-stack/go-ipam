@@ -7,6 +7,7 @@ import (
 
 type prefixJSON struct {
 	Prefix
+	Namespace              string
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
 	// TODO remove this in the next release
 	ChildPrefixLength int             // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
@@ -24,12 +25,12 @@ func (p prefixJSON) toPrefix() Prefix {
 	return Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
+		namespace:              p.Namespace,
 		availableChildPrefixes: p.AvailableChildPrefixes,
 		childPrefixLength:      p.ChildPrefixLength,
 		isParent:               p.IsParent,
 		ips:                    p.IPs,
 		version:                p.Version,
-		Namespace:              p.Namespace,
 	}
 }
 
@@ -38,8 +39,8 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 		Prefix: Prefix{
 			Cidr:       p.Cidr,
 			ParentCidr: p.ParentCidr,
-			Namespace:  p.Namespace,
 		},
+		Namespace:              p.namespace,
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		IsParent:               p.isParent,
 		// TODO remove this in the next release

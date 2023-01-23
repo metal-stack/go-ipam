@@ -36,11 +36,11 @@ func newRedis(ip, port string) *redis {
 	}
 }
 
-func (r *redis) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (r *redis) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	key := prefix.Cidr + "@" + prefix.Namespace
+	key := namespace + ":" + prefix.Cidr
 
 	existing, err := r.rdb.Exists(ctx, key).Result()
 	if err != nil {
@@ -60,7 +60,7 @@ func (r *redis) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefi
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	key := prefix + "@" + namespace
+	key := namespace + ":" + prefix
 	result, err := r.rdb.Get(ctx, key).Result()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
@@ -68,42 +68,24 @@ func (r *redis) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefi
 	return fromJSON([]byte(result))
 }
 
-func (r *redis) ReadPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
+func (r *redis) DeleteAllPrefixes(ctx context.Context, namespace string) error {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-
-	pfxs, err := r.rdb.Keys(ctx, "*@"+namespace).Result()
+	pfxs, err := r.rdb.Keys(ctx, namespace+":*").Result()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
+		return fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
-
-	result := []Prefix{}
-	for _, pfx := range pfxs {
-		v, err := r.rdb.Get(ctx, pfx).Bytes()
-		if err != nil {
-			return nil, err
-		}
-		pfx, err := fromJSON(v)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, pfx)
+	if len(pfxs) == 0 {
+		return nil
 	}
-	return result, nil
-}
-
-func (r *redis) DeleteAllPrefixes(ctx context.Context) error {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
-	_, err := r.rdb.FlushAll(ctx).Result()
+	_, err = r.rdb.Del(ctx, pfxs...).Result()
 	return err
 }
 
-func (r *redis) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
+func (r *redis) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-
-	pfxs, err := r.rdb.Keys(ctx, "*").Result()
+	pfxs, err := r.rdb.Keys(ctx, namespace+":*").Result()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
@@ -125,20 +107,18 @@ func (r *redis) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
 func (r *redis) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	pfxs, err := r.rdb.Keys(ctx, "*@"+namespace).Result()
+	pfxs, err := r.rdb.Keys(ctx, namespace+":*").Result()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 	ps := make([]string, 0, len(pfxs))
 	for _, cidr := range pfxs {
-		if strings.HasSuffix(cidr, "@"+namespace) {
-			c := strings.TrimSuffix(cidr, "@"+namespace)
-			ps = append(ps, c)
-		}
+		c := strings.TrimPrefix(cidr, namespace+":")
+		ps = append(ps, c)
 	}
 	return ps, nil
 }
-func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -149,7 +129,7 @@ func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error)
 		return Prefix{}, err
 	}
 
-	key := prefix.Cidr + "@" + prefix.Namespace
+	key := namespace + ":" + prefix.Cidr
 
 	txf := func(tx *redigo.Tx) error {
 		// Get current value or zero.
@@ -180,11 +160,10 @@ func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error)
 
 	return prefix, nil
 }
-func (r *redis) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (r *redis) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	key := prefix.Cidr + "@" + prefix.Namespace
-
+	key := namespace + ":" + prefix.Cidr
 	_, err := r.rdb.Del(ctx, key).Result()
 	if err != nil {
 		return *prefix.deepCopy(), err

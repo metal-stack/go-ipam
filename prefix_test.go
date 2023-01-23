@@ -52,7 +52,6 @@ func TestIPRangeOverlapping(t *testing.T) {
 
 func TestIpamer_AcquireIP(t *testing.T) {
 	ctx := context.Background()
-
 	type fields struct {
 		prefixCIDR  string
 		namespace   string
@@ -145,10 +144,8 @@ func TestIpamer_AcquireIP(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-
 		test := tt
 		testWithBackends(t, func(t *testing.T, ipam *ipamer) {
-			ipam.namespace = test.fields.namespace
 			p, err := ipam.NewPrefix(ctx, test.fields.prefixCIDR)
 			if err != nil {
 				t.Errorf("Could not create prefix: %v", err)
@@ -159,7 +156,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			}
 
 			var updatedPrefix Prefix
-			updatedPrefix, err = ipam.storage.UpdatePrefix(ctx, *p)
+			updatedPrefix, err = ipam.storage.UpdatePrefix(ctx, *p, defaultNamespace)
 			if err != nil {
 				t.Errorf("Could not update prefix: %v", err)
 			}
@@ -402,7 +399,7 @@ func TestIpamer_AcquireIPCountsIPv6(t *testing.T) {
 func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 	ctx := context.Background()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
-		allPrefixes, err := ipam.storage.ReadAllPrefixes(ctx)
+		allPrefixes, err := ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.NoError(t, err)
 		require.Equal(t, 0, len(allPrefixes))
 
@@ -472,7 +469,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 	ctx := context.Background()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
-		allPrefixes, err := ipam.storage.ReadAllPrefixes(ctx)
+		allPrefixes, err := ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.Equal(t, 0, len(allPrefixes))
 
@@ -486,7 +483,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		usage := prefix.Usage()
 		require.Equal(t, "ip:2/4096", usage.String())
 
-		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx)
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.Equal(t, 1, len(allPrefixes))
 
@@ -502,7 +499,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		usage = prefix.Usage()
 		require.Equal(t, "ip:2/4096 prefixes alloc:1 avail:768", usage.String())
 
-		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx)
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.Equal(t, 2, len(allPrefixes))
 
@@ -518,7 +515,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		require.True(t, strings.HasSuffix(c2.Cidr, "/22"))
 		require.True(t, strings.HasPrefix(c1.Cidr, "192.168."))
 		require.True(t, strings.HasPrefix(c2.Cidr, "192.168."))
-		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx)
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.Equal(t, 3, len(allPrefixes))
 
@@ -529,7 +526,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		s, _ = prefix.availablePrefixes()
 		require.Equal(t, uint64(768), s)
 		require.Equal(t, uint64(1), prefix.acquiredPrefixes())
-		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx)
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.Equal(t, 2, len(allPrefixes))
 
@@ -541,7 +538,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		require.Equal(t, uint64(1024), s)
 		require.Equal(t, uint64(0), prefix.acquiredPrefixes())
 		require.Equal(t, prefix.Usage().AcquiredPrefixes, uint64(0))
-		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx)
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.Equal(t, 1, len(allPrefixes))
 
@@ -564,7 +561,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		err = ipam.ReleaseChildPrefix(ctx, c3)
 		require.Nil(t, err)
 
-		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx)
+		allPrefixes, err = ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.Equal(t, 1, len(allPrefixes))
 	})
@@ -1512,7 +1509,7 @@ func Test_ipamer_DumpAndLoad(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "prefixes exist, please drop existing data before loading", err.Error())
 
-		err = ipam.storage.DeleteAllPrefixes(ctx)
+		err = ipam.storage.DeleteAllPrefixes(ctx, defaultNamespace)
 		require.NoError(t, err)
 		err = ipam.Load(ctx, data)
 		require.NoError(t, err)
@@ -1567,6 +1564,39 @@ func TestPrefix_Network(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Prefix.Network() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNamespaceFromContext(t *testing.T) {
+	tests := []struct {
+		name string
+		ctx  context.Context
+		want string
+	}{
+		{
+			name: "empty context",
+			ctx:  context.Background(),
+			want: defaultNamespace,
+		},
+		{
+			name: "namespaced context",
+			ctx:  NewContextWithNamespace(context.Background(), "a"),
+			want: "a",
+		},
+		{
+			name: "invalid context value",
+			ctx:  context.WithValue(context.Background(), namespaceContextKey{}, true),
+			want: defaultNamespace,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			got := namespaceFromContext(tt.ctx)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("namespaceFromContext() = %v, want %v", got, tt.want)
 			}
 		})
 	}

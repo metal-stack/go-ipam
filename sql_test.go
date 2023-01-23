@@ -16,24 +16,24 @@ func Test_sql_prefixExists(t *testing.T) {
 
 		// Existing Prefix
 		prefix := Prefix{Cidr: "10.0.0.0/16"}
-		p, err := db.CreatePrefix(ctx, prefix)
+		p, err := db.CreatePrefix(ctx, prefix, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, prefix.Cidr, p.Cidr)
-		got, exists := db.prefixExists(ctx, prefix)
+		got, exists := db.prefixExists(ctx, prefix, defaultNamespace)
 		require.True(t, exists)
 		require.Equal(t, got.Cidr, prefix.Cidr)
 
 		// NonExisting Prefix
 		notExistingPrefix := Prefix{Cidr: "10.0.0.0/8"}
-		got, exists = db.prefixExists(ctx, notExistingPrefix)
+		got, exists = db.prefixExists(ctx, notExistingPrefix, defaultNamespace)
 		require.False(t, exists)
 		require.Nil(t, got)
 
 		// Delete Existing Prefix
-		_, err = db.DeletePrefix(ctx, prefix)
+		_, err = db.DeletePrefix(ctx, prefix, defaultNamespace)
 		require.Nil(t, err)
-		got, exists = db.prefixExists(ctx, prefix)
+		got, exists = db.prefixExists(ctx, prefix, defaultNamespace)
 		require.False(t, exists)
 		require.Nil(t, got)
 	})
@@ -46,24 +46,24 @@ func Test_sql_CreatePrefix(t *testing.T) {
 
 		// Existing Prefix
 		prefix := Prefix{Cidr: "11.0.0.0/16"}
-		got, exists := db.prefixExists(ctx, prefix)
+		got, exists := db.prefixExists(ctx, prefix, defaultNamespace)
 		require.False(t, exists)
 		require.Nil(t, got)
-		p, err := db.CreatePrefix(ctx, prefix)
+		p, err := db.CreatePrefix(ctx, prefix, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, prefix.Cidr, p.Cidr)
-		got, exists = db.prefixExists(ctx, prefix)
+		got, exists = db.prefixExists(ctx, prefix, defaultNamespace)
 		require.True(t, exists)
 		require.Equal(t, got.Cidr, prefix.Cidr)
 
 		// Duplicate Prefix
-		p, err = db.CreatePrefix(ctx, prefix)
+		p, err = db.CreatePrefix(ctx, prefix, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, prefix.Cidr, p.Cidr)
 
-		ps, err := db.ReadAllPrefixCidrs(ctx, "")
+		ps, err := db.ReadAllPrefixCidrs(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 1, len(ps))
@@ -78,11 +78,11 @@ func Test_sql_ReadPrefix(t *testing.T) {
 		// Prefix
 		p, err := db.ReadPrefix(ctx, "12.0.0.0/8", "a")
 		require.NotNil(t, err)
-		require.Equal(t, "unable to read prefix:sql: no rows in result set", err.Error())
+		require.Equal(t, "unable to read prefix:pq: relation \"prefixes_a\" does not exist", err.Error())
 		require.Empty(t, p)
 
-		prefix := Prefix{Cidr: "12.0.0.0/16", Namespace: "a"}
-		p, err = db.CreatePrefix(ctx, prefix)
+		prefix := Prefix{Cidr: "12.0.0.0/16"}
+		p, err = db.CreatePrefix(ctx, prefix, "a")
 		require.Nil(t, err)
 		require.NotNil(t, p)
 
@@ -90,7 +90,6 @@ func Test_sql_ReadPrefix(t *testing.T) {
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, "12.0.0.0/16", p.Cidr)
-		require.Equal(t, "a", p.Namespace)
 	})
 }
 
@@ -100,25 +99,25 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		require.NotNil(t, db)
 
 		// no Prefixes
-		ps, err := db.ReadAllPrefixCidrs(ctx, "")
+		ps, err := db.ReadAllPrefixCidrs(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 0, len(ps))
 
 		// One Prefix
 		prefix := Prefix{Cidr: "12.0.0.0/16"}
-		p, err := db.CreatePrefix(ctx, prefix)
+		p, err := db.CreatePrefix(ctx, prefix, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, p)
-		ps, err = db.ReadAllPrefixCidrs(ctx, "")
+		ps, err = db.ReadAllPrefixCidrs(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 1, len(ps))
 
 		// no Prefixes again
-		_, err = db.DeletePrefix(ctx, prefix)
+		_, err = db.DeletePrefix(ctx, prefix, defaultNamespace)
 		require.Nil(t, err)
-		ps, err = db.ReadAllPrefixCidrs(ctx, "")
+		ps, err = db.ReadAllPrefixCidrs(ctx, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, ps)
 		require.Equal(t, 0, len(ps))
@@ -132,12 +131,12 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 
 		// Prefix
 		prefix := Prefix{Cidr: "13.0.0.0/16", ParentCidr: "13.0.0.0/8"}
-		p, err := db.CreatePrefix(ctx, prefix)
+		p, err := db.CreatePrefix(ctx, prefix, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, p)
 
 		// Check if present
-		p, err = db.ReadPrefix(ctx, "13.0.0.0/16", "")
+		p, err = db.ReadPrefix(ctx, "13.0.0.0/16", defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, "13.0.0.0/16", p.Cidr)
@@ -145,10 +144,10 @@ func Test_sql_UpdatePrefix(t *testing.T) {
 
 		// Modify
 		prefix.ParentCidr = "13.0.0.0/12"
-		p, err = db.UpdatePrefix(ctx, prefix)
+		p, err = db.UpdatePrefix(ctx, prefix, defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, p)
-		p, err = db.ReadPrefix(ctx, "13.0.0.0/16", "")
+		p, err = db.ReadPrefix(ctx, "13.0.0.0/16", defaultNamespace)
 		require.Nil(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, "13.0.0.0/16", p.Cidr)

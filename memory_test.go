@@ -13,17 +13,17 @@ func Test_ReadPrefix(t *testing.T) {
 	m := NewMemory()
 
 	// Prefix
-	p, err := m.ReadPrefix(ctx, "12.0.0.0/8", "")
+	p, err := m.ReadPrefix(ctx, "12.0.0.0/8", defaultNamespace)
 	require.NotNil(t, err)
 	require.Equal(t, "prefix 12.0.0.0/8 not found", err.Error())
 	require.Empty(t, p)
 
 	prefix := Prefix{Cidr: "12.0.0.0/16"}
-	p, err = m.CreatePrefix(ctx, prefix)
+	p, err = m.CreatePrefix(ctx, prefix, defaultNamespace)
 	require.Nil(t, err)
 	require.NotNil(t, p)
 
-	p, err = m.ReadPrefix(ctx, "12.0.0.0/16", "")
+	p, err = m.ReadPrefix(ctx, "12.0.0.0/16", defaultNamespace)
 	require.Nil(t, err)
 	require.NotNil(t, p)
 	require.Equal(t, "12.0.0.0/16", p.Cidr)
@@ -34,13 +34,13 @@ func Test_UpdatePrefix(t *testing.T) {
 	m := NewMemory()
 
 	prefix := Prefix{}
-	p, err := m.UpdatePrefix(ctx, prefix)
+	p, err := m.UpdatePrefix(ctx, prefix, defaultNamespace)
 	require.NotNil(t, err)
 	require.Empty(t, p)
 	require.Equal(t, "prefix not present:{   false map[] 0 map[] 1}", err.Error())
 
 	prefix.Cidr = "1.2.3.4/24"
-	p, err = m.UpdatePrefix(ctx, prefix)
+	p, err = m.UpdatePrefix(ctx, prefix, defaultNamespace)
 	require.NotNil(t, err)
 	require.Empty(t, p)
 	require.Equal(t, "prefix not found:1.2.3.4/24", err.Error())
@@ -58,23 +58,23 @@ func Test_UpdatePrefix_Concurrent(t *testing.T) {
 			cidr := calcPrefix24(run) + "/24"
 			prefix.Cidr = cidr
 
-			p, err := m.CreatePrefix(ctx, prefix)
+			p, err := m.CreatePrefix(ctx, prefix, defaultNamespace)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.ReadPrefix(ctx, cidr, "")
+			p, err = m.ReadPrefix(ctx, cidr, defaultNamespace)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.UpdatePrefix(ctx, p)
+			p, err = m.UpdatePrefix(ctx, p, defaultNamespace)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.ReadPrefix(ctx, cidr, "")
+			p, err = m.ReadPrefix(ctx, cidr, defaultNamespace)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 
-			p, err = m.DeletePrefix(ctx, p)
+			p, err = m.DeletePrefix(ctx, p, defaultNamespace)
 			require.Nil(t, err)
 			require.NotNil(t, p)
 		}(i)

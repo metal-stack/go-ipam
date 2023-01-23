@@ -10,19 +10,12 @@ import (
 )
 
 const postgresSchema = `
-CREATE TABLE IF NOT EXISTS prefixes (
-	cidr      text NOT NULL,
-	prefix    JSONB,
-	namespace text NOT NULL DEFAULT '',
-	PRIMARY KEY (cidr, namespace)
+ALTER TABLE IF EXISTS prefixes RENAME TO prefixes_root;
+CREATE TABLE IF NOT EXISTS prefixes_root (
+	cidr   text PRIMARY KEY NOT NULL,
+	prefix JSONB
 );
--- TODO test against cockroachdb
-ALTER TABLE prefixes DROP CONSTRAINT IF EXISTS prefixes_pkey;
-ALTER TABLE prefixes ADD CONSTRAINT prefixes_pkey PRIMARY KEY (cidr, namespace);
-ALTER TABLE prefixes ADD COLUMN IF NOT EXISTS namespace text NOT NULL DEFAULT '';
-UPDATE prefixes SET namespace = DEFAULT WHERE namespace IS NULL;
-
-CREATE INDEX IF NOT EXISTS prefix_idx ON prefixes USING GIN(prefix);
+CREATE INDEX IF NOT EXISTS prefix_idx ON prefixes_root USING GIN(prefix);
 `
 
 // SSLMode specifies how to configure ssl encryption to the database
@@ -65,7 +58,8 @@ func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*s
 	}
 	db.MustExec(postgresSchema)
 	return &sql{
-		db: db,
+		db:     db,
+		tables: map[string]struct{}{defaultNamespace: {}},
 	}, nil
 }
 

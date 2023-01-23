@@ -39,20 +39,26 @@ message ReleaseChildPrefixResponse {
 }
 message CreatePrefixRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
 message DeletePrefixRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
 message GetPrefixRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
-message ListPrefixesRequest {}
+message ListPrefixesRequest {
+  optional string namespace = 1;
+}
 message ListPrefixesResponse {
   repeated Prefix prefixes = 1;
 }
 
 message PrefixUsageRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
 
 message PrefixUsageResponse {
@@ -73,9 +79,11 @@ message PrefixUsageResponse {
 message AcquireChildPrefixRequest {
   string cidr = 1;
   uint32 length = 2;
+  optional string namespace = 3;
 }
 message ReleaseChildPrefixRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
 
 message IP {
@@ -84,6 +92,7 @@ message IP {
 }
 message AcquireIPResponse {
   IP ip = 1;
+  optional string namespace = 2;
 }
 message ReleaseIPResponse {
   IP ip = 1;
@@ -91,16 +100,22 @@ message ReleaseIPResponse {
 message AcquireIPRequest {
   string prefix_cidr = 1;
   optional string ip = 2;
+  optional string namespace = 3;
 }
 message ReleaseIPRequest {
   string prefix_cidr = 1;
   string ip = 2;
+  optional string namespace = 3;
 }
-message DumpRequest {}
+message DumpRequest {
+  optional string namespace = 1;
+}
 message DumpResponse {
   string dump = 1;
 }
 message LoadRequest {
   string dump = 1;
+  optional string namespace = 2;
 }
+
 message LoadResponse {}

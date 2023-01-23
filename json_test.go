@@ -11,6 +11,7 @@ func TestPrefixes_JSON(t *testing.T) {
 	p1 := Prefix{
 		Cidr:                   "192.168.0.0/24",
 		ParentCidr:             "192.168.0.0/20",
+		namespace:              defaultNamespace,
 		isParent:               false,
 		availableChildPrefixes: map[string]bool{},
 		childPrefixLength:      0,
@@ -22,6 +23,7 @@ func TestPrefixes_JSON(t *testing.T) {
 		Cidr:                   "172.17.0.0/24",
 		ParentCidr:             "172.17.0.0/20",
 		isParent:               false,
+		namespace:              defaultNamespace,
 		availableChildPrefixes: map[string]bool{},
 		childPrefixLength:      0,
 		ips:                    map[string]bool{"172.17.0.1": true, "172.17.0.2": true},

@@ -31,7 +31,6 @@ type server struct {
 }
 
 func newServer(c config) *server {
-
 	return &server{
 		c:       c,
 		ipamer:  goipam.NewWithStorage(c.Storage),

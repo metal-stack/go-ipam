@@ -12,7 +12,7 @@ import (
 )
 
 const dbCidr = `prefix.cidr`
-const dbNamespace = `prefix.namespace`
+const dbNamespace = `namespace`
 const versionKey = `version`
 
 type MongoConfig struct {
@@ -52,7 +52,7 @@ func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 	c := m.Database(config.DatabaseName).Collection(config.CollectionName)
 
 	_, err = c.Indexes().CreateMany(ctx, []mongo.IndexModel{{
-		Keys:    bson.D{{Key: dbCidr, Value: 1}, {Key: dbNamespace, Value: 2}},
+		Keys:    bson.D{{Key: dbCidr, Value: 1}},
 		Options: options.Index().SetUnique(true),
 	}})
 	if err != nil {
@@ -61,7 +61,7 @@ func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 	return &mongodb{c, sync.RWMutex{}}, nil
 }
 
-func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -105,11 +105,11 @@ func (m *mongodb) ReadPrefix(ctx context.Context, prefix string, namespace strin
 	return j.toPrefix(), nil
 }
 
-func (m *mongodb) DeleteAllPrefixes(ctx context.Context) error {
+func (m *mongodb) DeleteAllPrefixes(ctx context.Context, namespace string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{}} // match all documents
+	f := bson.D{{Key: dbNamespace, Value: namespace}}
 	_, err := m.c.DeleteMany(ctx, f)
 	if err != nil {
 		return fmt.Errorf(`error deleting all prefixes: %w`, err)
@@ -117,11 +117,11 @@ func (m *mongodb) DeleteAllPrefixes(ctx context.Context) error {
 	return nil
 }
 
-func (m *mongodb) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
+func (m *mongodb) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{}} // match all documents
+	f := bson.D{{Key: dbNamespace, Value: namespace}} // match all documents
 	c, err := m.c.Find(ctx, f)
 	if err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
@@ -162,7 +162,7 @@ func (m *mongodb) ReadPrefixes(ctx context.Context, namespace string) (Prefixes,
 }
 
 func (m *mongodb) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
-	p, err := m.ReadAllPrefixes(ctx)
+	p, err := m.ReadAllPrefixes(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -173,14 +173,14 @@ func (m *mongodb) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]s
 	return s, nil
 }
 
-func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
 
-	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: dbNamespace, Value: prefix.Namespace}, {Key: versionKey, Value: oldVersion}}
+	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: dbNamespace, Value: namespace}, {Key: versionKey, Value: oldVersion}}
 
 	o := options.Replace().SetUpsert(false)
 	r, err := m.c.ReplaceOne(ctx, f, prefix.toPrefixJSON(), o)
@@ -198,11 +198,11 @@ func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, erro
 	return prefix, nil
 }
 
-func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: dbNamespace, Value: prefix.Namespace}}
+	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: dbNamespace, Value: namespace}}
 	r := m.c.FindOneAndDelete(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
