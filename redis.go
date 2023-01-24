@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 
 	redigo "github.com/go-redis/redis/v8"
@@ -40,28 +39,27 @@ func (r *redis) CreatePrefix(ctx context.Context, prefix Prefix, namespace strin
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	key := namespace + ":" + prefix.Cidr
-
-	existing, err := r.rdb.Exists(ctx, key).Result()
+	existing, err := r.rdb.HExists(ctx, namespace, prefix.Cidr).Result()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
 	}
-	if existing != 0 {
+	if existing {
 		return Prefix{}, fmt.Errorf("prefix:%v already exists", prefix)
 	}
 	pfx, err := prefix.toJSON()
 	if err != nil {
 		return Prefix{}, err
 	}
-	err = r.rdb.Set(ctx, key, pfx, 0).Err()
+	if err = r.rdb.HSet(ctx, namespace, prefix.Cidr, pfx).Err(); err != nil {
+		return Prefix{}, err
+	}
 	return prefix, err
 }
 func (r *redis) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefix, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	key := namespace + ":" + prefix
-	result, err := r.rdb.Get(ctx, key).Result()
+	result, err := r.rdb.HGet(ctx, namespace, prefix).Result()
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
 	}
@@ -71,32 +69,19 @@ func (r *redis) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefi
 func (r *redis) DeleteAllPrefixes(ctx context.Context, namespace string) error {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	pfxs, err := r.rdb.Keys(ctx, namespace+":*").Result()
-	if err != nil {
-		return fmt.Errorf("unable to get all prefix cidrs:%w", err)
-	}
-	if len(pfxs) == 0 {
-		return nil
-	}
-	_, err = r.rdb.Del(ctx, pfxs...).Result()
-	return err
+	return r.rdb.Del(ctx, namespace).Err()
 }
 
 func (r *redis) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	pfxs, err := r.rdb.Keys(ctx, namespace+":*").Result()
+	pfxs, err := r.rdb.HGetAll(ctx, namespace).Result()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
-
 	result := Prefixes{}
 	for _, pfx := range pfxs {
-		v, err := r.rdb.Get(ctx, pfx).Bytes()
-		if err != nil {
-			return nil, err
-		}
-		pfx, err := fromJSON(v)
+		pfx, err := fromJSON([]byte(pfx))
 		if err != nil {
 			return nil, err
 		}
@@ -107,14 +92,13 @@ func (r *redis) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes
 func (r *redis) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	pfxs, err := r.rdb.Keys(ctx, namespace+":*").Result()
+	pfxs, err := r.rdb.HGetAll(ctx, namespace).Result()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 	ps := make([]string, 0, len(pfxs))
-	for _, cidr := range pfxs {
-		c := strings.TrimPrefix(cidr, namespace+":")
-		ps = append(ps, c)
+	for cidr := range pfxs {
+		ps = append(ps, cidr)
 	}
 	return ps, nil
 }
@@ -129,11 +113,9 @@ func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix, namespace strin
 		return Prefix{}, err
 	}
 
-	key := namespace + ":" + prefix.Cidr
-
 	txf := func(tx *redigo.Tx) error {
 		// Get current value or zero.
-		p, err := tx.Get(ctx, key).Result()
+		p, err := tx.HGet(ctx, namespace, prefix.Cidr).Result()
 		if err != nil && !errors.Is(err, redigo.Nil) {
 			return err
 		}
@@ -143,17 +125,17 @@ func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix, namespace strin
 		}
 		// Actual operation (local in optimistic lock).
 		if oldPrefix.version != oldVersion {
-			return fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, key)
+			return fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 		}
 
 		// Operation is committed only if the watched keys remain unchanged.
 		_, err = tx.TxPipelined(ctx, func(pipe redigo.Pipeliner) error {
-			pipe.Set(ctx, key, pn, 0)
+			pipe.HSet(ctx, namespace, prefix.Cidr, pn)
 			return nil
 		})
 		return err
 	}
-	err = r.rdb.Watch(ctx, txf, key)
+	err = r.rdb.Watch(ctx, txf, namespace)
 	if err != nil {
 		return Prefix{}, err
 	}
@@ -163,9 +145,7 @@ func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix, namespace strin
 func (r *redis) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	key := namespace + ":" + prefix.Cidr
-	_, err := r.rdb.Del(ctx, key).Result()
-	if err != nil {
+	if err := r.rdb.HDel(ctx, namespace, prefix.Cidr).Err(); err != nil {
 		return *prefix.deepCopy(), err
 	}
 	return *prefix.deepCopy(), nil
