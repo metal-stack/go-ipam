@@ -12,7 +12,7 @@ LINKMODE := -extldflags '-static -s -w'
 
 .EXPORT_ALL_VARIABLES:
 
-all: proto server client test bench
+all: proto server client test fuzz bench
 
 .PHONY: bench
 bench:
