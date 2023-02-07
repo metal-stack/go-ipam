@@ -101,10 +101,21 @@ func (i *IPAMService) ListPrefixes(ctx context.Context, req *connect.Request[v1.
 
 func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error) {
 	i.log.Debugw("acquirechildprefix", "req", req)
-	resp, err := i.ipamer.AcquireChildPrefix(ctx, req.Msg.Cidr, uint8(req.Msg.Length))
-	if err != nil {
-		i.log.Errorw("acquirechildprefix", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+
+	var resp *goipam.Prefix
+	var err error
+	if req.Msg.ChildCidr != nil {
+		resp, err = i.ipamer.AcquireSpecificChildPrefix(ctx, req.Msg.Cidr, *req.Msg.ChildCidr)
+		if err != nil {
+			i.log.Errorw("acquirechildprefix", "error", err)
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+	} else {
+		resp, err = i.ipamer.AcquireChildPrefix(ctx, req.Msg.Cidr, uint8(req.Msg.Length))
+		if err != nil {
+			i.log.Errorw("acquirechildprefix", "error", err)
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
 	}
 	return &connect.Response[v1.AcquireChildPrefixResponse]{
 		Msg: &v1.AcquireChildPrefixResponse{
