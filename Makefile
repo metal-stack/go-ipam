@@ -12,7 +12,7 @@ LINKMODE := -extldflags '-static -s -w'
 
 .EXPORT_ALL_VARIABLES:
 
-all: proto server client test bench
+all: proto server client test fuzz bench
 
 .PHONY: bench
 bench:
@@ -32,7 +32,7 @@ test:
 
 .PHONY: fuzz
 fuzz:
-	CGO_ENABLED=1 $(GO) test -fuzz=Fuzz -v -run ^Fuzz github.com/metal-stack/go-ipam 
+	CGO_ENABLED=1 $(GO) test -fuzz=Fuzz -fuzztime 30s -v -run ^Fuzz github.com/metal-stack/go-ipam
 
 .PHONY: golangcicheck
 golangcicheck:
