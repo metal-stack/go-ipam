@@ -79,7 +79,8 @@ message PrefixUsageResponse {
 message AcquireChildPrefixRequest {
   string cidr = 1;
   uint32 length = 2;
-  optional string namespace = 3;
+  optional string child_cidr = 3;
+  optional string namespace = 4;
 }
 message ReleaseChildPrefixRequest {
   string cidr = 1;

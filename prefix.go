@@ -26,6 +26,7 @@ var (
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
+// nolint:musttag
 type Prefix struct {
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
