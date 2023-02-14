@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	redigo "github.com/go-redis/redis/v8"
+	redigo "github.com/redis/go-redis/v9"
 )
 
 type redis struct {

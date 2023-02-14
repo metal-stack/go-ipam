@@ -1,8 +1,20 @@
+MAKEFLAGS += --no-print-directory
+BUF_VERSION := 1.14.0
+
+_buf:
+	docker run --rm \
+		--entrypoint sh \
+		-v $(PWD)/..:/workspace \
+		-w /workspace/proto \
+		bufbuild/buf:$(BUF_VERSION) \
+		-c "buf $(CMD) && chown -R $(shell id -u):$(shell id -g) /workspace"
+
+
 .PHONY: protolint
 protolint:
-	buf format -w api/v1
-	buf lint -v
+	@$(MAKE)	buf	CMD="format -w api/v1"
+	@$(MAKE)	buf	CMD="lint -v"
 
 .PHONY: protoc
 protoc: protolint
-	buf generate
+	@$(MAKE)	buf	CMD="generate -v"
