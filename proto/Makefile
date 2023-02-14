@@ -12,9 +12,9 @@ _buf:
 
 .PHONY: protolint
 protolint:
-	@$(MAKE)	buf	CMD="format -w api/v1"
-	@$(MAKE)	buf	CMD="lint -v"
+	@$(MAKE)	_buf	CMD="format -w api/v1"
+	@$(MAKE)	_buf	CMD="lint -v"
 
 .PHONY: protoc
 protoc: protolint
-	@$(MAKE)	buf	CMD="generate -v"
+	@$(MAKE)	_buf	CMD="generate -v"

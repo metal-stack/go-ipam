@@ -37,8 +37,7 @@ jobs:
 
     - name: build and test
       run: |
-        make test
-        make bench
+        make
     
     - name: Publish Codecoverage report
       run: bash <(curl -s https://codecov.io/bash)
