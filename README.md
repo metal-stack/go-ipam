@@ -165,3 +165,38 @@ It is possible to test a individual backend only to speed up development roundtr
 ```bash
 BACKEND=backend make test
 ```
+
+## TiKV
+
+https://tikv.org/docs/3.0/tasks/deploy/docker/
+
+
+```
+docker run -d --name pd1 \
+-p 2379:2379 \
+-p 2380:2380 \
+-v /etc/localtime:/etc/localtime:ro \
+-v /data:/data \
+pingcap/pd:latest \
+--name="pd1" \
+--data-dir="/data/pd1" \
+--client-urls="http://0.0.0.0:2379" \
+--advertise-client-urls="http://192.168.1.101:2379" \
+--peer-urls="http://0.0.0.0:2380" \
+--advertise-peer-urls="http://192.168.1.101:2380" \
+--initial-cluster="pd1=http://192.168.1.101:2380,pd2=http://192.168.1.102:2380,pd3=http://192.168.1.103:2380"
+```
+
+```
+docker run -d --name tikv1 \
+-p 20160:20160 \
+-v /etc/localtime:/etc/localtime:ro \
+-v /data:/data \
+pingcap/tikv:latest \
+--addr="0.0.0.0:20160" \
+--advertise-addr="192.168.1.104:20160" \
+--data-dir="/data/tikv1" \
+--pd="192.168.1.101:2379,192.168.1.102:2379,192.168.1.103:2379"
+```
+
+curl 192.168.1.101:2379/pd/api/v1/stores
