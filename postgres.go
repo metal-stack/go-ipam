@@ -63,6 +63,5 @@ func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*s
 }
 
 func dataSource(host, port, user, password, dbname string, sslmode SSLMode) string {
-	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s %s",
-		host, user, password, dbname, port, sslmode)
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s", user, password, host, port, dbname, sslmode)
 }
