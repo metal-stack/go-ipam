@@ -39,7 +39,7 @@ func (i *ipamer) getHostAddresses(ctx context.Context, prefix string) ([]string,
 
 func TestIPRangeOverlapping(t *testing.T) {
 	ctx := context.Background()
-	i := New()
+	i := New(ctx)
 
 	cidr := "10.10.10.0/24"
 	_, err := i.NewPrefix(ctx, cidr)

@@ -20,7 +20,7 @@ func TestIpamService(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
 	mux.Handle(apiv1connect.NewIpamServiceHandler(
-		New(zaptest.NewLogger(t).Sugar(), goipam.New()),
+		New(zaptest.NewLogger(t).Sugar(), goipam.New(context.Background())),
 	))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true

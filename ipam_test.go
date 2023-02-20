@@ -11,7 +11,7 @@ func ExampleIpamer_NewPrefix() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	ipamer := New()
+	ipamer := New(ctx)
 	prefix, err := ipamer.NewPrefix(ctx, "192.168.0.0/24")
 	if err != nil {
 		panic(err)
@@ -54,7 +54,7 @@ func ExampleIpamer_NewPrefix() {
 }
 func ExampleIpamer_AcquireChildPrefix() {
 	ctx := context.Background()
-	ipamer := New()
+	ipamer := New(ctx)
 	prefix, err := ipamer.NewPrefix(ctx, "2001:aabb::/48")
 	if err != nil {
 		panic(err)

@@ -127,7 +127,7 @@ func (i *ipamer) NewPrefix(ctx context.Context, cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	p, err := i.newPrefix(cidr, "", namespace)
+	p, err := i.newPrefix(cidr, "")
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, namespace, pare
 	if err != nil {
 		return nil, fmt.Errorf("unable to update parent prefix:%v error:%w", parent, err)
 	}
-	child, err = i.newPrefix(child.Cidr, parentCidr, namespace)
+	child, err = i.newPrefix(child.Cidr, parentCidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to persist created child:%w", err)
 	}
@@ -443,7 +443,7 @@ func PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error 
 }
 
 // newPrefix create a new Prefix from a string notation.
-func (i *ipamer) newPrefix(cidr, parentCidr string, namespace string) (*Prefix, error) {
+func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 	ipnet, err := netip.ParsePrefix(cidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse cidr:%s %w", cidr, err)

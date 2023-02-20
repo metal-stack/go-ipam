@@ -12,12 +12,12 @@ type memory struct {
 }
 
 // NewMemory create a memory storage for ipam
-func NewMemory() Storage {
+func NewMemory(ctx context.Context) Storage {
 	m := &memory{
 		prefixes: make(map[string]map[string]Prefix),
 		lock:     sync.RWMutex{},
 	}
-	_ = m.CreateNamespace(context.TODO(), defaultNamespace)
+	_ = m.CreateNamespace(ctx, defaultNamespace)
 	return m
 }
 func (m *memory) Name() string {

@@ -10,7 +10,7 @@ import (
 
 func Test_ReadPrefix(t *testing.T) {
 	ctx := context.Background()
-	m := NewMemory()
+	m := NewMemory(ctx)
 
 	// Prefix
 	p, err := m.ReadPrefix(ctx, "12.0.0.0/8", defaultNamespace)
@@ -31,7 +31,7 @@ func Test_ReadPrefix(t *testing.T) {
 
 func Test_UpdatePrefix(t *testing.T) {
 	ctx := context.Background()
-	m := NewMemory()
+	m := NewMemory(ctx)
 
 	prefix := Prefix{}
 	p, err := m.UpdatePrefix(ctx, prefix, defaultNamespace)
@@ -49,7 +49,7 @@ func Test_UpdatePrefix(t *testing.T) {
 // ensure that locks on memory storage work
 func Test_UpdatePrefix_Concurrent(t *testing.T) {
 	ctx := context.Background()
-	m := NewMemory()
+	m := NewMemory(ctx)
 
 	for i := 0; i < 50000; i++ {
 

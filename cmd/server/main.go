@@ -41,7 +41,7 @@ func main() {
 				Usage:   "start with memory backend",
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
-					c.Storage = goipam.NewMemory()
+					c.Storage = goipam.NewMemory(ctx.Context)
 					s := newServer(c)
 					return s.Run()
 				},

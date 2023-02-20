@@ -548,7 +548,7 @@ func storageProviders() []storageProvider {
 		{
 			name: "Memory",
 			provide: func() Storage {
-				return NewMemory()
+				return NewMemory(context.Background())
 			},
 			providesql: func() *sql {
 				return nil

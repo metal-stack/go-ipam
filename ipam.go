@@ -76,8 +76,8 @@ type ipamer struct {
 }
 
 // New returns a Ipamer with in memory storage for networks, prefixes and ips.
-func New() Ipamer {
-	storage := NewMemory()
+func New(ctx context.Context) Ipamer {
+	storage := NewMemory(ctx)
 	return &ipamer{storage: storage}
 }
 

@@ -275,13 +275,11 @@ func (m *mongodb) CreateNamespace(ctx context.Context, namespace string) error {
 	}
 
 	if err := m.db.CreateCollection(ctx, namespace); err != nil {
-		e, ok := err.(mongo.CommandError)
-		if !ok {
-			return err
+		var e mongo.CommandError
+		if errors.As(err, &e) && e.Name != "NamespaceExists" {
+			return nil
 		}
-		if e.Name != "NamespaceExists" {
-			return err
-		}
+		return err
 	}
 	_, err := m.db.Collection(namespace).Indexes().CreateMany(ctx, []mongo.IndexModel{{
 		Keys:    bson.D{{Key: dbCidr, Value: 1}},
