@@ -276,7 +276,7 @@ func (m *mongodb) CreateNamespace(ctx context.Context, namespace string) error {
 
 	if err := m.db.CreateCollection(ctx, namespace); err != nil {
 		var e mongo.CommandError
-		if errors.As(err, &e) && e.Name != "NamespaceExists" {
+		if errors.As(err, &e) && e.Name == "NamespaceExists" {
 			return nil
 		}
 		return err
