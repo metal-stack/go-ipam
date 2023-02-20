@@ -119,4 +119,41 @@ func TestIpamService(t *testing.T) {
 			counter++
 		}
 	})
+
+	t.Run("CreateDeleteGetPrefixNamespaced", func(t *testing.T) {
+		counter := 0
+		for _, client := range clients {
+			namespace := fmt.Sprintf("testns-%d", counter)
+			_, err := client.CreateNamespace(context.Background(), connect.NewRequest(&v1.CreateNamespaceRequest{Namespace: namespace}))
+			require.NoError(t, err)
+
+			result, err := client.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
+				Cidr:      "192.169.0.0/24",
+				Namespace: &namespace,
+			}))
+			require.NoError(t, err)
+			assert.Equal(t, result.Msg.Prefix.Cidr, "192.169.0.0/24")
+
+			getresult, err := client.GetPrefix(context.Background(), connect.NewRequest(&v1.GetPrefixRequest{
+				Cidr:      "192.169.0.0/24",
+				Namespace: &namespace,
+			}))
+			require.NoError(t, err)
+			assert.Equal(t, getresult.Msg.Prefix.Cidr, "192.169.0.0/24")
+
+			deleteresult, err := client.DeletePrefix(context.Background(), connect.NewRequest(&v1.DeletePrefixRequest{
+				Cidr:      "192.169.0.0/24",
+				Namespace: &namespace,
+			}))
+			require.NoError(t, err)
+			assert.Equal(t, deleteresult.Msg.Prefix.Cidr, "192.169.0.0/24", counter)
+
+			_, err = client.GetPrefix(context.Background(), connect.NewRequest(&v1.GetPrefixRequest{
+				Cidr:      "192.169.0.0/24",
+				Namespace: &namespace,
+			}))
+			require.Error(t, err, "prefix:'192.169.0.0/24' not found")
+			counter++
+		}
+	})
 }
