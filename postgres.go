@@ -2,6 +2,7 @@ package ipam
 
 import (
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -53,7 +54,13 @@ func NewPostgresStorage(host, port, user, password, dbname string, sslmode SSLMo
 }
 
 func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*sql, error) {
-	db, err := sqlx.Connect("postgres", dataSource(host, port, user, password, dbname, sslmode))
+	ds, err := dataSource(host, port, user, password, dbname, sslmode)
+	if err != nil {
+		// Already wrapped.
+		return nil, err
+	}
+
+	db, err := sqlx.Connect("postgres", ds)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database:%w", err)
 	}
@@ -66,7 +73,12 @@ func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*s
 	return sql, nil
 }
 
-func dataSource(host, port, user, password, dbname string, sslmode SSLMode) string {
-	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s %s",
-		host, user, password, dbname, port, sslmode)
+func dataSource(host, port, user, password, dbname string, sslmode SSLMode) (string, error) {
+	baseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s", user, password, host, port, dbname, sslmode)
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("%w: unable to parse base URL:%s", err, baseURL)
+	}
+
+	return parsedURL.String(), nil
 }
