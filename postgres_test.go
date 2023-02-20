@@ -41,15 +41,13 @@ func TestDatasource(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:     "spaces are not allowed in username/password",
-			host:     "host",
-			port:     "5432",
-			user:     "us er",
-			password: "pass word",
+			name:     "username and password with very special characters",
+			user:     "us@r",
+			password: "+S-@u]JBpWo^kduE7+(25zts",
 			dbname:   "dbname",
 			sslmode:  SSLModeAllow,
-			want:     "",
-			wantErr:  true,
+			want:     "postgres://us%40r:+S-%40u%5DJBpWo%5EkduE7+%2825zts@:/dbname?sslmode=allow",
+			wantErr:  false,
 		},
 		{
 			name:     "space allowed in dbname",
@@ -79,7 +77,11 @@ func TestDatasource(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := dataSource(tc.host, tc.port, tc.user, tc.password, tc.dbname, tc.sslmode)
-			require.Equal(t, tc.wantErr, err != nil)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 			require.Equal(t, tc.want, got)
 		})
 	}
