@@ -8,5 +8,4 @@ import (
 type IP struct {
 	IP           netip.Addr
 	ParentPrefix string
-	Namespace    string
 }

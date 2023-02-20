@@ -13,11 +13,12 @@ type memory struct {
 
 // NewMemory create a memory storage for ipam
 func NewMemory() Storage {
-	prefixes := make(map[string]map[string]Prefix)
-	return &memory{
-		prefixes: prefixes,
+	m := &memory{
+		prefixes: make(map[string]map[string]Prefix),
 		lock:     sync.RWMutex{},
 	}
+	_ = m.CreateNamespace(context.TODO(), defaultNamespace)
+	return m
 }
 func (m *memory) Name() string {
 	return "memory"
@@ -26,7 +27,7 @@ func (m *memory) CreatePrefix(_ context.Context, prefix Prefix, namespace string
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	if _, ok := m.prefixes[namespace]; !ok {
-		m.prefixes[namespace] = make(map[string]Prefix)
+		return Prefix{}, ErrNamespaceDoesNotExist
 	}
 	_, ok := m.prefixes[namespace][prefix.Cidr]
 	if ok {
@@ -39,7 +40,7 @@ func (m *memory) ReadPrefix(_ context.Context, prefix, namespace string) (Prefix
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	if _, ok := m.prefixes[namespace]; !ok {
-		return Prefix{}, fmt.Errorf("prefix %s not found", prefix)
+		return Prefix{}, ErrNamespaceDoesNotExist
 	}
 	result, ok := m.prefixes[namespace][prefix]
 	if !ok {
@@ -59,10 +60,10 @@ func (m *memory) ReadAllPrefixes(_ context.Context, namespace string) (Prefixes,
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	ps := make([]Prefix, 0, len(m.prefixes))
 	if _, ok := m.prefixes[namespace]; !ok {
-		return ps, nil
+		return nil, ErrNamespaceDoesNotExist
 	}
+	ps := make([]Prefix, 0, len(m.prefixes[namespace]))
 	for _, v := range m.prefixes[namespace] {
 		ps = append(ps, *v.deepCopy())
 	}
@@ -74,7 +75,7 @@ func (m *memory) ReadAllPrefixCidrs(_ context.Context, namespace string) ([]stri
 	defer m.lock.RUnlock()
 
 	if _, ok := m.prefixes[namespace]; !ok {
-		return []string{}, nil
+		return nil, ErrNamespaceDoesNotExist
 	}
 
 	ps := make([]string, 0, len(m.prefixes[namespace]))
@@ -96,7 +97,7 @@ func (m *memory) UpdatePrefix(_ context.Context, prefix Prefix, namespace string
 	}
 
 	if _, ok := m.prefixes[namespace]; !ok {
-		return Prefix{}, fmt.Errorf("prefix not found:%s", prefix.Cidr)
+		return Prefix{}, ErrNamespaceDoesNotExist
 	}
 	oldPrefix, ok := m.prefixes[namespace][prefix.Cidr]
 	if !ok {
@@ -113,8 +114,35 @@ func (m *memory) DeletePrefix(_ context.Context, prefix Prefix, namespace string
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	if _, ok := m.prefixes[namespace]; !ok {
-		return Prefix{}, fmt.Errorf("prefix not found:%s", prefix.Cidr)
+		return Prefix{}, ErrNamespaceDoesNotExist
 	}
 	delete(m.prefixes[namespace], prefix.Cidr)
 	return *prefix.deepCopy(), nil
+}
+
+func (m *memory) CreateNamespace(_ context.Context, namespace string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	if _, ok := m.prefixes[namespace]; !ok {
+		m.prefixes[namespace] = make(map[string]Prefix)
+	}
+	return nil
+}
+
+func (m *memory) ListNamespaces(_ context.Context) ([]string, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	var result []string
+	for n := range m.prefixes {
+		result = append(result, n)
+	}
+	return result, nil
+}
+
+func (m *memory) DeleteNamespace(_ context.Context, namespace string) error {
+	if _, ok := m.prefixes[namespace]; !ok {
+		return ErrNamespaceDoesNotExist
+	}
+	delete(m.prefixes, namespace)
+	return nil
 }

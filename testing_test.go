@@ -9,7 +9,6 @@ import (
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -172,8 +171,10 @@ func startRedis() (container testcontainers.Container, s *redis, err error) {
 	if err != nil {
 		return redisContainer, nil, err
 	}
-	db := newRedis(ip, port.Port())
-
+	db, err := newRedis(ctx, ip, port.Port())
+	if err != nil {
+		return redisContainer, nil, err
+	}
 	return redisContainer, db, nil
 }
 
@@ -208,8 +209,10 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 	if err != nil {
 		return etcdContainer, nil, err
 	}
-	db := newEtcd(ip, port.Port(), nil, nil, true)
-
+	db, err := newEtcd(ctx, ip, port.Port(), nil, nil, true)
+	if err != nil {
+		return etcdContainer, nil, err
+	}
 	return etcdContainer, db, nil
 }
 
@@ -258,7 +261,6 @@ func startMongodb() (container testcontainers.Container, s *mongodb, err error) 
 
 	c := MongoConfig{
 		DatabaseName:       `go-ipam`,
-		CollectionName:     `prefixes`,
 		MongoClientOptions: opts,
 	}
 	db, err := newMongo(ctx, c)
@@ -294,8 +296,10 @@ func startKeyDB() (container testcontainers.Container, s *redis, err error) {
 	if err != nil {
 		return keyDBContainer, nil, err
 	}
-	db := newRedis(ip, port.Port())
-
+	db, err := newRedis(ctx, ip, port.Port())
+	if err != nil {
+		return keyDBContainer, nil, err
+	}
 	return keyDBContainer, db, nil
 }
 
@@ -426,20 +430,12 @@ func (e *extendedSQL) cleanup() error {
 
 // cleanup database before test
 func (kv *kvStorage) cleanup() error {
-	_, err := kv.redis.rdb.FlushAll(context.Background()).Result()
-	if err != nil {
-		return err
-	}
-	return nil
+	return kv.redis.DeleteAllPrefixes(context.Background(), defaultNamespace)
 }
 
 // cleanup database before test
 func (kv *kvEtcdStorage) cleanup() error {
-	_, err := kv.etcdDB.Delete(context.Background(), "", clientv3.WithPrefix())
-	if err != nil {
-		return err
-	}
-	return nil
+	return kv.etcd.DeleteAllPrefixes(context.Background(), defaultNamespace)
 }
 
 // cleanup database before test
@@ -453,9 +449,7 @@ func (sql *sql) cleanup() error {
 }
 
 func (ds *docStorage) cleanup() error {
-	ds.mongodb.lock.Lock()
-	defer ds.mongodb.lock.Unlock()
-	return ds.mongodb.c.Drop(context.TODO())
+	return ds.mongodb.DeleteAllPrefixes(context.Background(), defaultNamespace)
 }
 
 type benchMethod func(b *testing.B, ipam *ipamer)

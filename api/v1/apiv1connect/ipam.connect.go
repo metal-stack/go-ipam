@@ -38,6 +38,9 @@ type IpamServiceClient interface {
 	ReleaseIP(context.Context, *connect_go.Request[v1.ReleaseIPRequest]) (*connect_go.Response[v1.ReleaseIPResponse], error)
 	Dump(context.Context, *connect_go.Request[v1.DumpRequest]) (*connect_go.Response[v1.DumpResponse], error)
 	Load(context.Context, *connect_go.Request[v1.LoadRequest]) (*connect_go.Response[v1.LoadResponse], error)
+	CreateNamespace(context.Context, *connect_go.Request[v1.CreateNamespaceRequest]) (*connect_go.Response[v1.CreateNamespaceResponse], error)
+	ListNamespaces(context.Context, *connect_go.Request[v1.ListNamespacesRequest]) (*connect_go.Response[v1.ListNamespacesResponse], error)
+	DeleteNamespace(context.Context, *connect_go.Request[v1.DeleteNamespaceRequest]) (*connect_go.Response[v1.DeleteNamespaceResponse], error)
 }
 
 // NewIpamServiceClient constructs a client for the api.v1.IpamService service. By default, it uses
@@ -105,6 +108,21 @@ func NewIpamServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/api.v1.IpamService/Load",
 			opts...,
 		),
+		createNamespace: connect_go.NewClient[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse](
+			httpClient,
+			baseURL+"/api.v1.IpamService/CreateNamespace",
+			opts...,
+		),
+		listNamespaces: connect_go.NewClient[v1.ListNamespacesRequest, v1.ListNamespacesResponse](
+			httpClient,
+			baseURL+"/api.v1.IpamService/ListNamespaces",
+			opts...,
+		),
+		deleteNamespace: connect_go.NewClient[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse](
+			httpClient,
+			baseURL+"/api.v1.IpamService/DeleteNamespace",
+			opts...,
+		),
 	}
 }
 
@@ -121,6 +139,9 @@ type ipamServiceClient struct {
 	releaseIP          *connect_go.Client[v1.ReleaseIPRequest, v1.ReleaseIPResponse]
 	dump               *connect_go.Client[v1.DumpRequest, v1.DumpResponse]
 	load               *connect_go.Client[v1.LoadRequest, v1.LoadResponse]
+	createNamespace    *connect_go.Client[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse]
+	listNamespaces     *connect_go.Client[v1.ListNamespacesRequest, v1.ListNamespacesResponse]
+	deleteNamespace    *connect_go.Client[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse]
 }
 
 // CreatePrefix calls api.v1.IpamService.CreatePrefix.
@@ -178,6 +199,21 @@ func (c *ipamServiceClient) Load(ctx context.Context, req *connect_go.Request[v1
 	return c.load.CallUnary(ctx, req)
 }
 
+// CreateNamespace calls api.v1.IpamService.CreateNamespace.
+func (c *ipamServiceClient) CreateNamespace(ctx context.Context, req *connect_go.Request[v1.CreateNamespaceRequest]) (*connect_go.Response[v1.CreateNamespaceResponse], error) {
+	return c.createNamespace.CallUnary(ctx, req)
+}
+
+// ListNamespaces calls api.v1.IpamService.ListNamespaces.
+func (c *ipamServiceClient) ListNamespaces(ctx context.Context, req *connect_go.Request[v1.ListNamespacesRequest]) (*connect_go.Response[v1.ListNamespacesResponse], error) {
+	return c.listNamespaces.CallUnary(ctx, req)
+}
+
+// DeleteNamespace calls api.v1.IpamService.DeleteNamespace.
+func (c *ipamServiceClient) DeleteNamespace(ctx context.Context, req *connect_go.Request[v1.DeleteNamespaceRequest]) (*connect_go.Response[v1.DeleteNamespaceResponse], error) {
+	return c.deleteNamespace.CallUnary(ctx, req)
+}
+
 // IpamServiceHandler is an implementation of the api.v1.IpamService service.
 type IpamServiceHandler interface {
 	CreatePrefix(context.Context, *connect_go.Request[v1.CreatePrefixRequest]) (*connect_go.Response[v1.CreatePrefixResponse], error)
@@ -191,6 +227,9 @@ type IpamServiceHandler interface {
 	ReleaseIP(context.Context, *connect_go.Request[v1.ReleaseIPRequest]) (*connect_go.Response[v1.ReleaseIPResponse], error)
 	Dump(context.Context, *connect_go.Request[v1.DumpRequest]) (*connect_go.Response[v1.DumpResponse], error)
 	Load(context.Context, *connect_go.Request[v1.LoadRequest]) (*connect_go.Response[v1.LoadResponse], error)
+	CreateNamespace(context.Context, *connect_go.Request[v1.CreateNamespaceRequest]) (*connect_go.Response[v1.CreateNamespaceResponse], error)
+	ListNamespaces(context.Context, *connect_go.Request[v1.ListNamespacesRequest]) (*connect_go.Response[v1.ListNamespacesResponse], error)
+	DeleteNamespace(context.Context, *connect_go.Request[v1.DeleteNamespaceRequest]) (*connect_go.Response[v1.DeleteNamespaceResponse], error)
 }
 
 // NewIpamServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -255,6 +294,21 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect_go.HandlerOpt
 		svc.Load,
 		opts...,
 	))
+	mux.Handle("/api.v1.IpamService/CreateNamespace", connect_go.NewUnaryHandler(
+		"/api.v1.IpamService/CreateNamespace",
+		svc.CreateNamespace,
+		opts...,
+	))
+	mux.Handle("/api.v1.IpamService/ListNamespaces", connect_go.NewUnaryHandler(
+		"/api.v1.IpamService/ListNamespaces",
+		svc.ListNamespaces,
+		opts...,
+	))
+	mux.Handle("/api.v1.IpamService/DeleteNamespace", connect_go.NewUnaryHandler(
+		"/api.v1.IpamService/DeleteNamespace",
+		svc.DeleteNamespace,
+		opts...,
+	))
 	return "/api.v1.IpamService/", mux
 }
 
@@ -303,4 +357,16 @@ func (UnimplementedIpamServiceHandler) Dump(context.Context, *connect_go.Request
 
 func (UnimplementedIpamServiceHandler) Load(context.Context, *connect_go.Request[v1.LoadRequest]) (*connect_go.Response[v1.LoadResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.Load is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) CreateNamespace(context.Context, *connect_go.Request[v1.CreateNamespaceRequest]) (*connect_go.Response[v1.CreateNamespaceResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.CreateNamespace is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) ListNamespaces(context.Context, *connect_go.Request[v1.ListNamespacesRequest]) (*connect_go.Response[v1.ListNamespacesResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.ListNamespaces is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) DeleteNamespace(context.Context, *connect_go.Request[v1.DeleteNamespaceRequest]) (*connect_go.Response[v1.DeleteNamespaceResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.v1.IpamService.DeleteNamespace is not implemented"))
 }

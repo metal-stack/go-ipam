@@ -25,7 +25,6 @@ func (p prefixJSON) toPrefix() Prefix {
 	return Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
-		namespace:              p.Namespace,
 		availableChildPrefixes: p.AvailableChildPrefixes,
 		childPrefixLength:      p.ChildPrefixLength,
 		isParent:               p.IsParent,
@@ -40,7 +39,6 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 			Cidr:       p.Cidr,
 			ParentCidr: p.ParentCidr,
 		},
-		Namespace:              p.namespace,
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		IsParent:               p.isParent,
 		// TODO remove this in the next release

@@ -12,4 +12,7 @@ type Storage interface {
 	ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]string, error)
 	UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error)
 	DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error)
+	CreateNamespace(ctx context.Context, namespace string) error
+	ListNamespaces(ctx context.Context) ([]string, error)
+	DeleteNamespace(ctx context.Context, namespace string) error
 }

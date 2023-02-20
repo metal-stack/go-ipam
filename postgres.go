@@ -2,6 +2,7 @@ package ipam
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 
@@ -57,10 +58,12 @@ func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*s
 		return nil, fmt.Errorf("unable to connect to database:%w", err)
 	}
 	db.MustExec(postgresSchema)
-	return &sql{
+	sql := &sql{
 		db:     db,
-		tables: map[string]struct{}{defaultNamespace: {}},
-	}, nil
+		tables: sync.Map{},
+	}
+	sql.tables.Store(defaultNamespace, struct{}{})
+	return sql, nil
 }
 
 func dataSource(host, port, user, password, dbname string, sslmode SSLMode) string {

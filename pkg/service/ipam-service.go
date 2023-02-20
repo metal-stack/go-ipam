@@ -269,3 +269,34 @@ func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.P
 		},
 	}, nil
 }
+
+func (i *IPAMService) CreateNamespace(ctx context.Context, req *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error) {
+	i.log.Debugw("createnamespace", "req", req)
+	err := i.ipamer.CreateNamespace(ctx, req.Msg.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	return &connect.Response[v1.CreateNamespaceResponse]{}, nil
+}
+
+func (i *IPAMService) DeleteNamespace(ctx context.Context, req *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error) {
+	i.log.Debugw("deletenamespace", "req", req)
+	err := i.ipamer.DeleteNamespace(ctx, req.Msg.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	return &connect.Response[v1.DeleteNamespaceResponse]{}, nil
+}
+
+func (i *IPAMService) ListNamespaces(ctx context.Context, req *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error) {
+	i.log.Debugw("", "req", req)
+	res, err := i.ipamer.ListNamespaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &connect.Response[v1.ListNamespacesResponse]{
+		Msg: &v1.ListNamespacesResponse{
+			Namespace: res,
+		},
+	}, nil
+}

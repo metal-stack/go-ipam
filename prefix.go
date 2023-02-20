@@ -14,23 +14,11 @@ import (
 	"go4.org/netipx"
 )
 
-var (
-	// ErrNotFound is returned if prefix or cidr was not found
-	ErrNotFound NotFoundError
-	// ErrNoIPAvailable is returned if no IP is available anymore
-	ErrNoIPAvailable NoIPAvailableError
-	// ErrAlreadyAllocated is returned if the requested address is not available
-	ErrAlreadyAllocated AlreadyAllocatedError
-	// ErrOptimisticLockError is returned if insert or update conflicts with the existing data
-	ErrOptimisticLockError OptimisticLockError
-)
-
 // Prefix is a expression of a ip with length and forms a classless network.
 // nolint:musttag
 type Prefix struct {
 	Cidr                   string          // The Cidr of this prefix
 	ParentCidr             string          // if this prefix is a child this is a pointer back
-	namespace              string          // used to allow overlapping prefixes
 	isParent               bool            // if this Prefix has child prefixes, this is set to true
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
 	// TODO remove this in the next release
@@ -46,7 +34,6 @@ func (p Prefix) deepCopy() *Prefix {
 	return &Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
-		namespace:              p.namespace,
 		isParent:               p.isParent,
 		childPrefixLength:      p.childPrefixLength,
 		availableChildPrefixes: copyMap(p.availableChildPrefixes),
@@ -59,9 +46,6 @@ func (p Prefix) deepCopy() *Prefix {
 func (p *Prefix) GobEncode() ([]byte, error) {
 	w := new(bytes.Buffer)
 	encoder := gob.NewEncoder(w)
-	if err := encoder.Encode(p.namespace); err != nil {
-		return nil, err
-	}
 	if err := encoder.Encode(p.availableChildPrefixes); err != nil {
 		return nil, err
 	}
@@ -90,9 +74,6 @@ func (p *Prefix) GobEncode() ([]byte, error) {
 func (p *Prefix) GobDecode(buf []byte) error {
 	r := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(r)
-	if err := decoder.Decode(&p.namespace); err != nil {
-		return err
-	}
 	if err := decoder.Decode(&p.availableChildPrefixes); err != nil {
 		return err
 	}
@@ -392,7 +373,6 @@ func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, namespace, prefi
 			acquired := &IP{
 				IP:           ip,
 				ParentPrefix: prefix.Cidr,
-				Namespace:    namespace,
 			}
 			prefix.ips[ipstring] = true
 			_, err := i.storage.UpdatePrefix(ctx, *prefix, namespace)
@@ -463,7 +443,7 @@ func PrefixesOverlapping(existingPrefixes []string, newPrefixes []string) error 
 }
 
 // newPrefix create a new Prefix from a string notation.
-func (i *ipamer) newPrefix(cidr, parentCidr string, namepsace string) (*Prefix, error) {
+func (i *ipamer) newPrefix(cidr, parentCidr string, namespace string) (*Prefix, error) {
 	ipnet, err := netip.ParsePrefix(cidr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse cidr:%s %w", cidr, err)
@@ -479,7 +459,6 @@ func (i *ipamer) newPrefix(cidr, parentCidr string, namepsace string) (*Prefix, 
 	p := &Prefix{
 		Cidr:                   ipnet.Masked().String(),
 		ParentCidr:             parentCidr,
-		namespace:              namepsace,
 		ips:                    make(map[string]bool),
 		availableChildPrefixes: make(map[string]bool),
 		isParent:               false,
@@ -550,6 +529,21 @@ func (i *ipamer) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
 // ReadAllNamespacedPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
 func (i *ipamer) ReadAllNamespacedPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
 	return i.storage.ReadAllPrefixCidrs(ctx, namespace)
+}
+
+// CreateNamespaces creates a namespace with the given name.
+func (i *ipamer) CreateNamespace(ctx context.Context, namespace string) error {
+	return i.storage.CreateNamespace(ctx, namespace)
+}
+
+// ListNamespaces returns a list of all namespaces.
+func (i *ipamer) ListNamespaces(ctx context.Context) ([]string, error) {
+	return i.storage.ListNamespaces(ctx)
+}
+
+// DeleteNamespace deletes a namespace.
+func (i *ipamer) DeleteNamespace(ctx context.Context, namespace string) error {
+	return i.storage.DeleteNamespace(ctx, namespace)
 }
 
 func (p *Prefix) String() string {
@@ -667,40 +661,6 @@ func (p *Prefix) Usage() Usage {
 		AvailableSmallestPrefixes: sp,
 		AvailablePrefixes:         ap,
 	}
-}
-
-// NoIPAvailableError indicates that the acquire-operation could not be executed
-// because the specified prefix has no free IP anymore.
-type NoIPAvailableError struct {
-}
-
-func (o NoIPAvailableError) Error() string {
-	return "NoIPAvailableError"
-}
-
-// NotFoundError is raised if the given Prefix or Cidr was not found
-type NotFoundError struct {
-}
-
-func (o NotFoundError) Error() string {
-	return "NotFound"
-}
-
-// OptimisticLockError indicates that the operation could not be executed because the dataset to update has changed in the meantime.
-// clients can decide to read the current dataset and retry the operation.
-type OptimisticLockError struct {
-}
-
-func (o OptimisticLockError) Error() string {
-	return "OptimisticLockError"
-}
-
-// AlreadyAllocatedError is raised if the given address is already in use
-type AlreadyAllocatedError struct {
-}
-
-func (o AlreadyAllocatedError) Error() string {
-	return "AlreadyAllocatedError"
 }
 
 // retries the given function if the reported error is an OptimisticLockError
