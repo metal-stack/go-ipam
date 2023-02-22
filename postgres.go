@@ -12,12 +12,11 @@ import (
 )
 
 const postgresSchema = `
-ALTER TABLE IF EXISTS prefixes RENAME TO prefixes_root;
-CREATE TABLE IF NOT EXISTS prefixes_root (
+CREATE TABLE IF NOT EXISTS prefixes (
 	cidr   text PRIMARY KEY NOT NULL,
 	prefix JSONB
 );
-CREATE INDEX IF NOT EXISTS prefix_idx ON prefixes_root USING GIN(prefix);
+CREATE INDEX IF NOT EXISTS prefix_idx ON prefixes USING GIN(prefix);
 `
 
 // SSLMode specifies how to configure ssl encryption to the database
@@ -64,10 +63,20 @@ func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*s
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database:%w", err)
 	}
-	db.MustExec(postgresSchema)
+	_, err = db.Exec(postgresSchema)
+	if err != nil {
+		return nil, fmt.Errorf("error creating tables: %w", err)
+	}
+	var maxIdLength int
+	err = db.Get(&maxIdLength, "show max_identifier_length")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get max_identifier_length: %w", err)
+	}
+
 	sql := &sql{
-		db:     db,
-		tables: sync.Map{},
+		db:          db,
+		maxIdLength: maxIdLength,
+		tables:      sync.Map{},
 	}
 	sql.tables.Store(defaultNamespace, struct{}{})
 	return sql, nil

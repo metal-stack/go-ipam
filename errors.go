@@ -13,4 +13,6 @@ var (
 	ErrOptimisticLockError = errors.New("OptimisticLockError")
 	// ErrNamespaceDoesNotExist is returned when an operation is perfomed in a namespace that does not exist.
 	ErrNamespaceDoesNotExist = errors.New("NamespaceDoesNotExist")
+	// ErrNameTooLong is returned when a name exceeds the databases max identifier length
+	ErrNameTooLong = errors.New("NameTooLong")
 )

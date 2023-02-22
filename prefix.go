@@ -543,6 +543,13 @@ func (i *ipamer) ListNamespaces(ctx context.Context) ([]string, error) {
 
 // DeleteNamespace deletes a namespace.
 func (i *ipamer) DeleteNamespace(ctx context.Context, namespace string) error {
+	prefixes, err := i.storage.ReadAllPrefixes(ctx, namespace)
+	if err != nil {
+		return err
+	}
+	if len(prefixes) > 0 {
+		return fmt.Errorf("cannot delete namespace with allocated prefixes")
+	}
 	return i.storage.DeleteNamespace(ctx, namespace)
 }
 

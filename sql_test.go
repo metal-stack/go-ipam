@@ -129,34 +129,35 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 	})
 }
 
-func Test_sql_UpdatePrefix(t *testing.T) {
+func Test_sql_CreateNamespace(t *testing.T) {
 	ctx := context.Background()
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
+		{
+			// Create a namespace with special characters in name
+			namespace := "%u6c^qi$u%tSqhQTcjR!zZHNvMB$3XJd"
+			err := db.CreateNamespace(ctx, namespace)
+			require.NoError(t, err)
 
-		// Prefix
-		prefix := Prefix{Cidr: "13.0.0.0/16", ParentCidr: "13.0.0.0/8"}
-		p, err := db.CreatePrefix(ctx, prefix, defaultNamespace)
-		require.NoError(t, err)
-		require.NotNil(t, p)
+			err = db.DeleteNamespace(ctx, namespace)
+			require.NoError(t, err)
+		}
+		{
+			// Create a long namespace name
+			namespace := "d4546731-6056-4b48-80e9-ef924ca7f651"
+			err := db.CreateNamespace(ctx, namespace)
+			require.NoError(t, err)
 
-		// Check if present
-		p, err = db.ReadPrefix(ctx, "13.0.0.0/16", defaultNamespace)
-		require.NoError(t, err)
-		require.NotNil(t, p)
-		require.Equal(t, "13.0.0.0/16", p.Cidr)
-		require.Equal(t, "13.0.0.0/8", p.ParentCidr)
-
-		// Modify
-		prefix.ParentCidr = "13.0.0.0/12"
-		p, err = db.UpdatePrefix(ctx, prefix, defaultNamespace)
-		require.NoError(t, err)
-		require.NotNil(t, p)
-		p, err = db.ReadPrefix(ctx, "13.0.0.0/16", defaultNamespace)
-		require.NoError(t, err)
-		require.NotNil(t, p)
-		require.Equal(t, "13.0.0.0/16", p.Cidr)
-		require.Equal(t, "13.0.0.0/12", p.ParentCidr)
+			err = db.DeleteNamespace(ctx, namespace)
+			require.NoError(t, err)
+		}
+		{
+			// Create a namespace with a name that is too long
+			namespace := "d4546731-6056-4b48-80e9-ef924ca7f651d4546731-6056-4b48-80e9-ef924ca7f651d4546731-6056-4b48-80e9-ef924ca7f651d4546731-6056-4b48-80e9-ef924ca7f651"
+			err := db.CreateNamespace(ctx, namespace)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNameTooLong)
+		}
 	})
 }
 

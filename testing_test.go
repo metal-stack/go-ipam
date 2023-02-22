@@ -421,7 +421,7 @@ func newMongodbWithCleanup() (*docStorage, error) {
 // cleanup database before test
 func (e *extendedSQL) cleanup() error {
 	tx := e.sql.db.MustBegin()
-	_, err := e.sql.db.Exec("TRUNCATE TABLE prefixes_root ")
+	_, err := e.sql.db.Exec("TRUNCATE TABLE prefixes")
 	if err != nil {
 		return err
 	}
@@ -441,7 +441,7 @@ func (kv *kvEtcdStorage) cleanup() error {
 // cleanup database before test
 func (sql *sql) cleanup() error {
 	tx := sql.db.MustBegin()
-	_, err := sql.db.Exec("TRUNCATE TABLE prefixes_root")
+	_, err := sql.db.Exec("TRUNCATE TABLE prefixes")
 	if err != nil {
 		return err
 	}

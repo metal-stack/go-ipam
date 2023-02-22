@@ -1542,7 +1542,7 @@ func TestIpamer_NamespacedOps(t *testing.T) {
 		require.Contains(t, ns, "testns1")
 		require.Contains(t, ns, "testns2")
 
-		// Create Prefix in NS a
+		// Create Prefix in a namespace
 		createPrefixFn := func(ctx context.Context, namespace string) {
 			ctx = NewContextWithNamespace(ctx, namespace)
 			_, err := ipam.NewPrefix(ctx, "192.168.0.0/20")
@@ -1553,9 +1553,28 @@ func TestIpamer_NamespacedOps(t *testing.T) {
 		createPrefixFn(ctx, "testns1")
 		createPrefixFn(ctx, "testns2")
 
+		deletePrefixFn := func(ctx context.Context, namespace string) {
+			ctx = NewContextWithNamespace(ctx, namespace)
+			p := ipam.PrefixFrom(ctx, "192.168.0.0/20")
+			require.NotNil(t, p)
+
+			err = ipam.ReleaseIPFromPrefix(ctx, p.Cidr, "192.168.0.2")
+			require.NoError(t, err)
+
+			_, err = ipam.DeletePrefix(ctx, p.Cidr)
+			require.NoError(t, err)
+		}
+
+		// Cannot delete namespace with allocated prefixes
+		err = ipam.DeleteNamespace(ctx, "testns1")
+		require.Error(t, err)
+
+		// Delete prefixes first, then delete namespaces
+		deletePrefixFn(ctx, "testns1")
 		err = ipam.DeleteNamespace(ctx, "testns1")
 		require.NoError(t, err)
 
+		deletePrefixFn(ctx, "testns2")
 		err = ipam.DeleteNamespace(ctx, "testns2")
 		require.NoError(t, err)
 	})
