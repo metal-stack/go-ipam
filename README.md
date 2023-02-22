@@ -168,10 +168,9 @@ BACKEND=backend make test
 
 ## TiKV
 
-https://tikv.org/docs/3.0/tasks/deploy/docker/
+[deploy with docker](https://tikv.org/docs/3.0/tasks/deploy/docker/)
 
-
-```
+```bash
 docker run -d --name pd1 \
 -p 2379:2379 \
 -p 2380:2380 \
@@ -187,7 +186,7 @@ pingcap/pd:latest \
 --initial-cluster="pd1=http://192.168.1.101:2380,pd2=http://192.168.1.102:2380,pd3=http://192.168.1.103:2380"
 ```
 
-```
+```bash
 docker run -d --name tikv1 \
 -p 20160:20160 \
 -v /etc/localtime:/etc/localtime:ro \

@@ -9,7 +9,6 @@ import (
 
 	"github.com/tikv/client-go/v2/kv"
 	"github.com/tikv/client-go/v2/txnkv"
-	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 type tikv struct {
@@ -161,21 +160,23 @@ func (t *tikv) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
 	return result, nil
 }
 func (t *tikv) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	allPrefix := []string{}
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
-	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
-	defer cancel()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
-	}
 
-	for _, pfx := range pfxs.Kvs {
-		allPrefix = append(allPrefix, string(pfx.Key))
-	}
+	// ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
+	// t.client.
+	// 	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
+	// defer cancel()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
+	// }
+
+	// for _, pfx := range pfxs.Kvs {
+	// 	allPrefix = append(allPrefix, string(pfx.Key))
+	// }
 
 	return allPrefix, nil
 }
