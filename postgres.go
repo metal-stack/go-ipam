@@ -74,7 +74,7 @@ func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*s
 }
 
 func dataSource(host, port, user, password, dbname string, sslmode SSLMode) (string, error) {
-	baseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s", user, password, host, port, dbname, sslmode)
+	baseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s", url.PathEscape(user), url.PathEscape(password), host, port, dbname, sslmode)
 	parsedURL, err := url.Parse(baseURL)
 	if err != nil {
 		return "", fmt.Errorf("%w: unable to parse base URL:%s", err, baseURL)
