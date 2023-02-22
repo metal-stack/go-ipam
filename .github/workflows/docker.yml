@@ -40,6 +40,7 @@ jobs:
         make proto
     - name: Check if there are changes
       uses: UnicornGlobal/has-changes-action@v1.0.12
+
     - name: Process changes
       if: steps.changes.outputs.changed == 1
       run: echo "Changes exist"
@@ -51,6 +52,11 @@ jobs:
     - name: Publish Codecoverage report
       run: bash <(curl -s https://codecov.io/bash)
 
+  container:
+    # TODO skip for external contributors
+    name: Build Container
+    runs-on: ubuntu-latest
+    steps:
     - name: Log in to the Container registry
       uses: docker/login-action@v2
       with:
