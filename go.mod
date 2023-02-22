@@ -1,6 +1,6 @@
 module github.com/metal-stack/go-ipam
 
-go 1.19
+go 1.20
 
 require (
 	github.com/avast/retry-go/v4 v4.3.3
