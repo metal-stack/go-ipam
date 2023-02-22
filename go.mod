@@ -1,10 +1,10 @@
 module github.com/metal-stack/go-ipam
 
-go 1.19
+go 1.20
 
 require (
 	github.com/avast/retry-go/v4 v4.3.3
-	github.com/bufbuild/connect-go v1.5.1
+	github.com/bufbuild/connect-go v1.5.2
 	github.com/bufbuild/connect-grpchealth-go v1.0.0
 	github.com/bufbuild/connect-grpcreflect-go v1.0.0
 	github.com/jmoiron/sqlx v1.3.5
@@ -13,8 +13,8 @@ require (
 	github.com/metal-stack/v v1.0.3
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/stretchr/testify v1.8.1
-	github.com/testcontainers/testcontainers-go v0.17.0
-	github.com/urfave/cli/v2 v2.24.3
+	github.com/testcontainers/testcontainers-go v0.18.0
+	github.com/urfave/cli/v2 v2.24.4
 	go.etcd.io/etcd/client/v3 v3.5.7
 	go.mongodb.org/mongo-driver v1.11.2
 	go.uber.org/zap v1.24.0
