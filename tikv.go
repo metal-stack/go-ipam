@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/netip"
 	"sync"
 	"time"
 
@@ -16,18 +17,22 @@ type tikv struct {
 	lock   sync.RWMutex
 }
 
-// NewEtcd create a etcd storage for ipam
-func NewTikv(ip, port string, cert, key []byte, insecureskip bool) Storage {
-	return newEtcd(ip, port, cert, key, insecureskip)
+// NewTikv create a tikv storage for ipam
+func NewTikv(addrs []netip.AddrPort) Storage {
+	return newTikv(addrs)
 }
 
 func (t *tikv) Name() string {
-	return "etcd"
+	return "tikv"
 }
 
-func newTikv(ip, port string) *tikv {
-	pdAddr := fmt.Sprintf("%s:%s", ip, port)
-	client, err := txnkv.NewClient([]string{pdAddr})
+func newTikv(addrs []netip.AddrPort) *tikv {
+	tikvaddrs := []string{}
+	for _, addr := range addrs {
+		tikvaddrs = append(tikvaddrs, addr.String())
+	}
+
+	client, err := txnkv.NewClient(tikvaddrs)
 	if err != nil {
 		log.Fatal(err)
 	}
