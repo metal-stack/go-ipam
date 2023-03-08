@@ -2,19 +2,19 @@ package ipam
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/netip"
-	"sync"
 	"time"
 
+	tikverr "github.com/tikv/client-go/v2/error"
 	"github.com/tikv/client-go/v2/kv"
 	"github.com/tikv/client-go/v2/txnkv"
 )
 
 type tikv struct {
 	client *txnkv.Client
-	lock   sync.RWMutex
 }
 
 // NewTikv create a tikv storage for ipam
@@ -62,12 +62,12 @@ func (t *tikv) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 		return Prefix{}, err
 	}
 
-	_, err = txn.Get(ctx, primaryKey)
-	if err != nil {
+	existing, err := txn.Get(ctx, primaryKey)
+	if err != nil && !errors.Is(err, tikverr.ErrNotExist) {
 		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
 	}
 
-	if txn.Len() != 0 {
+	if existing != nil {
 		return Prefix{}, fmt.Errorf("prefix already exists:%v", prefix)
 	}
 
@@ -101,12 +101,12 @@ func (t *tikv) ReadPrefix(ctx context.Context, prefix string) (Prefix, error) {
 	}
 
 	get, err := txn.Get(ctx, primaryKey)
-	if err != nil {
+	if err != nil && !errors.Is(err, tikverr.ErrNotExist) {
 		return Prefix{}, fmt.Errorf("unable to read data from ETCD error:%w", err)
 	}
 
-	if txn.Len() != 0 {
-		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+	if get == nil {
+		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v", prefix)
 	}
 
 	err = txn.Commit(ctx)
@@ -117,73 +117,72 @@ func (t *tikv) ReadPrefix(ctx context.Context, prefix string) (Prefix, error) {
 }
 
 func (t *tikv) DeleteAllPrefixes(ctx context.Context) error {
-	// txn := t.begin_pessimistic_txn()
-	ctx, cancel := context.WithTimeout(ctx, 50*time.Minute)
-	defer cancel()
+	txn := t.begin_pessimistic_txn()
+	iter, err := txn.Iter([]byte(""), nil)
+	if err != nil {
+		return err
+	}
+	for iter.Valid() {
+		err := txn.Delete(iter.Key())
+		if err != nil {
+			return err
+		}
+		err = iter.Next()
+		if err != nil {
+			return err
+		}
+	}
 
-	// txn.Iter()
-	// defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
-	// pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
-	// defer cancel()
-	// if err != nil {
-	// 	return fmt.Errorf("unable to get all prefix cidrs:%w", err)
-	// }
-
-	// for _, pfx := range pfxs.Kvs {
-	// 	_, err := e.etcdDB.Delete(ctx, string(pfx.Key))
-	// 	if err != nil {
-	// 		return fmt.Errorf("unable to delete prefix:%w", err)
-	// 	}
-	// }
-	return nil
+	err = txn.Commit(ctx)
+	return err
 }
 
 func (t *tikv) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
-	// e.lock.Lock()
-	// defer e.lock.Unlock()
-
-	// ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	// defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
-	// pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
-	// defer cancel()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
-	// }
+	txn := t.begin_pessimistic_txn()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	result := Prefixes{}
-	// for _, pfx := range pfxs.Kvs {
-	// 	v, err := e.etcdDB.Get(ctx, string(pfx.Key))
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	pfx, err := fromJSON(v.Kvs[0].Value)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	result = append(result, pfx)
-	// }
-	return result, nil
+	iter, err := txn.Iter([]byte(""), nil)
+	if err != nil {
+		return nil, err
+	}
+	for iter.Valid() {
+		pfx, err := fromJSON(iter.Value())
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, pfx)
+		err = iter.Next()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = txn.Commit(ctx)
+	return result, err
 }
 func (t *tikv) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
+	txn := t.begin_pessimistic_txn()
+
+	iter, err := txn.Iter([]byte(""), nil)
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
 
 	allPrefix := []string{}
+	for iter.Valid() {
+		cidr := string(iter.Key())
+		allPrefix = append(allPrefix, cidr)
+		err = iter.Next()
+		if err != nil {
+			return nil, err
+		}
+	}
 
-	// ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	// defaultOpts := []clientv3.OpOption{clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable()}
-	// t.client.
-	// 	pfxs, err := e.etcdDB.Get(ctx, "", defaultOpts...)
-	// defer cancel()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
-	// }
-
-	// for _, pfx := range pfxs.Kvs {
-	// 	allPrefix = append(allPrefix, string(pfx.Key))
-	// }
-
-	return allPrefix, nil
+	err = txn.Commit(ctx)
+	return allPrefix, err
 }
 func (t *tikv) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	txn := t.begin_pessimistic_txn()
@@ -206,12 +205,12 @@ func (t *tikv) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 	}
 
 	get, err := txn.Get(ctx, primaryKey)
-	if err != nil {
+	if err != nil && !errors.Is(err, tikverr.ErrNotExist) {
 		return Prefix{}, fmt.Errorf("unable to read data from tikv error:%w", err)
 	}
 
-	if txn.Len() == 0 {
-		return Prefix{}, fmt.Errorf("unable to get all prefix cidrs:%w", err)
+	if get == nil {
+		return Prefix{}, fmt.Errorf("unable to get prefix cidrs:%s", &prefix)
 	}
 
 	oldPrefix, err := fromJSON(get)
@@ -228,8 +227,8 @@ func (t *tikv) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to update prefix:%s, error:%w", prefix.Cidr, err)
 	}
-
-	return prefix, nil
+	err = txn.Commit(ctx)
+	return prefix, err
 }
 func (t *tikv) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
 	txn := t.begin_pessimistic_txn()
@@ -248,5 +247,6 @@ func (t *tikv) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) 
 	if err != nil {
 		return *prefix.deepCopy(), err
 	}
-	return *prefix.deepCopy(), nil
+	err = txn.Commit(ctx)
+	return *prefix.deepCopy(), err
 }
