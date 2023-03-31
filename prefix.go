@@ -469,6 +469,10 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 		isParent:               false,
 	}
 
+	// A special case: Allow the allocation of the one IP in host prefixes
+	if ipnet.IsSingleIP() {
+		return p, nil
+	}
 	// FIXME: should this be done by the user ?
 	// First ip in the prefix and broadcast is blocked.
 	p.ips[ipnet.Range().From.String()] = true
