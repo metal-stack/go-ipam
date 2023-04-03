@@ -115,7 +115,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			fields: fields{
 				prefixCIDR: "192.168.4.0/32",
 			},
-			want: &IP{IP: netip.MustParseAddr("192.168.4.0"), ParentPrefix: "192.168.4.0/32"},
+			want: &IP{IP: mustIP("192.168.4.0"), ParentPrefix: "192.168.4.0/32"},
 		},
 		{
 			name: "Want next IP, host prefix already allocated",
@@ -138,7 +138,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 			fields: fields{
 				prefixCIDR: "2001:0db8:85a3::1/128",
 			},
-			want: &IP{IP: netip.MustParseAddr("2001:0db8:85a3::1"), ParentPrefix: "2001:0db8:85a3::1/128"},
+			want: &IP{IP: mustIP("2001:0db8:85a3::1"), ParentPrefix: "2001:0db8:85a3::1/128"},
 		},
 		{
 			name: "Want next IPv6, host prefix already allocated",
@@ -281,26 +281,26 @@ func TestIpamer_AcquireSpecificIP(t *testing.T) {
 		require.Equal(t, prefix.acquiredips(), uint64(2))
 
 		// IPv4, Host prefix
-		prefix, err = ipam.NewPrefix(ctx, "192.168.98.0/32")
+		prefix, err = ipam.NewPrefix("192.168.98.0/32")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(1))
 		// No network or broadcast - no IP allocated
 		require.Equal(t, prefix.acquiredips(), uint64(0))
 		// allocate IP
-		ip1, err = ipam.AcquireSpecificIP(ctx, prefix.Cidr, "192.168.98.0")
+		ip1, err = ipam.AcquireSpecificIP(prefix.Cidr, "192.168.98.0")
 		require.Nil(t, err)
 		require.NotNil(t, ip1)
-		prefix = ipam.PrefixFrom(ctx, prefix.Cidr)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
 		require.Equal(t, prefix.availableips(), uint64(1))
 		require.Equal(t, prefix.acquiredips(), uint64(1))
 		require.Equal(t, "192.168.98.0", ip1.IP.String())
 		// IP already allocated
-		ip2, err = ipam.AcquireSpecificIP(ctx, prefix.Cidr, "192.168.98.0")
+		ip2, err = ipam.AcquireSpecificIP(prefix.Cidr, "192.168.98.0")
 		require.Nil(t, ip2)
 		require.NotNil(t, err)
 		require.Equal(t, "AlreadyAllocatedError: given ip:192.168.98.0 is already allocated", err.Error())
 
-		prefix, err = ipam.ReleaseIP(ctx, ip1)
+		prefix, err = ipam.ReleaseIP(ip1)
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(1))
 		require.Equal(t, prefix.acquiredips(), uint64(0))
@@ -351,26 +351,26 @@ func TestIpamer_AcquireSpecificIP(t *testing.T) {
 		require.Equal(t, prefix.acquiredips(), uint64(1))
 
 		// IPv6, Host prefix
-		prefix, err = ipam.NewPrefix(ctx, "2001:0db8:85a4::1/128")
+		prefix, err = ipam.NewPrefix("2001:0db8:85a4::1/128")
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(1))
 		// No network address - no IP allocated
 		require.Equal(t, prefix.acquiredips(), uint64(0))
 		// allocate IP
-		ip1, err = ipam.AcquireSpecificIP(ctx, prefix.Cidr, "2001:0db8:85a4::1")
+		ip1, err = ipam.AcquireSpecificIP(prefix.Cidr, "2001:0db8:85a4::1")
 		require.Nil(t, err)
 		require.NotNil(t, ip1)
-		prefix = ipam.PrefixFrom(ctx, prefix.Cidr)
+		prefix = ipam.PrefixFrom(prefix.Cidr)
 		require.Equal(t, prefix.availableips(), uint64(1))
 		require.Equal(t, prefix.acquiredips(), uint64(1))
 		require.Equal(t, "2001:db8:85a4::1", ip1.IP.String())
 		// IP already allocated
-		ip2, err = ipam.AcquireSpecificIP(ctx, prefix.Cidr, "2001:0db8:85a4::1")
+		ip2, err = ipam.AcquireSpecificIP(prefix.Cidr, "2001:0db8:85a4::1")
 		require.Nil(t, ip2)
 		require.NotNil(t, err)
 		require.Equal(t, "AlreadyAllocatedError: given ip:2001:db8:85a4::1 is already allocated", err.Error())
 
-		prefix, err = ipam.ReleaseIP(ctx, ip1)
+		prefix, err = ipam.ReleaseIP(ip1)
 		require.Nil(t, err)
 		require.Equal(t, prefix.availableips(), uint64(1))
 		require.Equal(t, prefix.acquiredips(), uint64(0))
