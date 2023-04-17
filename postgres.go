@@ -3,6 +3,7 @@ package ipam
 import (
 	"fmt"
 	"net/url"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 
@@ -15,7 +16,6 @@ CREATE TABLE IF NOT EXISTS prefixes (
 	cidr   text PRIMARY KEY NOT NULL,
 	prefix JSONB
 );
-
 CREATE INDEX IF NOT EXISTS prefix_idx ON prefixes USING GIN(prefix);
 `
 
@@ -63,10 +63,23 @@ func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*s
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database:%w", err)
 	}
-	db.MustExec(postgresSchema)
-	return &sql{
-		db: db,
-	}, nil
+	_, err = db.Exec(postgresSchema)
+	if err != nil {
+		return nil, fmt.Errorf("error creating tables: %w", err)
+	}
+	var maxIdLength int
+	err = db.Get(&maxIdLength, "show max_identifier_length")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get max_identifier_length: %w", err)
+	}
+
+	sql := &sql{
+		db:          db,
+		maxIdLength: maxIdLength,
+		tables:      sync.Map{},
+	}
+	sql.tables.Store(defaultNamespace, struct{}{})
+	return sql, nil
 }
 
 func dataSource(host, port, user, password, dbname string, sslmode SSLMode) (string, error) {

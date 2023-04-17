@@ -127,7 +127,7 @@ func TestIntegration(t *testing.T) {
 	require.EqualError(t, err, "prefix 10.130.36.0/22 has ips, deletion not possible")
 
 	// Read all child prefixes
-	pfxs, err := storage.ReadAllPrefixes(ctx)
+	pfxs, err := storage.ReadAllPrefixes(ctx, defaultNamespace)
 	require.NoError(t, err)
 	childPrefixCount := 0
 	for _, pfx := range pfxs {
@@ -196,7 +196,7 @@ func TestIntegrationP(t *testing.T) {
 	require.EqualError(t, err, "prefix 10.64.0.0/14 has childprefixes, acquire ip not possible")
 
 	// Read all child prefixes
-	pfxs, err := storage.ReadAllPrefixes(ctx)
+	pfxs, err := storage.ReadAllPrefixes(ctx, defaultNamespace)
 	require.NoError(t, err)
 	childPrefixesOfTenantSuper := make(map[string]bool)
 
@@ -257,7 +257,7 @@ func TestIntegrationP(t *testing.T) {
 	require.EqualError(t, err, "prefix 10.76.0.0/14 has childprefixes, acquire ip not possible")
 
 	// Read all child prefixes
-	pfxs, err = storage.ReadAllPrefixes(ctx)
+	pfxs, err = storage.ReadAllPrefixes(ctx, defaultNamespace)
 	require.NoError(t, err)
 	childPrefixesOfTenantSuper = make(map[string]bool)
 
@@ -376,7 +376,7 @@ func TestIntegrationEtcd(t *testing.T) {
 	require.EqualError(t, err, "prefix 10.76.0.0/14 has childprefixes, acquire ip not possible")
 
 	// Read all child prefixes
-	pfxs, err := storage.ReadAllPrefixes(ctx)
+	pfxs, err := storage.ReadAllPrefixes(ctx, defaultNamespace)
 	require.NoError(t, err)
 	childPrefixesOfTenantSuper := make(map[string]bool)
 

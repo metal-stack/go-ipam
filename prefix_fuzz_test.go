@@ -40,7 +40,7 @@ func FuzzIpamer_AcquireIP(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, prefixCIDR, want string) {
-		ipam := New()
+		ipam := New(ctx)
 		p, err := ipam.NewPrefix(ctx, prefixCIDR)
 
 		if err == nil {

@@ -18,7 +18,7 @@ import (
 // BenchmarkGrpcImpact located in a separate package to prevent import cycles.
 func BenchmarkGrpcImpact(b *testing.B) {
 	ctx := context.Background()
-	ipam := goipam.New()
+	ipam := goipam.New(ctx)
 
 	mux := http.NewServeMux()
 	mux.Handle(apiv1connect.NewIpamServiceHandler(

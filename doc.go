@@ -6,33 +6,32 @@ You can also bring you own Storage implementation as you need.
 
 Example usage:
 
-		import (
-			"fmt"
-			goipam "github.com/metal-stack/go-ipam"
-		)
+	import (
+		"fmt"
+		goipam "github.com/metal-stack/go-ipam"
+	)
 
 
-		func main() {
-			// create a ipamer with in memory storage
-			ipam := goipam.New()
+	func main() {
+		// create a ipamer with in memory storage
+		ipam := goipam.New()
 
-			prefix, err := ipam.NewPrefix("192.168.0.0/24")
-			if err != nil {
-				panic(err)
-			}
-
-			ip, err := ipam.AcquireIP(prefix)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("got IP: %s", ip.IP)
-
-			err = ipam.ReleaseIP(ip)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("IP: %s released.", ip.IP)
+		prefix, err := ipam.NewPrefix("192.168.0.0/24")
+		if err != nil {
+			panic(err)
 		}
 
+		ip, err := ipam.AcquireIP(prefix)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("got IP: %s", ip.IP)
+
+		err = ipam.ReleaseIP(ip)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("IP: %s released.", ip.IP)
+	}
 */
 package ipam

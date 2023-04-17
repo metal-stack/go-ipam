@@ -14,17 +14,6 @@ import (
 	"go4.org/netipx"
 )
 
-var (
-	// ErrNotFound is returned if prefix or cidr was not found
-	ErrNotFound NotFoundError
-	// ErrNoIPAvailable is returned if no IP is available anymore
-	ErrNoIPAvailable NoIPAvailableError
-	// ErrAlreadyAllocated is returned if the requested address is not available
-	ErrAlreadyAllocated AlreadyAllocatedError
-	// ErrOptimisticLockError is returned if insert or update conflicts with the existing data
-	ErrOptimisticLockError OptimisticLockError
-)
-
 // Prefix is a expression of a ip with length and forms a classless network.
 // nolint:musttag
 type Prefix struct {
@@ -57,32 +46,25 @@ func (p Prefix) deepCopy() *Prefix {
 func (p *Prefix) GobEncode() ([]byte, error) {
 	w := new(bytes.Buffer)
 	encoder := gob.NewEncoder(w)
-	err := encoder.Encode(p.availableChildPrefixes)
-	if err != nil {
+	if err := encoder.Encode(p.availableChildPrefixes); err != nil {
 		return nil, err
 	}
-	err = encoder.Encode(p.childPrefixLength)
-	if err != nil {
+	if err := encoder.Encode(p.childPrefixLength); err != nil {
 		return nil, err
 	}
-	err = encoder.Encode(p.isParent)
-	if err != nil {
+	if err := encoder.Encode(p.isParent); err != nil {
 		return nil, err
 	}
-	err = encoder.Encode(p.ips)
-	if err != nil {
+	if err := encoder.Encode(p.ips); err != nil {
 		return nil, err
 	}
-	err = encoder.Encode(p.version)
-	if err != nil {
+	if err := encoder.Encode(p.version); err != nil {
 		return nil, err
 	}
-	err = encoder.Encode(p.Cidr)
-	if err != nil {
+	if err := encoder.Encode(p.Cidr); err != nil {
 		return nil, err
 	}
-	err = encoder.Encode(p.ParentCidr)
-	if err != nil {
+	if err := encoder.Encode(p.ParentCidr); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
@@ -92,28 +74,22 @@ func (p *Prefix) GobEncode() ([]byte, error) {
 func (p *Prefix) GobDecode(buf []byte) error {
 	r := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(r)
-	err := decoder.Decode(&p.availableChildPrefixes)
-	if err != nil {
+	if err := decoder.Decode(&p.availableChildPrefixes); err != nil {
 		return err
 	}
-	err = decoder.Decode(&p.childPrefixLength)
-	if err != nil {
+	if err := decoder.Decode(&p.childPrefixLength); err != nil {
 		return err
 	}
-	err = decoder.Decode(&p.isParent)
-	if err != nil {
+	if err := decoder.Decode(&p.isParent); err != nil {
 		return err
 	}
-	err = decoder.Decode(&p.ips)
-	if err != nil {
+	if err := decoder.Decode(&p.ips); err != nil {
 		return err
 	}
-	err = decoder.Decode(&p.version)
-	if err != nil {
+	if err := decoder.Decode(&p.version); err != nil {
 		return err
 	}
-	err = decoder.Decode(&p.Cidr)
-	if err != nil {
+	if err := decoder.Decode(&p.Cidr); err != nil {
 		return err
 	}
 	return decoder.Decode(&p.ParentCidr)
@@ -146,7 +122,8 @@ type Usage struct {
 func (i *ipamer) NewPrefix(ctx context.Context, cidr string) (*Prefix, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	existingPrefixes, err := i.storage.ReadAllPrefixCidrs(ctx)
+	namespace := namespaceFromContext(ctx)
+	existingPrefixes, err := i.storage.ReadAllPrefixCidrs(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +135,7 @@ func (i *ipamer) NewPrefix(ctx context.Context, cidr string) (*Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	newPrefix, err := i.storage.CreatePrefix(ctx, *p)
+	newPrefix, err := i.storage.CreatePrefix(ctx, *p, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +144,7 @@ func (i *ipamer) NewPrefix(ctx context.Context, cidr string) (*Prefix, error) {
 }
 
 func (i *ipamer) DeletePrefix(ctx context.Context, cidr string) (*Prefix, error) {
+	namespace := namespaceFromContext(ctx)
 	p := i.PrefixFrom(ctx, cidr)
 	if p == nil {
 		return nil, fmt.Errorf("%w: delete prefix:%s", ErrNotFound, cidr)
@@ -174,7 +152,7 @@ func (i *ipamer) DeletePrefix(ctx context.Context, cidr string) (*Prefix, error)
 	if p.hasIPs() {
 		return nil, fmt.Errorf("prefix %s has ips, delete prefix not possible", p.Cidr)
 	}
-	prefix, err := i.storage.DeletePrefix(ctx, *p)
+	prefix, err := i.storage.DeletePrefix(ctx, *p, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("delete prefix:%s %w", cidr, err)
 	}
@@ -183,25 +161,27 @@ func (i *ipamer) DeletePrefix(ctx context.Context, cidr string) (*Prefix, error)
 }
 
 func (i *ipamer) AcquireChildPrefix(ctx context.Context, parentCidr string, length uint8) (*Prefix, error) {
+	namespace := namespaceFromContext(ctx)
 	var prefix *Prefix
 	return prefix, retryOnOptimisticLock(func() error {
 		var err error
-		prefix, err = i.acquireChildPrefixInternal(ctx, parentCidr, "", int(length))
+		prefix, err = i.acquireChildPrefixInternal(ctx, namespace, parentCidr, "", int(length))
 		return err
 	})
 }
 
 func (i *ipamer) AcquireSpecificChildPrefix(ctx context.Context, parentCidr, childCidr string) (*Prefix, error) {
+	namespace := namespaceFromContext(ctx)
 	var prefix *Prefix
 	return prefix, retryOnOptimisticLock(func() error {
 		var err error
-		prefix, err = i.acquireChildPrefixInternal(ctx, parentCidr, childCidr, 0)
+		prefix, err = i.acquireChildPrefixInternal(ctx, namespace, parentCidr, childCidr, 0)
 		return err
 	})
 }
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
-func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, parentCidr, childCidr string, length int) (*Prefix, error) {
+func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, namespace, parentCidr, childCidr string, length int) (*Prefix, error) {
 	specificChildRequest := childCidr != ""
 	var childprefix netip.Prefix
 	parent := i.PrefixFrom(ctx, parentCidr)
@@ -281,7 +261,7 @@ func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, parentCidr, chi
 	parent.availableChildPrefixes[child.Cidr] = false
 	parent.isParent = true
 
-	_, err = i.storage.UpdatePrefix(ctx, *parent)
+	_, err = i.storage.UpdatePrefix(ctx, *parent, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update parent prefix:%v error:%w", parent, err)
 	}
@@ -289,7 +269,7 @@ func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, parentCidr, chi
 	if err != nil {
 		return nil, fmt.Errorf("unable to persist created child:%w", err)
 	}
-	_, err = i.storage.CreatePrefix(ctx, *child)
+	_, err = i.storage.CreatePrefix(ctx, *child, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update parent prefix:%v error:%w", child, err)
 	}
@@ -298,13 +278,14 @@ func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, parentCidr, chi
 }
 
 func (i *ipamer) ReleaseChildPrefix(ctx context.Context, child *Prefix) error {
+	namespace := namespaceFromContext(ctx)
 	return retryOnOptimisticLock(func() error {
-		return i.releaseChildPrefixInternal(ctx, child)
+		return i.releaseChildPrefixInternal(ctx, namespace, child)
 	})
 }
 
 // releaseChildPrefixInternal will mark this child Prefix as available again.
-func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, child *Prefix) error {
+func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace string, child *Prefix) error {
 	parent := i.PrefixFrom(ctx, child.ParentCidr)
 
 	if parent == nil {
@@ -319,7 +300,7 @@ func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, child *Prefix) 
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%w", child, err)
 	}
-	_, err = i.storage.UpdatePrefix(ctx, *parent)
+	_, err = i.storage.UpdatePrefix(ctx, *parent, namespace)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%w", child, err)
 	}
@@ -327,11 +308,12 @@ func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, child *Prefix) 
 }
 
 func (i *ipamer) PrefixFrom(ctx context.Context, cidr string) *Prefix {
+	namespace := namespaceFromContext(ctx)
 	ipprefix, err := netip.ParsePrefix(cidr)
 	if err != nil {
 		return nil
 	}
-	prefix, err := i.storage.ReadPrefix(ctx, ipprefix.Masked().String())
+	prefix, err := i.storage.ReadPrefix(ctx, ipprefix.Masked().String(), namespace)
 	if err != nil {
 		return nil
 	}
@@ -339,10 +321,11 @@ func (i *ipamer) PrefixFrom(ctx context.Context, cidr string) *Prefix {
 }
 
 func (i *ipamer) AcquireSpecificIP(ctx context.Context, prefixCidr, specificIP string) (*IP, error) {
+	namespace := namespaceFromContext(ctx)
 	var ip *IP
 	return ip, retryOnOptimisticLock(func() error {
 		var err error
-		ip, err = i.acquireSpecificIPInternal(ctx, prefixCidr, specificIP)
+		ip, err = i.acquireSpecificIPInternal(ctx, namespace, prefixCidr, specificIP)
 		return err
 	})
 }
@@ -351,7 +334,7 @@ func (i *ipamer) AcquireSpecificIP(ctx context.Context, prefixCidr, specificIP s
 // If specificIP is empty, the next free IP is returned.
 // If there is no free IP an NoIPAvailableError is returned.
 // If the Prefix is not found an NotFoundError is returned.
-func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, prefixCidr, specificIP string) (*IP, error) {
+func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, namespace, prefixCidr, specificIP string) (*IP, error) {
 	prefix := i.PrefixFrom(ctx, prefixCidr)
 	if prefix == nil {
 		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
@@ -392,7 +375,7 @@ func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, prefixCidr, spec
 				ParentPrefix: prefix.Cidr,
 			}
 			prefix.ips[ipstring] = true
-			_, err := i.storage.UpdatePrefix(ctx, *prefix)
+			_, err := i.storage.UpdatePrefix(ctx, *prefix, namespace)
 			if err != nil {
 				return nil, fmt.Errorf("unable to persist acquired ip:%v error:%w", prefix, err)
 			}
@@ -414,13 +397,14 @@ func (i *ipamer) ReleaseIP(ctx context.Context, ip *IP) (*Prefix, error) {
 }
 
 func (i *ipamer) ReleaseIPFromPrefix(ctx context.Context, prefixCidr, ip string) error {
+	namespace := namespaceFromContext(ctx)
 	return retryOnOptimisticLock(func() error {
-		return i.releaseIPFromPrefixInternal(ctx, prefixCidr, ip)
+		return i.releaseIPFromPrefixInternal(ctx, namespace, prefixCidr, ip)
 	})
 }
 
 // releaseIPFromPrefixInternal will release the given IP for later usage.
-func (i *ipamer) releaseIPFromPrefixInternal(ctx context.Context, prefixCidr, ip string) error {
+func (i *ipamer) releaseIPFromPrefixInternal(ctx context.Context, namespace, prefixCidr, ip string) error {
 	prefix := i.PrefixFrom(ctx, prefixCidr)
 	if prefix == nil {
 		return fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
@@ -430,7 +414,7 @@ func (i *ipamer) releaseIPFromPrefixInternal(ctx context.Context, prefixCidr, ip
 		return fmt.Errorf("%w: unable to release ip:%s because it is not allocated in prefix:%s", ErrNotFound, ip, prefixCidr)
 	}
 	delete(prefix.ips, ip)
-	_, err := i.storage.UpdatePrefix(ctx, *prefix)
+	_, err := i.storage.UpdatePrefix(ctx, *prefix, namespace)
 	if err != nil {
 		return fmt.Errorf("unable to release ip %v:%w", ip, err)
 	}
@@ -493,7 +477,11 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 }
 
 func (i *ipamer) Dump(ctx context.Context) (string, error) {
-	pfxs, err := i.storage.ReadAllPrefixes(ctx)
+	return i.NamespacedDump(ctx, defaultNamespace)
+}
+
+func (i *ipamer) NamespacedDump(ctx context.Context, namespace string) (string, error) {
+	pfxs, err := i.storage.ReadAllPrefixes(ctx, namespace)
 	if err != nil {
 		return "", err
 	}
@@ -505,7 +493,11 @@ func (i *ipamer) Dump(ctx context.Context) (string, error) {
 }
 
 func (i *ipamer) Load(ctx context.Context, dump string) error {
-	existingpfxs, err := i.storage.ReadAllPrefixes(ctx)
+	return i.NamespacedLoad(ctx, defaultNamespace, dump)
+}
+
+func (i *ipamer) NamespacedLoad(ctx context.Context, namespace, dump string) error {
+	existingpfxs, err := i.storage.ReadAllPrefixes(ctx, namespace)
 	if err != nil {
 		return err
 	}
@@ -516,12 +508,12 @@ func (i *ipamer) Load(ctx context.Context, dump string) error {
 	if err != nil {
 		return err
 	}
-	err = i.storage.DeleteAllPrefixes(ctx)
+	err = i.storage.DeleteAllPrefixes(ctx, namespace)
 	if err != nil {
 		return err
 	}
 	for _, pfx := range pfxs {
-		_, err = i.storage.CreatePrefix(ctx, pfx)
+		_, err = i.storage.CreatePrefix(ctx, pfx, namespace)
 		if err != nil {
 			return err
 		}
@@ -531,7 +523,34 @@ func (i *ipamer) Load(ctx context.Context, dump string) error {
 
 // ReadAllPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
 func (i *ipamer) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
-	return i.storage.ReadAllPrefixCidrs(ctx)
+	return i.ReadAllNamespacedPrefixCidrs(ctx, defaultNamespace)
+}
+
+// ReadAllNamespacedPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
+func (i *ipamer) ReadAllNamespacedPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
+	return i.storage.ReadAllPrefixCidrs(ctx, namespace)
+}
+
+// CreateNamespaces creates a namespace with the given name.
+func (i *ipamer) CreateNamespace(ctx context.Context, namespace string) error {
+	return i.storage.CreateNamespace(ctx, namespace)
+}
+
+// ListNamespaces returns a list of all namespaces.
+func (i *ipamer) ListNamespaces(ctx context.Context) ([]string, error) {
+	return i.storage.ListNamespaces(ctx)
+}
+
+// DeleteNamespace deletes a namespace.
+func (i *ipamer) DeleteNamespace(ctx context.Context, namespace string) error {
+	prefixes, err := i.storage.ReadAllPrefixes(ctx, namespace)
+	if err != nil {
+		return err
+	}
+	if len(prefixes) > 0 {
+		return fmt.Errorf("cannot delete namespace with allocated prefixes")
+	}
+	return i.storage.DeleteNamespace(ctx, namespace)
 }
 
 func (p *Prefix) String() string {
@@ -651,40 +670,6 @@ func (p *Prefix) Usage() Usage {
 	}
 }
 
-// NoIPAvailableError indicates that the acquire-operation could not be executed
-// because the specified prefix has no free IP anymore.
-type NoIPAvailableError struct {
-}
-
-func (o NoIPAvailableError) Error() string {
-	return "NoIPAvailableError"
-}
-
-// NotFoundError is raised if the given Prefix or Cidr was not found
-type NotFoundError struct {
-}
-
-func (o NotFoundError) Error() string {
-	return "NotFound"
-}
-
-// OptimisticLockError indicates that the operation could not be executed because the dataset to update has changed in the meantime.
-// clients can decide to read the current dataset and retry the operation.
-type OptimisticLockError struct {
-}
-
-func (o OptimisticLockError) Error() string {
-	return "OptimisticLockError"
-}
-
-// AlreadyAllocatedError is raised if the given address is already in use
-type AlreadyAllocatedError struct {
-}
-
-func (o AlreadyAllocatedError) Error() string {
-	return "AlreadyAllocatedError"
-}
-
 // retries the given function if the reported error is an OptimisticLockError
 // with ten attempts and jitter delay ~100ms
 // returns only error of last failed attempt
@@ -698,4 +683,15 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 		retry.Attempts(10),
 		retry.DelayType(retry.CombineDelay(retry.BackOffDelay, retry.RandomDelay)),
 		retry.LastErrorOnly(true))
+}
+
+func namespaceFromContext(ctx context.Context) string {
+	raw := ctx.Value(namespaceContextKey{})
+	if raw == nil {
+		return defaultNamespace
+	}
+	if ns, ok := raw.(string); ok {
+		return ns
+	}
+	return defaultNamespace
 }

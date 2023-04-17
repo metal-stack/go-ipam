@@ -11,18 +11,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const dbIndex = `prefix.cidr`
+const dbCidr = `prefix.cidr`
 const versionKey = `version`
 
 type MongoConfig struct {
 	DatabaseName       string
-	CollectionName     string
 	MongoClientOptions *options.ClientOptions
 }
 
 type mongodb struct {
-	c    *mongo.Collection
-	lock sync.RWMutex
+	db         *mongo.Database
+	namespaces map[string]struct{}
+	lock       sync.RWMutex
 }
 
 func NewMongo(ctx context.Context, config MongoConfig) (Storage, error) {
@@ -48,24 +48,47 @@ func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 		return nil, err
 	}
 
-	c := m.Database(config.DatabaseName).Collection(config.CollectionName)
-
-	_, err = c.Indexes().CreateMany(ctx, []mongo.IndexModel{{
-		Keys:    bson.M{dbIndex: 1},
-		Options: options.Index().SetUnique(true),
-	}})
-	if err != nil {
+	db := &mongodb{
+		db:         m.Database(config.DatabaseName),
+		namespaces: make(map[string]struct{}),
+		lock:       sync.RWMutex{}}
+	if err := db.CreateNamespace(ctx, defaultNamespace); err != nil {
 		return nil, err
 	}
-	return &mongodb{c, sync.RWMutex{}}, nil
+	return db, nil
 }
 
-func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (m *mongodb) checkNamespaceExists(ctx context.Context, namespace string) error {
+	if _, ok := m.namespaces[namespace]; ok {
+		return nil
+	}
+
+	r, err := m.db.ListCollectionNames(ctx, bson.D{})
+	if err != nil {
+		return ErrNotFound
+	}
+
+	for _, ns := range r {
+		m.namespaces[ns] = struct{}{}
+	}
+
+	if _, ok := m.namespaces[namespace]; !ok {
+		return ErrNamespaceDoesNotExist
+	}
+
+	return nil
+}
+
+func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}}
-	r := m.c.FindOne(ctx, f)
+	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
+		return Prefix{}, err
+	}
+
+	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}}
+	r := m.db.Collection(namespace).FindOne(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() == nil {
@@ -74,7 +97,7 @@ func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, erro
 		return Prefix{}, fmt.Errorf("unable to insert prefix:%s, error:%w", prefix.Cidr, r.Err())
 	} // ErrNoDocuments should pass through this block
 
-	_, err := m.c.InsertOne(ctx, prefix.toPrefixJSON())
+	_, err := m.db.Collection(namespace).InsertOne(ctx, prefix.toPrefixJSON())
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to insert prefix:%s, error:%w", prefix.Cidr, err)
 	}
@@ -82,12 +105,16 @@ func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix) (Prefix, erro
 	return prefix, nil
 }
 
-func (m *mongodb) ReadPrefix(ctx context.Context, prefix string) (Prefix, error) {
+func (m *mongodb) ReadPrefix(ctx context.Context, prefix string, namespace string) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{Key: dbIndex, Value: prefix}}
-	r := m.c.FindOne(ctx, f)
+	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
+		return Prefix{}, err
+	}
+
+	f := bson.D{{Key: dbCidr, Value: prefix}}
+	r := m.db.Collection(namespace).FindOne(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() != nil && errors.Is(r.Err(), mongo.ErrNoDocuments) {
@@ -104,24 +131,32 @@ func (m *mongodb) ReadPrefix(ctx context.Context, prefix string) (Prefix, error)
 	return j.toPrefix(), nil
 }
 
-func (m *mongodb) DeleteAllPrefixes(ctx context.Context) error {
+func (m *mongodb) DeleteAllPrefixes(ctx context.Context, namespace string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{}} // match all documents
-	_, err := m.c.DeleteMany(ctx, f)
+	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
+		return err
+	}
+
+	f := bson.D{}
+	_, err := m.db.Collection(namespace).DeleteMany(ctx, f)
 	if err != nil {
 		return fmt.Errorf(`error deleting all prefixes: %w`, err)
 	}
 	return nil
 }
 
-func (m *mongodb) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
+func (m *mongodb) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{}} // match all documents
-	c, err := m.c.Find(ctx, f)
+	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
+		return nil, err
+	}
+
+	f := bson.D{} // match all documents
+	c, err := m.db.Collection(namespace).Find(ctx, f)
 	if err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
 	}
@@ -138,8 +173,34 @@ func (m *mongodb) ReadAllPrefixes(ctx context.Context) (Prefixes, error) {
 	return s, nil
 }
 
-func (m *mongodb) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
-	p, err := m.ReadAllPrefixes(ctx)
+func (m *mongodb) ReadPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
+		return nil, err
+	}
+
+	f := bson.D{} // match all documents
+	c, err := m.db.Collection(namespace).Find(ctx, f)
+	if err != nil {
+		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
+	}
+	var r []prefixJSON
+	if err := c.All(ctx, &r); err != nil {
+		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
+	}
+
+	var s = make([]Prefix, len(r))
+	for i, v := range r {
+		s[i] = v.toPrefix()
+	}
+
+	return s, nil
+}
+
+func (m *mongodb) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
+	p, err := m.ReadAllPrefixes(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -150,17 +211,21 @@ func (m *mongodb) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
 	return s, nil
 }
 
-func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
+	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
+		return Prefix{}, err
+	}
 
 	oldVersion := prefix.version
 	prefix.version = oldVersion + 1
 
-	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}, {Key: versionKey, Value: oldVersion}}
+	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: versionKey, Value: oldVersion}}
 
 	o := options.Replace().SetUpsert(false)
-	r, err := m.c.ReplaceOne(ctx, f, prefix.toPrefixJSON(), o)
+	r, err := m.db.Collection(namespace).ReplaceOne(ctx, f, prefix.toPrefixJSON(), o)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to update prefix:%s, error: %w", prefix.Cidr, err)
 	}
@@ -175,12 +240,16 @@ func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix) (Prefix, erro
 	return prefix, nil
 }
 
-func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, error) {
+func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	f := bson.D{{Key: dbIndex, Value: prefix.Cidr}}
-	r := m.c.FindOneAndDelete(ctx, f)
+	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
+		return Prefix{}, err
+	}
+
+	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}}
+	r := m.db.Collection(namespace).FindOneAndDelete(ctx, f)
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() != nil && errors.Is(r.Err(), mongo.ErrNoDocuments) {
@@ -195,4 +264,50 @@ func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix) (Prefix, erro
 		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
 	return j.toPrefix(), nil
+}
+
+func (m *mongodb) CreateNamespace(ctx context.Context, namespace string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if _, ok := m.namespaces[namespace]; ok {
+		return nil
+	}
+
+	if err := m.db.CreateCollection(ctx, namespace); err != nil {
+		var e mongo.CommandError
+		if errors.As(err, &e) && e.Name == "NamespaceExists" {
+			return nil
+		}
+		return err
+	}
+	_, err := m.db.Collection(namespace).Indexes().CreateMany(ctx, []mongo.IndexModel{{
+		Keys:    bson.D{{Key: dbCidr, Value: 1}},
+		Options: options.Index().SetUnique(true),
+	}})
+	m.namespaces[namespace] = struct{}{}
+	return err
+}
+
+func (m *mongodb) ListNamespaces(ctx context.Context) ([]string, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	r, err := m.db.ListCollectionNames(ctx, bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	// update our cache
+	for _, ns := range r {
+		m.namespaces[ns] = struct{}{}
+	}
+	return r, nil
+}
+
+func (m *mongodb) DeleteNamespace(ctx context.Context, namespace string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
+		return err
+	}
+	return m.db.Collection(namespace).Drop(ctx)
 }

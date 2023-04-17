@@ -7,6 +7,7 @@ import (
 
 type prefixJSON struct {
 	Prefix
+	Namespace              string
 	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
 	// TODO remove this in the next release
 	ChildPrefixLength int             // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.

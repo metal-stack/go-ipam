@@ -41,7 +41,7 @@ func main() {
 				Usage:   "start with memory backend",
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
-					c.Storage = goipam.NewMemory()
+					c.Storage = goipam.NewMemory(ctx.Context)
 					s := newServer(c)
 					return s.Run()
 				},
@@ -126,7 +126,11 @@ func main() {
 					c := getConfig(ctx)
 					host := ctx.String("host")
 					port := ctx.String("port")
-					c.Storage = goipam.NewRedis(host, port)
+					var err error
+					c.Storage, err = goipam.NewRedis(ctx.Context, host, port)
+					if err != nil {
+						return err
+					}
 
 					s := newServer(c)
 					return s.Run()
@@ -183,7 +187,10 @@ func main() {
 					}
 					insecureSkip := ctx.Bool("insecure-skip-verify")
 
-					c.Storage = goipam.NewEtcd(host, port, cert, key, insecureSkip)
+					c.Storage, err = goipam.NewEtcd(ctx.Context, host, port, cert, key, insecureSkip)
+					if err != nil {
+						return err
+					}
 					s := newServer(c)
 					return s.Run()
 				},
@@ -236,7 +243,6 @@ func main() {
 					user := ctx.String("user")
 					password := ctx.String("password")
 					dbname := ctx.String("db-name")
-					collectionname := ctx.String("collection-name")
 
 					opts := options.Client()
 					opts.ApplyURI(fmt.Sprintf(`mongodb://%s:%s`, host, port))
@@ -248,7 +254,6 @@ func main() {
 
 					mongocfg := goipam.MongoConfig{
 						DatabaseName:       dbname,
-						CollectionName:     collectionname,
 						MongoClientOptions: opts,
 					}
 					db, err := goipam.NewMongo(context.Background(), mongocfg)

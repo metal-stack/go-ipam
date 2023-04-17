@@ -16,6 +16,9 @@ service IpamService {
   rpc ReleaseIP(ReleaseIPRequest) returns (ReleaseIPResponse);
   rpc Dump(DumpRequest) returns (DumpResponse);
   rpc Load(LoadRequest) returns (LoadResponse);
+  rpc CreateNamespace(CreateNamespaceRequest) returns (CreateNamespaceResponse);
+  rpc ListNamespaces(ListNamespacesRequest) returns (ListNamespacesResponse);
+  rpc DeleteNamespace(DeleteNamespaceRequest) returns (DeleteNamespaceResponse);
 }
 
 message Prefix {
@@ -39,20 +42,26 @@ message ReleaseChildPrefixResponse {
 }
 message CreatePrefixRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
 message DeletePrefixRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
 message GetPrefixRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
-message ListPrefixesRequest {}
+message ListPrefixesRequest {
+  optional string namespace = 1;
+}
 message ListPrefixesResponse {
   repeated Prefix prefixes = 1;
 }
 
 message PrefixUsageRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
 
 message PrefixUsageResponse {
@@ -74,9 +83,11 @@ message AcquireChildPrefixRequest {
   string cidr = 1;
   uint32 length = 2;
   optional string child_cidr = 3;
+  optional string namespace = 4;
 }
 message ReleaseChildPrefixRequest {
   string cidr = 1;
+  optional string namespace = 2;
 }
 
 message IP {
@@ -85,6 +96,7 @@ message IP {
 }
 message AcquireIPResponse {
   IP ip = 1;
+  optional string namespace = 2;
 }
 message ReleaseIPResponse {
   IP ip = 1;
@@ -92,16 +104,40 @@ message ReleaseIPResponse {
 message AcquireIPRequest {
   string prefix_cidr = 1;
   optional string ip = 2;
+  optional string namespace = 3;
 }
 message ReleaseIPRequest {
   string prefix_cidr = 1;
   string ip = 2;
+  optional string namespace = 3;
 }
-message DumpRequest {}
+message DumpRequest {
+  optional string namespace = 1;
+}
 message DumpResponse {
   string dump = 1;
 }
 message LoadRequest {
   string dump = 1;
+  optional string namespace = 2;
 }
+
 message LoadResponse {}
+
+message CreateNamespaceRequest {
+  string namespace = 1;
+}
+
+message CreateNamespaceResponse {}
+
+message ListNamespacesRequest {}
+
+message ListNamespacesResponse {
+  repeated string namespace = 1;
+}
+
+message DeleteNamespaceRequest {
+  string namespace = 1;
+}
+
+message DeleteNamespaceResponse {}
