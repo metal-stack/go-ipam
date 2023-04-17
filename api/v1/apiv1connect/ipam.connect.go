@@ -25,6 +25,52 @@ const (
 	IpamServiceName = "api.v1.IpamService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// IpamServiceCreatePrefixProcedure is the fully-qualified name of the IpamService's CreatePrefix
+	// RPC.
+	IpamServiceCreatePrefixProcedure = "/api.v1.IpamService/CreatePrefix"
+	// IpamServiceDeletePrefixProcedure is the fully-qualified name of the IpamService's DeletePrefix
+	// RPC.
+	IpamServiceDeletePrefixProcedure = "/api.v1.IpamService/DeletePrefix"
+	// IpamServiceGetPrefixProcedure is the fully-qualified name of the IpamService's GetPrefix RPC.
+	IpamServiceGetPrefixProcedure = "/api.v1.IpamService/GetPrefix"
+	// IpamServiceListPrefixesProcedure is the fully-qualified name of the IpamService's ListPrefixes
+	// RPC.
+	IpamServiceListPrefixesProcedure = "/api.v1.IpamService/ListPrefixes"
+	// IpamServicePrefixUsageProcedure is the fully-qualified name of the IpamService's PrefixUsage RPC.
+	IpamServicePrefixUsageProcedure = "/api.v1.IpamService/PrefixUsage"
+	// IpamServiceAcquireChildPrefixProcedure is the fully-qualified name of the IpamService's
+	// AcquireChildPrefix RPC.
+	IpamServiceAcquireChildPrefixProcedure = "/api.v1.IpamService/AcquireChildPrefix"
+	// IpamServiceReleaseChildPrefixProcedure is the fully-qualified name of the IpamService's
+	// ReleaseChildPrefix RPC.
+	IpamServiceReleaseChildPrefixProcedure = "/api.v1.IpamService/ReleaseChildPrefix"
+	// IpamServiceAcquireIPProcedure is the fully-qualified name of the IpamService's AcquireIP RPC.
+	IpamServiceAcquireIPProcedure = "/api.v1.IpamService/AcquireIP"
+	// IpamServiceReleaseIPProcedure is the fully-qualified name of the IpamService's ReleaseIP RPC.
+	IpamServiceReleaseIPProcedure = "/api.v1.IpamService/ReleaseIP"
+	// IpamServiceDumpProcedure is the fully-qualified name of the IpamService's Dump RPC.
+	IpamServiceDumpProcedure = "/api.v1.IpamService/Dump"
+	// IpamServiceLoadProcedure is the fully-qualified name of the IpamService's Load RPC.
+	IpamServiceLoadProcedure = "/api.v1.IpamService/Load"
+	// IpamServiceCreateNamespaceProcedure is the fully-qualified name of the IpamService's
+	// CreateNamespace RPC.
+	IpamServiceCreateNamespaceProcedure = "/api.v1.IpamService/CreateNamespace"
+	// IpamServiceListNamespacesProcedure is the fully-qualified name of the IpamService's
+	// ListNamespaces RPC.
+	IpamServiceListNamespacesProcedure = "/api.v1.IpamService/ListNamespaces"
+	// IpamServiceDeleteNamespaceProcedure is the fully-qualified name of the IpamService's
+	// DeleteNamespace RPC.
+	IpamServiceDeleteNamespaceProcedure = "/api.v1.IpamService/DeleteNamespace"
+)
+
 // IpamServiceClient is a client for the api.v1.IpamService service.
 type IpamServiceClient interface {
 	CreatePrefix(context.Context, *connect_go.Request[v1.CreatePrefixRequest]) (*connect_go.Response[v1.CreatePrefixResponse], error)
@@ -55,72 +101,72 @@ func NewIpamServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 	return &ipamServiceClient{
 		createPrefix: connect_go.NewClient[v1.CreatePrefixRequest, v1.CreatePrefixResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/CreatePrefix",
+			baseURL+IpamServiceCreatePrefixProcedure,
 			opts...,
 		),
 		deletePrefix: connect_go.NewClient[v1.DeletePrefixRequest, v1.DeletePrefixResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/DeletePrefix",
+			baseURL+IpamServiceDeletePrefixProcedure,
 			opts...,
 		),
 		getPrefix: connect_go.NewClient[v1.GetPrefixRequest, v1.GetPrefixResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/GetPrefix",
+			baseURL+IpamServiceGetPrefixProcedure,
 			opts...,
 		),
 		listPrefixes: connect_go.NewClient[v1.ListPrefixesRequest, v1.ListPrefixesResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/ListPrefixes",
+			baseURL+IpamServiceListPrefixesProcedure,
 			opts...,
 		),
 		prefixUsage: connect_go.NewClient[v1.PrefixUsageRequest, v1.PrefixUsageResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/PrefixUsage",
+			baseURL+IpamServicePrefixUsageProcedure,
 			opts...,
 		),
 		acquireChildPrefix: connect_go.NewClient[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/AcquireChildPrefix",
+			baseURL+IpamServiceAcquireChildPrefixProcedure,
 			opts...,
 		),
 		releaseChildPrefix: connect_go.NewClient[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/ReleaseChildPrefix",
+			baseURL+IpamServiceReleaseChildPrefixProcedure,
 			opts...,
 		),
 		acquireIP: connect_go.NewClient[v1.AcquireIPRequest, v1.AcquireIPResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/AcquireIP",
+			baseURL+IpamServiceAcquireIPProcedure,
 			opts...,
 		),
 		releaseIP: connect_go.NewClient[v1.ReleaseIPRequest, v1.ReleaseIPResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/ReleaseIP",
+			baseURL+IpamServiceReleaseIPProcedure,
 			opts...,
 		),
 		dump: connect_go.NewClient[v1.DumpRequest, v1.DumpResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/Dump",
+			baseURL+IpamServiceDumpProcedure,
 			opts...,
 		),
 		load: connect_go.NewClient[v1.LoadRequest, v1.LoadResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/Load",
+			baseURL+IpamServiceLoadProcedure,
 			opts...,
 		),
 		createNamespace: connect_go.NewClient[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/CreateNamespace",
+			baseURL+IpamServiceCreateNamespaceProcedure,
 			opts...,
 		),
 		listNamespaces: connect_go.NewClient[v1.ListNamespacesRequest, v1.ListNamespacesResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/ListNamespaces",
+			baseURL+IpamServiceListNamespacesProcedure,
 			opts...,
 		),
 		deleteNamespace: connect_go.NewClient[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse](
 			httpClient,
-			baseURL+"/api.v1.IpamService/DeleteNamespace",
+			baseURL+IpamServiceDeleteNamespaceProcedure,
 			opts...,
 		),
 	}
@@ -239,73 +285,73 @@ type IpamServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/api.v1.IpamService/CreatePrefix", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/CreatePrefix",
+	mux.Handle(IpamServiceCreatePrefixProcedure, connect_go.NewUnaryHandler(
+		IpamServiceCreatePrefixProcedure,
 		svc.CreatePrefix,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/DeletePrefix", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/DeletePrefix",
+	mux.Handle(IpamServiceDeletePrefixProcedure, connect_go.NewUnaryHandler(
+		IpamServiceDeletePrefixProcedure,
 		svc.DeletePrefix,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/GetPrefix", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/GetPrefix",
+	mux.Handle(IpamServiceGetPrefixProcedure, connect_go.NewUnaryHandler(
+		IpamServiceGetPrefixProcedure,
 		svc.GetPrefix,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/ListPrefixes", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/ListPrefixes",
+	mux.Handle(IpamServiceListPrefixesProcedure, connect_go.NewUnaryHandler(
+		IpamServiceListPrefixesProcedure,
 		svc.ListPrefixes,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/PrefixUsage", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/PrefixUsage",
+	mux.Handle(IpamServicePrefixUsageProcedure, connect_go.NewUnaryHandler(
+		IpamServicePrefixUsageProcedure,
 		svc.PrefixUsage,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/AcquireChildPrefix", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/AcquireChildPrefix",
+	mux.Handle(IpamServiceAcquireChildPrefixProcedure, connect_go.NewUnaryHandler(
+		IpamServiceAcquireChildPrefixProcedure,
 		svc.AcquireChildPrefix,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/ReleaseChildPrefix", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/ReleaseChildPrefix",
+	mux.Handle(IpamServiceReleaseChildPrefixProcedure, connect_go.NewUnaryHandler(
+		IpamServiceReleaseChildPrefixProcedure,
 		svc.ReleaseChildPrefix,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/AcquireIP", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/AcquireIP",
+	mux.Handle(IpamServiceAcquireIPProcedure, connect_go.NewUnaryHandler(
+		IpamServiceAcquireIPProcedure,
 		svc.AcquireIP,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/ReleaseIP", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/ReleaseIP",
+	mux.Handle(IpamServiceReleaseIPProcedure, connect_go.NewUnaryHandler(
+		IpamServiceReleaseIPProcedure,
 		svc.ReleaseIP,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/Dump", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/Dump",
+	mux.Handle(IpamServiceDumpProcedure, connect_go.NewUnaryHandler(
+		IpamServiceDumpProcedure,
 		svc.Dump,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/Load", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/Load",
+	mux.Handle(IpamServiceLoadProcedure, connect_go.NewUnaryHandler(
+		IpamServiceLoadProcedure,
 		svc.Load,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/CreateNamespace", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/CreateNamespace",
+	mux.Handle(IpamServiceCreateNamespaceProcedure, connect_go.NewUnaryHandler(
+		IpamServiceCreateNamespaceProcedure,
 		svc.CreateNamespace,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/ListNamespaces", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/ListNamespaces",
+	mux.Handle(IpamServiceListNamespacesProcedure, connect_go.NewUnaryHandler(
+		IpamServiceListNamespacesProcedure,
 		svc.ListNamespaces,
 		opts...,
 	))
-	mux.Handle("/api.v1.IpamService/DeleteNamespace", connect_go.NewUnaryHandler(
-		"/api.v1.IpamService/DeleteNamespace",
+	mux.Handle(IpamServiceDeleteNamespaceProcedure, connect_go.NewUnaryHandler(
+		IpamServiceDeleteNamespaceProcedure,
 		svc.DeleteNamespace,
 		opts...,
 	))

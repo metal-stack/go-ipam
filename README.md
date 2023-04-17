@@ -35,7 +35,12 @@ func main() {
     // create a ipamer with in memory storage
     ipam := goipam.New()
 
-    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+    bgCtx := context.Background()
+    // Optional with Namespace
+    ctx := goipam.NewContextWithNamespace(bgCtx, "tenant-a")
+
+    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
     defer cancel()
     prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
     if err != nil {
@@ -107,7 +112,12 @@ func main() {
             connect.WithGRPC(),
     )
 
-    result, err := c.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{Cidr: "192.168.0.0/16",}))
+    bgCtx := context.Background()
+
+    // Optional with Namespace
+    ctx := goipam.NewContextWithNamespace(bgCtx, "tenant-a")
+
+    result, err := c.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{Cidr: "192.168.0.0/16",}))
     if err != nil {
         panic(err)
     }

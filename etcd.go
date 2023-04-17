@@ -300,7 +300,6 @@ func (e *etcd) DeletePrefix(ctx context.Context, prefix Prefix, namespace string
 func (e *etcd) CreateNamespace(ctx context.Context, namespace string) error {
 	e.lock.Lock()
 	defer e.lock.Unlock()
-	fmt.Printf("ETCD CREATE NAMESPACE: %s\n", namespace)
 	if _, ok := e.namespaces[namespace]; ok {
 		return nil
 	}
@@ -325,7 +324,6 @@ func (e *etcd) ListNamespaces(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	var result []string
-	fmt.Printf("ALL KEYS: %v\n", res.Kvs)
 	for _, kv := range res.Kvs {
 		result = append(result, strings.TrimPrefix(string(kv.Key), key))
 	}
