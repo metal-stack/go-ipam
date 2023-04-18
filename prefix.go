@@ -477,6 +477,7 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 }
 
 func (i *ipamer) Dump(ctx context.Context) (string, error) {
+	// FIXME must dump all namespaces
 	return i.NamespacedDump(ctx, defaultNamespace)
 }
 
@@ -493,6 +494,7 @@ func (i *ipamer) NamespacedDump(ctx context.Context, namespace string) (string, 
 }
 
 func (i *ipamer) Load(ctx context.Context, dump string) error {
+	// FIXME must load all namespaces
 	return i.NamespacedLoad(ctx, defaultNamespace, dump)
 }
 
