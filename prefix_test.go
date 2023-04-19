@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 )
@@ -1641,6 +1642,70 @@ func TestNamespaceFromContext(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("namespaceFromContext() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+func TestAvailablePrefixes(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		cidr                 string
+		expectedTotal        uint64
+		expectedAvailablePfx []string
+	}{
+		// Panics with "runtime error: negative shift amount"
+		{
+			name:                 "192.168.0.0/32",
+			cidr:                 "192.168.0.0/32",
+			expectedTotal:        0,
+			expectedAvailablePfx: []string{},
+		},
+		// Panics with "runtime error: negative shift amount"
+		{
+			name:                 "192.168.0.0/31",
+			cidr:                 "192.168.0.0/31",
+			expectedTotal:        0,
+			expectedAvailablePfx: []string{},
+		},
+		{
+			name:                 "192.168.0.0/30",
+			cidr:                 "192.168.0.0/30",
+			expectedTotal:        1,
+			expectedAvailablePfx: []string{"192.168.0.0/30"},
+		},
+		{
+			name:                 "192.168.0.0/24",
+			cidr:                 "192.168.0.0/24",
+			expectedTotal:        64,
+			expectedAvailablePfx: []string{"192.168.0.0/24"},
+		},
+		{
+			name:                 "Invalid CIDR",
+			cidr:                 "Invalid CIDR",
+			expectedTotal:        0,
+			expectedAvailablePfx: []string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			prefix := &Prefix{
+				Cidr:                   tc.cidr,
+				isParent:               false,
+				availableChildPrefixes: make(map[string]bool),
+			}
+
+			totalAvailable, availablePrefixes := prefix.availablePrefixes()
+
+			assert.Equal(
+				t, tc.expectedTotal, totalAvailable,
+				"Expected totalAvailable: %d, got: %d",
+				tc.expectedTotal, totalAvailable,
+			)
+			assert.ElementsMatchf(
+				t, availablePrefixes, tc.expectedAvailablePfx,
+				"Expected availablePrefixes: %v, got: %v",
+				tc.expectedAvailablePfx, availablePrefixes,
+			)
 		})
 	}
 }

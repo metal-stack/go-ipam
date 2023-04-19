@@ -638,8 +638,12 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	totalAvailable := uint64(0)
 	availablePrefixes := []string{}
 	for _, pfx := range pfxs {
+		bits := maxBits - pfx.Bits()
+		if bits < 0 {
+			continue
+		}
 		// same as: totalAvailable += uint64(math.Pow(float64(2), float64(maxBits-pfx.Bits)))
-		totalAvailable += 1 << (maxBits - pfx.Bits())
+		totalAvailable += 1 << bits
 		availablePrefixes = append(availablePrefixes, pfx.String())
 	}
 	// we are not reporting more that 2^31 available prefixes
