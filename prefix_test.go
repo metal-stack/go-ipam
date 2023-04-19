@@ -1652,14 +1652,12 @@ func TestAvailablePrefixes(t *testing.T) {
 		expectedTotal        uint64
 		expectedAvailablePfx []string
 	}{
-		// Panics with "runtime error: negative shift amount"
 		{
 			name:                 "192.168.0.0/32",
 			cidr:                 "192.168.0.0/32",
 			expectedTotal:        0,
 			expectedAvailablePfx: []string{},
 		},
-		// Panics with "runtime error: negative shift amount"
 		{
 			name:                 "192.168.0.0/31",
 			cidr:                 "192.168.0.0/31",
@@ -1677,6 +1675,24 @@ func TestAvailablePrefixes(t *testing.T) {
 			cidr:                 "192.168.0.0/24",
 			expectedTotal:        64,
 			expectedAvailablePfx: []string{"192.168.0.0/24"},
+		},
+		{
+			name:                 "2001:0db8:85a3::/128",
+			cidr:                 "2001:0db8:85a3::/128",
+			expectedTotal:        0,
+			expectedAvailablePfx: []string{},
+		},
+		{
+			name:                 "2001:0db8:85a3::/127",
+			cidr:                 "2001:0db8:85a3::/127",
+			expectedTotal:        0,
+			expectedAvailablePfx: []string{},
+		},
+		{
+			name:                 "2001:0db8:85a3::/126",
+			cidr:                 "2001:0db8:85a3::/126",
+			expectedTotal:        1,
+			expectedAvailablePfx: []string{"2001:db8:85a3::/126"},
 		},
 		{
 			name:                 "Invalid CIDR",
