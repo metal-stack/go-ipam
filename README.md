@@ -170,7 +170,7 @@ The benchmarks above were performed using:
 
 It is possible to test a individual backend only to speed up development roundtrip.
 
-`backend` can be one of `Memory`, `Postgres`, `Cockroach`, `Etcd`, `Redis`, and `MongoDB`.
+`backend` can be one of `Memory`, `Postgres`, `Cockroach`, `Etcd`, `Redis`,`MongoDB` `FerretDB`.
 
 ```bash
 BACKEND=backend make test

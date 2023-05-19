@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -13,24 +14,34 @@ import (
 )
 
 var (
-	pgOnce           sync.Once
-	pgContainer      testcontainers.Container
-	pgVersion        string
+	// Postgres
+	pgOnce      sync.Once
+	pgContainer testcontainers.Container
+	pgVersion   string
+	// Cockroach
 	crOnce           sync.Once
 	crContainer      testcontainers.Container
 	cockroachVersion string
-	redisOnce        sync.Once
-	redisContainer   testcontainers.Container
-	redisVersion     string
-	keyDBOnce        sync.Once
-	keyDBVersion     string
-	keyDBContainer   testcontainers.Container
-	etcdContainer    testcontainers.Container
-	etcdVersion      string
-	etcdOnce         sync.Once
-	mdbOnce          sync.Once
-	mdbContainer     testcontainers.Container
-	mdbVersion       string
+	// Redis
+	redisOnce      sync.Once
+	redisContainer testcontainers.Container
+	redisVersion   string
+	// KeyDB
+	keyDBOnce      sync.Once
+	keyDBVersion   string
+	keyDBContainer testcontainers.Container
+	// etcd
+	etcdContainer testcontainers.Container
+	etcdVersion   string
+	etcdOnce      sync.Once
+	// MongoDB
+	mdbOnce      sync.Once
+	mdbContainer testcontainers.Container
+	mdbVersion   string
+	// FerretDB
+	ferretdbOnce      sync.Once
+	ferretdbContainer testcontainers.Container
+	ferretdbVersion   string
 
 	backend string
 )
@@ -60,6 +71,10 @@ func TestMain(m *testing.M) {
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {
 		mdbVersion = "6.0.5-jammy"
+	}
+	ferretdbVersion = os.Getenv("FERRETDB_VERSION")
+	if ferretdbVersion == "" {
+		ferretdbVersion = "ghcr.io/ferretdb/all-in-one"
 	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
@@ -267,6 +282,56 @@ func startMongodb() (container testcontainers.Container, s *mongodb, err error) 
 
 	return mdbContainer, db, err
 }
+func startFerretdb() (container testcontainers.Container, s *mongodb, err error) {
+	ctx := context.Background()
+
+	ferretdbOnce.Do(func() {
+		var err error
+		req := testcontainers.ContainerRequest{
+			Image:        ferretdbVersion,
+			ExposedPorts: []string{`27017/tcp`},
+			// Env: map[string]string{
+			// 	`MONGO_INITDB_ROOT_USERNAME`: `testuser`,
+			// 	`MONGO_INITDB_ROOT_PASSWORD`: `testuser`,
+			// },
+			WaitingFor: wait.ForAll(
+				wait.ForLog("database system is ready to accept connections"),
+				wait.ForListeningPort(`27017/tcp`),
+			),
+		}
+		ferretdbContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+	})
+	time.Sleep(10 * time.Second)
+	ip, err := ferretdbContainer.Host(ctx)
+	if err != nil {
+		return ferretdbContainer, nil, err
+	}
+	port, err := ferretdbContainer.MappedPort(ctx, `27017`)
+	if err != nil {
+		return ferretdbContainer, nil, err
+	}
+
+	opts := options.Client()
+	opts.ApplyURI(fmt.Sprintf(`mongodb://%s:%s`, ip, port.Port()))
+	// opts.Auth = &options.Credential{
+	// 	Username: `testuser`,
+	// 	Password: `testuser`,
+	// }
+
+	c := MongoConfig{
+		DatabaseName:       `go-ipam`,
+		MongoClientOptions: opts,
+	}
+	db, err := newMongo(ctx, c)
+
+	return ferretdbContainer, db, err
+}
 
 func startKeyDB() (container testcontainers.Container, s *redis, err error) {
 	ctx := context.Background()
@@ -407,6 +472,18 @@ func newKeyDBWithCleanup() (*kvStorage, error) {
 
 func newMongodbWithCleanup() (*docStorage, error) {
 	c, s, err := startMongodb()
+	if err != nil {
+		return nil, err
+	}
+
+	x := &docStorage{
+		mongodb: s,
+		c:       c,
+	}
+	return x, nil
+}
+func newFerretdbWithCleanup() (*docStorage, error) {
+	c, s, err := startFerretdb()
 	if err != nil {
 		return nil, err
 	}
@@ -633,6 +710,19 @@ func storageProviders() []storageProvider {
 				storage, err := newMongodbWithCleanup()
 				if err != nil {
 					panic(fmt.Sprintf(`error getting mongodb storage, error: %s`, err))
+				}
+				return storage
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "FerretDB",
+			provide: func() Storage {
+				storage, err := newFerretdbWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf(`error getting ferretd storage, error: %s`, err))
 				}
 				return storage
 			},

@@ -99,7 +99,7 @@ func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix, namespace str
 
 	_, err := m.db.Collection(namespace).InsertOne(ctx, prefix.toPrefixJSON())
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to insert prefix:%s, error:%w", prefix.Cidr, err)
+		return Prefix{}, fmt.Errorf("unable to insert prefix:%s namespace:%s  error:%w", prefix.Cidr, namespace, err)
 	}
 
 	return prefix, nil
