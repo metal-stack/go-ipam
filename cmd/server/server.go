@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -58,7 +57,21 @@ func (s *server) Run() error {
 	provider := metric.NewMeterProvider(metric.WithReader(exporter))
 
 	// Start the prometheus HTTP server and pass the exporter Collector to it
-	go s.serveMetrics()
+	go func() {
+		s.log.Infof("serving metrics at %s/metrics", s.c.MetricsEndpoint)
+		metricsServer := http.NewServeMux()
+		metricsServer.Handle("/metrics", promhttp.Handler())
+		ms := &http.Server{
+			Addr:              s.c.MetricsEndpoint,
+			Handler:           metricsServer,
+			ReadHeaderTimeout: time.Minute,
+		}
+		err := ms.ListenAndServe()
+		if err != nil {
+			s.log.Errorw("unable to start metric endpoint", "error", err)
+			return
+		}
+	}()
 
 	mux := http.NewServeMux()
 	// The generated constructors return a path and a plain net/http
@@ -91,14 +104,4 @@ func (s *server) Run() error {
 
 	err = server.ListenAndServe()
 	return err
-}
-
-func (s *server) serveMetrics() {
-	s.log.Infof("serving metrics at %s/metrics", s.c.MetricsEndpoint)
-	http.Handle("/metrics", promhttp.Handler())
-	err := http.ListenAndServe(s.c.MetricsEndpoint, nil)
-	if err != nil {
-		fmt.Printf("error serving http: %v", err)
-		return
-	}
 }
