@@ -284,78 +284,110 @@ type IpamServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(IpamServiceCreatePrefixProcedure, connect_go.NewUnaryHandler(
+	ipamServiceCreatePrefixHandler := connect_go.NewUnaryHandler(
 		IpamServiceCreatePrefixProcedure,
 		svc.CreatePrefix,
 		opts...,
-	))
-	mux.Handle(IpamServiceDeletePrefixProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceDeletePrefixHandler := connect_go.NewUnaryHandler(
 		IpamServiceDeletePrefixProcedure,
 		svc.DeletePrefix,
 		opts...,
-	))
-	mux.Handle(IpamServiceGetPrefixProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceGetPrefixHandler := connect_go.NewUnaryHandler(
 		IpamServiceGetPrefixProcedure,
 		svc.GetPrefix,
 		opts...,
-	))
-	mux.Handle(IpamServiceListPrefixesProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceListPrefixesHandler := connect_go.NewUnaryHandler(
 		IpamServiceListPrefixesProcedure,
 		svc.ListPrefixes,
 		opts...,
-	))
-	mux.Handle(IpamServicePrefixUsageProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServicePrefixUsageHandler := connect_go.NewUnaryHandler(
 		IpamServicePrefixUsageProcedure,
 		svc.PrefixUsage,
 		opts...,
-	))
-	mux.Handle(IpamServiceAcquireChildPrefixProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceAcquireChildPrefixHandler := connect_go.NewUnaryHandler(
 		IpamServiceAcquireChildPrefixProcedure,
 		svc.AcquireChildPrefix,
 		opts...,
-	))
-	mux.Handle(IpamServiceReleaseChildPrefixProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceReleaseChildPrefixHandler := connect_go.NewUnaryHandler(
 		IpamServiceReleaseChildPrefixProcedure,
 		svc.ReleaseChildPrefix,
 		opts...,
-	))
-	mux.Handle(IpamServiceAcquireIPProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceAcquireIPHandler := connect_go.NewUnaryHandler(
 		IpamServiceAcquireIPProcedure,
 		svc.AcquireIP,
 		opts...,
-	))
-	mux.Handle(IpamServiceReleaseIPProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceReleaseIPHandler := connect_go.NewUnaryHandler(
 		IpamServiceReleaseIPProcedure,
 		svc.ReleaseIP,
 		opts...,
-	))
-	mux.Handle(IpamServiceDumpProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceDumpHandler := connect_go.NewUnaryHandler(
 		IpamServiceDumpProcedure,
 		svc.Dump,
 		opts...,
-	))
-	mux.Handle(IpamServiceLoadProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceLoadHandler := connect_go.NewUnaryHandler(
 		IpamServiceLoadProcedure,
 		svc.Load,
 		opts...,
-	))
-	mux.Handle(IpamServiceCreateNamespaceProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceCreateNamespaceHandler := connect_go.NewUnaryHandler(
 		IpamServiceCreateNamespaceProcedure,
 		svc.CreateNamespace,
 		opts...,
-	))
-	mux.Handle(IpamServiceListNamespacesProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceListNamespacesHandler := connect_go.NewUnaryHandler(
 		IpamServiceListNamespacesProcedure,
 		svc.ListNamespaces,
 		opts...,
-	))
-	mux.Handle(IpamServiceDeleteNamespaceProcedure, connect_go.NewUnaryHandler(
+	)
+	ipamServiceDeleteNamespaceHandler := connect_go.NewUnaryHandler(
 		IpamServiceDeleteNamespaceProcedure,
 		svc.DeleteNamespace,
 		opts...,
-	))
-	return "/api.v1.IpamService/", mux
+	)
+	return "/api.v1.IpamService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case IpamServiceCreatePrefixProcedure:
+			ipamServiceCreatePrefixHandler.ServeHTTP(w, r)
+		case IpamServiceDeletePrefixProcedure:
+			ipamServiceDeletePrefixHandler.ServeHTTP(w, r)
+		case IpamServiceGetPrefixProcedure:
+			ipamServiceGetPrefixHandler.ServeHTTP(w, r)
+		case IpamServiceListPrefixesProcedure:
+			ipamServiceListPrefixesHandler.ServeHTTP(w, r)
+		case IpamServicePrefixUsageProcedure:
+			ipamServicePrefixUsageHandler.ServeHTTP(w, r)
+		case IpamServiceAcquireChildPrefixProcedure:
+			ipamServiceAcquireChildPrefixHandler.ServeHTTP(w, r)
+		case IpamServiceReleaseChildPrefixProcedure:
+			ipamServiceReleaseChildPrefixHandler.ServeHTTP(w, r)
+		case IpamServiceAcquireIPProcedure:
+			ipamServiceAcquireIPHandler.ServeHTTP(w, r)
+		case IpamServiceReleaseIPProcedure:
+			ipamServiceReleaseIPHandler.ServeHTTP(w, r)
+		case IpamServiceDumpProcedure:
+			ipamServiceDumpHandler.ServeHTTP(w, r)
+		case IpamServiceLoadProcedure:
+			ipamServiceLoadHandler.ServeHTTP(w, r)
+		case IpamServiceCreateNamespaceProcedure:
+			ipamServiceCreateNamespaceHandler.ServeHTTP(w, r)
+		case IpamServiceListNamespacesProcedure:
+			ipamServiceListNamespacesHandler.ServeHTTP(w, r)
+		case IpamServiceDeleteNamespaceProcedure:
+			ipamServiceDeleteNamespaceHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedIpamServiceHandler returns CodeUnimplemented from all methods.
