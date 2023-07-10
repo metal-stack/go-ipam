@@ -28,6 +28,12 @@ func main() {
 				EnvVars: []string{"GOIPAM_GRPC_SERVER_ENDPOINT"},
 			},
 			&cli.StringFlag{
+				Name:    "metrics-endpoint",
+				Value:   "localhost:2112",
+				Usage:   "metrics endpoint",
+				EnvVars: []string{"GOIPAM_METRICS_ENDPOINT"},
+			},
+			&cli.StringFlag{
 				Name:    "log-level",
 				Value:   "info",
 				Usage:   "log-level can be one of error|warn|info|debug",
@@ -291,6 +297,7 @@ func getConfig(ctx *cli.Context) config {
 
 	return config{
 		GrpcServerEndpoint: ctx.String("grpc-server-endpoint"),
+		MetricsEndpoint:    ctx.String("metrics-endpoint"),
 		Log:                zlog.Sugar(),
 	}
 }
