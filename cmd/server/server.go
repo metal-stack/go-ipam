@@ -4,11 +4,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bufbuild/connect-go"
+	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
 	compress "github.com/klauspost/connect-compress"
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
 	"github.com/metal-stack/v"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/sdk/metric"
 
 	grpchealth "github.com/bufbuild/connect-grpchealth-go"
 	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
@@ -20,6 +25,7 @@ import (
 
 type config struct {
 	GrpcServerEndpoint string
+	MetricsEndpoint    string
 	Log                *zap.SugaredLogger
 	Storage            goipam.Storage
 }
@@ -40,10 +46,44 @@ func newServer(c config) *server {
 }
 func (s *server) Run() error {
 	s.log.Infow("starting go-ipam", "version", v.V, "backend", s.storage.Name())
+
+	// The exporter embeds a default OpenTelemetry Reader and
+	// implements prometheus.Collector, allowing it to be used as
+	// both a Reader and Collector.
+	exporter, err := prometheus.New()
+	if err != nil {
+		return err
+	}
+	provider := metric.NewMeterProvider(metric.WithReader(exporter))
+
+	// Start the prometheus HTTP server and pass the exporter Collector to it
+	go func() {
+		s.log.Infof("serving metrics at %s/metrics", s.c.MetricsEndpoint)
+		metricsServer := http.NewServeMux()
+		metricsServer.Handle("/metrics", promhttp.Handler())
+		ms := &http.Server{
+			Addr:              s.c.MetricsEndpoint,
+			Handler:           metricsServer,
+			ReadHeaderTimeout: time.Minute,
+		}
+		err := ms.ListenAndServe()
+		if err != nil {
+			s.log.Errorw("unable to start metric endpoint", "error", err)
+			return
+		}
+	}()
+
 	mux := http.NewServeMux()
 	// The generated constructors return a path and a plain net/http
 	// handler.
-	mux.Handle(apiv1connect.NewIpamServiceHandler(service.New(s.log, s.ipamer)))
+	mux.Handle(
+		apiv1connect.NewIpamServiceHandler(
+			service.New(s.log, s.ipamer),
+			connect.WithInterceptors(
+				otelconnect.NewInterceptor(otelconnect.WithMeterProvider(provider)),
+			),
+		),
+	)
 
 	mux.Handle(grpchealth.NewHandler(
 		grpchealth.NewStaticChecker(apiv1connect.IpamServiceName),
@@ -62,6 +102,6 @@ func (s *server) Run() error {
 		ReadHeaderTimeout: 1 * time.Minute,
 	}
 
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	return err
 }
