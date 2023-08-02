@@ -9,6 +9,7 @@ require (
 	connectrpc.com/otelconnect v0.5.0
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/klauspost/connect-compress v1.0.1-0.20230802074947-fad90b26cfbc
 	github.com/lib/pq v1.10.9
 	github.com/metal-stack/v v1.0.3
 	github.com/prometheus/client_golang v1.16.0

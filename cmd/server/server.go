@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/otelconnect"
+	compress "github.com/klauspost/connect-compress"
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
@@ -86,11 +87,11 @@ func (s *server) Run() error {
 
 	mux.Handle(grpchealth.NewHandler(
 		grpchealth.NewStaticChecker(apiv1connect.IpamServiceName),
-		// compress.WithAll(compress.LevelBalanced),
+		compress.WithAll(compress.LevelBalanced),
 	))
 	mux.Handle(grpcreflect.NewHandlerV1(
 		grpcreflect.NewStaticReflector(apiv1connect.IpamServiceName),
-		// compress.WithAll(compress.LevelBalanced),
+		compress.WithAll(compress.LevelBalanced),
 	))
 
 	server := http.Server{
