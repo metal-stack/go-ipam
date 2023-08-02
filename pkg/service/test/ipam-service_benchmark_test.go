@@ -6,8 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/bufbuild/connect-go"
-	compress "github.com/klauspost/connect-compress"
+	"connectrpc.com/connect"
 	goipam "github.com/metal-stack/go-ipam"
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
@@ -23,7 +22,7 @@ func BenchmarkGrpcImpact(b *testing.B) {
 	mux := http.NewServeMux()
 	mux.Handle(apiv1connect.NewIpamServiceHandler(
 		service.New(zaptest.NewLogger(b).Sugar(), ipam),
-		compress.WithAll(compress.LevelBalanced),
+		// compress.WithAll(compress.LevelBalanced),
 	))
 
 	server := httptest.NewUnstartedServer(mux)
@@ -35,12 +34,12 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		server.Client(),
 		server.URL,
 		connect.WithGRPC(),
-		compress.WithAll(compress.LevelBalanced),
+		// compress.WithAll(compress.LevelBalanced),
 	)
 	httpclient := apiv1connect.NewIpamServiceClient(
 		server.Client(),
 		server.URL,
-		compress.WithAll(compress.LevelBalanced),
+		// compress.WithAll(compress.LevelBalanced),
 	)
 
 	grpcUncompressed := apiv1connect.NewIpamServiceClient(

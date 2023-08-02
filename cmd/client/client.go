@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/bufbuild/connect-go"
-	compress "github.com/klauspost/connect-compress"
+	"connectrpc.com/connect"
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/v"
@@ -255,6 +254,5 @@ func client(ctx *cli.Context) apiv1connect.IpamServiceClient {
 		http.DefaultClient,
 		ctx.String("grpc-server-endpoint"),
 		connect.WithGRPC(),
-		compress.WithAll(compress.LevelBalanced),
 	)
 }
