@@ -9,7 +9,7 @@ require (
 	connectrpc.com/otelconnect v0.5.0
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/klauspost/connect-compress v1.0.1-0.20230802074947-fad90b26cfbc
+	github.com/klauspost/connect-compress/v2 v2.0.0
 	github.com/lib/pq v1.10.9
 	github.com/metal-stack/v v1.0.3
 	github.com/prometheus/client_golang v1.16.0
@@ -18,7 +18,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.21.0
 	github.com/urfave/cli/v2 v2.25.7
 	go.etcd.io/etcd/client/v3 v3.5.9
-	go.mongodb.org/mongo-driver v1.12.0
+	go.mongodb.org/mongo-driver v1.12.1
 	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
 	go.opentelemetry.io/otel/sdk/metric v0.39.0
 	go.uber.org/zap v1.25.0

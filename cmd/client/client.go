@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"connectrpc.com/connect"
-	compress "github.com/klauspost/connect-compress"
+	compress "github.com/klauspost/connect-compress/v2"
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/v"

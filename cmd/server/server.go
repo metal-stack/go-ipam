@@ -6,7 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/otelconnect"
-	compress "github.com/klauspost/connect-compress"
+	compress "github.com/klauspost/connect-compress/v2"
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
