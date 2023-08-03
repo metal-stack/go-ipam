@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bufbuild/connect-go"
-	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
-	compress "github.com/klauspost/connect-compress"
+	"connectrpc.com/connect"
+	"connectrpc.com/otelconnect"
+	compress "github.com/klauspost/connect-compress/v2"
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
@@ -15,8 +15,8 @@ import (
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
 
-	grpchealth "github.com/bufbuild/connect-grpchealth-go"
-	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
+	"connectrpc.com/grpchealth"
+	"connectrpc.com/grpcreflect"
 
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
