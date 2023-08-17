@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	goipam "github.com/metal-stack/go-ipam"
 	"github.com/metal-stack/v"
 	"github.com/urfave/cli/v2"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 func main() {
@@ -283,21 +282,19 @@ func main() {
 }
 
 func getConfig(ctx *cli.Context) config {
-	cfg := zap.NewProductionConfig()
-	level, err := zap.ParseAtomicLevel(ctx.String("log-level"))
-	if err != nil {
-		panic(err)
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
 	}
-	cfg.Level = level
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	zlog, err := cfg.Build()
-	if err != nil {
-		panic(err)
+	switch ctx.String("log-level") {
+	case "debug":
+		opts.Level = slog.LevelDebug
+	case "error":
+		opts.Level = slog.LevelError
 	}
 
 	return config{
 		GrpcServerEndpoint: ctx.String("grpc-server-endpoint"),
 		MetricsEndpoint:    ctx.String("metrics-endpoint"),
-		Log:                zlog.Sugar(),
+		Log:                slog.New(slog.NewJSONHandler(os.Stdout, opts)),
 	}
 }

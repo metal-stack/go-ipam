@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -13,14 +15,14 @@ import (
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestIpamService(t *testing.T) {
 	t.Parallel()
+	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	mux := http.NewServeMux()
 	mux.Handle(apiv1connect.NewIpamServiceHandler(
-		New(zaptest.NewLogger(t).Sugar(), goipam.New(context.Background())),
+		New(log, goipam.New(context.Background())),
 	))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true

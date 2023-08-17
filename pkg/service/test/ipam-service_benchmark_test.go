@@ -2,8 +2,10 @@ package test
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -12,17 +14,17 @@ import (
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
-	"go.uber.org/zap/zaptest"
 )
 
 // BenchmarkGrpcImpact located in a separate package to prevent import cycles.
 func BenchmarkGrpcImpact(b *testing.B) {
 	ctx := context.Background()
 	ipam := goipam.New(ctx)
+	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	mux := http.NewServeMux()
 	mux.Handle(apiv1connect.NewIpamServiceHandler(
-		service.New(zaptest.NewLogger(b).Sugar(), ipam),
+		service.New(log, ipam),
 		compress.WithAll(compress.LevelBalanced),
 	))
 
