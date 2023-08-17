@@ -285,7 +285,7 @@ func getConfig(ctx *cli.Context) config {
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}
-	switch ctx.String("loglevel") {
+	switch ctx.String("log-level") {
 	case "debug":
 		opts.Level = slog.LevelDebug
 	case "error":
