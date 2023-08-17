@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -18,7 +20,6 @@ import (
 	"connectrpc.com/grpchealth"
 	"connectrpc.com/grpcreflect"
 
-	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -26,14 +27,14 @@ import (
 type config struct {
 	GrpcServerEndpoint string
 	MetricsEndpoint    string
-	Log                *zap.SugaredLogger
+	Log                *slog.Logger
 	Storage            goipam.Storage
 }
 type server struct {
 	c       config
 	ipamer  goipam.Ipamer
 	storage goipam.Storage
-	log     *zap.SugaredLogger
+	log     *slog.Logger
 }
 
 func newServer(c config) *server {
@@ -45,7 +46,7 @@ func newServer(c config) *server {
 	}
 }
 func (s *server) Run() error {
-	s.log.Infow("starting go-ipam", "version", v.V, "backend", s.storage.Name())
+	s.log.Info("starting go-ipam", "version", v.V, "backend", s.storage.Name())
 
 	// The exporter embeds a default OpenTelemetry Reader and
 	// implements prometheus.Collector, allowing it to be used as
@@ -58,7 +59,7 @@ func (s *server) Run() error {
 
 	// Start the prometheus HTTP server and pass the exporter Collector to it
 	go func() {
-		s.log.Infof("serving metrics at %s/metrics", s.c.MetricsEndpoint)
+		s.log.Info("serving metrics", "at", fmt.Sprintf("%s/metrics", s.c.MetricsEndpoint))
 		metricsServer := http.NewServeMux()
 		metricsServer.Handle("/metrics", promhttp.Handler())
 		ms := &http.Server{
@@ -68,7 +69,7 @@ func (s *server) Run() error {
 		}
 		err := ms.ListenAndServe()
 		if err != nil {
-			s.log.Errorw("unable to start metric endpoint", "error", err)
+			s.log.Error("unable to start metric endpoint", "error", err)
 			return
 		}
 	}()
