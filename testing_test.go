@@ -338,6 +338,32 @@ type docStorage struct {
 	c testcontainers.Container
 }
 
+type testableFileStorage struct {
+	*file
+}
+
+func newLocalFileWithCleanup() (*file, error) {
+	ctx := context.Background()
+	fp, err := os.CreateTemp("", "go-ipam-*.json")
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = fp.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return &file{
+		path:       fp.Name(),
+		prettyJSON: true,
+		parent:     NewMemory(ctx),
+		modTime:    nullModTime,
+		lock:       sync.RWMutex{},
+	}, nil
+}
+
 func newPostgresWithCleanup() (*extendedSQL, error) {
 	c, s, err := startPostgres()
 	if err != nil {
@@ -416,6 +442,14 @@ func newMongodbWithCleanup() (*docStorage, error) {
 		c:       c,
 	}
 	return x, nil
+}
+
+func (f *file) cleanup() error {
+	err := f.clearParent(context.Background())
+	if err != nil {
+		return err
+	}
+	return os.Remove(f.path)
 }
 
 // cleanup database before test
@@ -549,6 +583,19 @@ func storageProviders() []storageProvider {
 			name: "Memory",
 			provide: func() Storage {
 				return NewMemory(context.Background())
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "File",
+			provide: func() Storage {
+				storage, err := newLocalFileWithCleanup()
+				if err != nil {
+					panic("error getting local file storage")
+				}
+				return storage
 			},
 			providesql: func() *sql {
 				return nil
