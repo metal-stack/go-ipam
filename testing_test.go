@@ -2,7 +2,9 @@ package ipam
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"sync"
 	"testing"
@@ -317,6 +319,11 @@ type cleanable interface {
 	cleanup() error
 }
 
+// postCleanable interface for impls that support cleaning after each testrun
+type postCleanable interface {
+	postCleanup() error
+}
+
 // extendedSQL extended sql interface
 type extendedSQL struct {
 	*sql
@@ -336,10 +343,6 @@ type kvEtcdStorage struct {
 type docStorage struct {
 	*mongodb
 	c testcontainers.Container
-}
-
-type testableFileStorage struct {
-	*file
 }
 
 func newLocalFileWithCleanup() (*file, error) {
@@ -445,11 +448,17 @@ func newMongodbWithCleanup() (*docStorage, error) {
 }
 
 func (f *file) cleanup() error {
-	err := f.clearParent(context.Background())
-	if err != nil {
+	if err := f.clearParent(context.Background()); err != nil {
 		return err
 	}
+	if _, err := os.Stat(f.path); errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
 	return os.Remove(f.path)
+}
+
+func (f *file) postCleanup() error {
+	return f.cleanup()
 }
 
 // cleanup database before test
@@ -498,7 +507,7 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 		if tp, ok := storage.(cleanable); ok {
 			err := tp.cleanup()
 			if err != nil {
-				b.Errorf("error cleaning up, %v", err)
+				b.Errorf("error cleaning up before the test: %v", err)
 			}
 		}
 
@@ -508,6 +517,13 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 		b.Run(testName, func(b *testing.B) {
 			fn(b, ipamer)
 		})
+
+		if tp, ok := storage.(postCleanable); ok {
+			err := tp.postCleanup()
+			if err != nil {
+				b.Errorf("error cleaning up after the test: %v", err)
+			}
+		}
 	}
 }
 
@@ -536,6 +552,13 @@ func testWithBackends(t *testing.T, fn testMethod) {
 		t.Run(testName, func(t *testing.T) {
 			fn(t, ipamer)
 		})
+
+		if tp, ok := storage.(postCleanable); ok {
+			err := tp.postCleanup()
+			if err != nil {
+				t.Errorf("error cleaning up after the test: %v", err)
+			}
+		}
 	}
 }
 

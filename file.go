@@ -3,11 +3,12 @@ package ipam
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -65,11 +66,15 @@ func (f *file) clearParent(ctx context.Context) (err error) {
 		if err = f.parent.DeleteAllPrefixes(ctx, namespace); err != nil {
 			return err
 		}
+		if namespace == defaultNamespace {
+			// skip deletion instead of replicating NewMemory behavior
+			continue
+		}
 		if err = f.parent.DeleteNamespace(ctx, namespace); err != nil {
 			return err
 		}
 	}
-	return f.parent.CreateNamespace(ctx, defaultNamespace)
+	return err
 }
 
 func (f *file) refresh(ctx context.Context) error {
@@ -88,24 +93,25 @@ func (f *file) getModTime() time.Time {
 
 // see ipamer.NamespacedLoad for similar, but incomplete functionality
 func (f *file) reload(ctx context.Context) (err error) {
+	var data []byte
 	storage := make(fileJSONData)
-	data, err := os.ReadFile(f.path)
-	if err != nil {
-		fsErr := err.(*fs.PathError)
-		if fsErr.Err != syscall.ENOENT {
-			return err
+	if _, err = os.Stat(f.path); !errors.Is(err, fs.ErrNotExist) {
+		data, err = os.ReadFile(f.path)
+		if err != nil {
+			return fmt.Errorf("failed to read state file %q: %w", f.path, err)
 		}
 	}
 	f.modTime = f.getModTime()
-	if len(data) > 1 {
+	// smallest valid piece of data is "{}"
+	if len(data) >= 2 {
 		err = json.Unmarshal(data, &storage)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to parse state file %q: %w", f.path, err)
 		}
 	}
-	// TODO: improve by diffing parent storage?
+	// TODO: improve by diffing parent storage instead of discarding and recreating?
 	if err = f.clearParent(ctx); err != nil {
-		return err
+		return fmt.Errorf("failed to clear memory storage: %w", err)
 	}
 	for namespace, prefixes := range storage {
 		if err = f.parent.CreateNamespace(ctx, namespace); err != nil {
@@ -154,9 +160,9 @@ func (f *file) persist(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(f.path, data, 0640)
+	err = os.WriteFile(f.path, data, 0600)
 	if err != nil {
-		return err
+		return fmt.Errorf("error storing state at %q: %w", f.path, err)
 	}
 	f.modTime = f.getModTime()
 	return err
@@ -164,6 +170,7 @@ func (f *file) persist(ctx context.Context) (err error) {
 func (f *file) Name() string {
 	return "file"
 }
+
 func (f *file) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (p Prefix, err error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -178,6 +185,7 @@ func (f *file) CreatePrefix(ctx context.Context, prefix Prefix, namespace string
 
 	return p, f.persist(ctx)
 }
+
 func (f *file) ReadPrefix(ctx context.Context, prefix, namespace string) (p Prefix, err error) {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
