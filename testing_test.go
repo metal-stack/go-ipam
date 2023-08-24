@@ -47,7 +47,7 @@ func TestMain(m *testing.M) {
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
-		redisVersion = "7.0-alpine"
+		redisVersion = "7.2-alpine"
 	}
 	keyDBVersion = os.Getenv("KEYDB_VERSION")
 	if keyDBVersion == "" {
@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 	}
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {
-		mdbVersion = "6.0.5-jammy"
+		mdbVersion = "7.0.0-jammy"
 	}
 	backend = os.Getenv("BACKEND")
 	if backend == "" {
@@ -70,7 +70,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func startPostgres() (container testcontainers.Container, dn *sql, err error) {
+func startPostgres() (container testcontainers.Container, db *sql, err error) {
 	ctx := context.Background()
 	pgOnce.Do(func() {
 		var err error
@@ -101,7 +101,7 @@ func startPostgres() (container testcontainers.Container, dn *sql, err error) {
 		return pgContainer, nil, err
 	}
 	dbname := "postgres"
-	db, err := newPostgres(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
+	db, err = newPostgres(ip, port.Port(), "postgres", "password", dbname, SSLModeDisable)
 
 	return pgContainer, db, err
 }
