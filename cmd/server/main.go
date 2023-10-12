@@ -52,6 +52,26 @@ func main() {
 				},
 			},
 			{
+				Name:    "file",
+				Aliases: []string{"f", "local"},
+				Usage:   "start with local JSON file backend",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "path",
+						Value:       goipam.DefaultLocalFilePath,
+						DefaultText: "~/.local/share/go-ipam/ipam-db.json",
+						Usage:       "path to the file",
+						EnvVars:     []string{"GOIPAM_FILE_PATH"},
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					c := getConfig(ctx)
+					c.Storage = goipam.NewLocalFile(ctx.Context, ctx.String("path"))
+					s := newServer(c)
+					return s.Run()
+				},
+			},
+			{
 				Name:    "postgres",
 				Aliases: []string{"pg"},
 				Usage:   "start with postgres backend",

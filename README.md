@@ -138,6 +138,7 @@ docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
 | Database    | Acquire Child Prefix |  Acquire IP |  New Prefix | Prefix Overlap | Production-Ready | Geo-Redundant |
 |:------------|---------------------:|------------:|------------:|---------------:|:-----------------|:--------------|
 | In-Memory   |          106,861/sec | 196,687/sec | 330,578/sec |        248/sec | N                | N             |
+| File        |                      |             |             |                | N                | N             |
 | KeyDB       |              777/sec |     975/sec |   2,271/sec |                | Y                | Y             |
 | Redis       |              773/sec |     958/sec |   2,349/sec |                | Y                | N             |
 | MongoDB     |              415/sec |     682/sec |     772/sec |                | Y                | Y             |

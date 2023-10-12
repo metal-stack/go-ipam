@@ -2,7 +2,9 @@ package ipam
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"sync"
 	"testing"
@@ -317,6 +319,11 @@ type cleanable interface {
 	cleanup() error
 }
 
+// postCleanable interface for impls that support cleaning after each testrun
+type postCleanable interface {
+	postCleanup() error
+}
+
 // extendedSQL extended sql interface
 type extendedSQL struct {
 	*sql
@@ -336,6 +343,28 @@ type kvEtcdStorage struct {
 type docStorage struct {
 	*mongodb
 	c testcontainers.Container
+}
+
+func newLocalFileWithCleanup() (*file, error) {
+	ctx := context.Background()
+	fp, err := os.CreateTemp("", "go-ipam-*.json")
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = fp.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return &file{
+		path:       fp.Name(),
+		prettyJSON: true,
+		parent:     NewMemory(ctx),
+		modTime:    nullModTime,
+		lock:       sync.RWMutex{},
+	}, nil
 }
 
 func newPostgresWithCleanup() (*extendedSQL, error) {
@@ -418,6 +447,20 @@ func newMongodbWithCleanup() (*docStorage, error) {
 	return x, nil
 }
 
+func (f *file) cleanup() error {
+	if err := f.clearParent(context.Background()); err != nil {
+		return err
+	}
+	if _, err := os.Stat(f.path); errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	return os.Remove(f.path)
+}
+
+func (f *file) postCleanup() error {
+	return f.cleanup()
+}
+
 // cleanup database before test
 func (e *extendedSQL) cleanup() error {
 	tx := e.sql.db.MustBegin()
@@ -464,7 +507,7 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 		if tp, ok := storage.(cleanable); ok {
 			err := tp.cleanup()
 			if err != nil {
-				b.Errorf("error cleaning up, %v", err)
+				b.Errorf("error cleaning up before the test: %v", err)
 			}
 		}
 
@@ -474,6 +517,13 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 		b.Run(testName, func(b *testing.B) {
 			fn(b, ipamer)
 		})
+
+		if tp, ok := storage.(postCleanable); ok {
+			err := tp.postCleanup()
+			if err != nil {
+				b.Errorf("error cleaning up after the test: %v", err)
+			}
+		}
 	}
 }
 
@@ -502,6 +552,13 @@ func testWithBackends(t *testing.T, fn testMethod) {
 		t.Run(testName, func(t *testing.T) {
 			fn(t, ipamer)
 		})
+
+		if tp, ok := storage.(postCleanable); ok {
+			err := tp.postCleanup()
+			if err != nil {
+				t.Errorf("error cleaning up after the test: %v", err)
+			}
+		}
 	}
 }
 
@@ -549,6 +606,19 @@ func storageProviders() []storageProvider {
 			name: "Memory",
 			provide: func() Storage {
 				return NewMemory(context.Background())
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "File",
+			provide: func() Storage {
+				storage, err := newLocalFileWithCleanup()
+				if err != nil {
+					panic("error getting local file storage")
+				}
+				return storage
 			},
 			providesql: func() *sql {
 				return nil
