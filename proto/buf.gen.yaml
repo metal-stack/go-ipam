@@ -4,11 +4,11 @@ managed:
   go_package_prefix:
     default: github.com/metal-stack/go-ipam
 plugins:
-  # generate go structs for protocol buffer defination
-  - plugin: buf.build/connectrpc/go:v1.11.0
+  # generate go structs for protocol buffer definition
+  - plugin: buf.build/connectrpc/go:v1.11.1
     out: ../
     opt: paths=source_relative
-  # generate go structs for protocol buffer defination
+  # generate go structs for protocol buffer definition
   - plugin: buf.build/protocolbuffers/go:v1.31.0
     out: ../
     opt: paths=source_relative
