@@ -145,7 +145,10 @@ func (i *ipamer) NewPrefix(ctx context.Context, cidr string) (*Prefix, error) {
 
 func (i *ipamer) DeletePrefix(ctx context.Context, cidr string) (*Prefix, error) {
 	namespace := namespaceFromContext(ctx)
-	p := i.PrefixFrom(ctx, cidr)
+	p, err := i.PrefixFrom(ctx, cidr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s error:%s", ErrNotFound, cidr, err.Error())
+	}
 	if p == nil {
 		return nil, fmt.Errorf("%w: delete prefix:%s", ErrNotFound, cidr)
 	}
@@ -184,7 +187,10 @@ func (i *ipamer) AcquireSpecificChildPrefix(ctx context.Context, parentCidr, chi
 func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, namespace, parentCidr, childCidr string, length int) (*Prefix, error) {
 	specificChildRequest := childCidr != ""
 	var childprefix netip.Prefix
-	parent := i.PrefixFrom(ctx, parentCidr)
+	parent, err := i.PrefixFrom(ctx, parentCidr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s error:%s", ErrNotFound, parentCidr, err.Error())
+	}
 	if parent == nil {
 		return nil, fmt.Errorf("unable to find prefix for cidr:%s", parentCidr)
 	}
@@ -286,8 +292,10 @@ func (i *ipamer) ReleaseChildPrefix(ctx context.Context, child *Prefix) error {
 
 // releaseChildPrefixInternal will mark this child Prefix as available again.
 func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace string, child *Prefix) error {
-	parent := i.PrefixFrom(ctx, child.ParentCidr)
-
+	parent, err := i.PrefixFrom(ctx, child.ParentCidr)
+	if err != nil {
+		return fmt.Errorf("%w: unable to find prefix for cidr:%s error:%s", ErrNotFound, child.ParentCidr, err.Error())
+	}
 	if parent == nil {
 		return fmt.Errorf("prefix %s is no child prefix", child.Cidr)
 	}
@@ -296,7 +304,7 @@ func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace strin
 	}
 
 	parent.availableChildPrefixes[child.Cidr] = true
-	_, err := i.DeletePrefix(ctx, child.Cidr)
+	_, err = i.DeletePrefix(ctx, child.Cidr)
 	if err != nil {
 		return fmt.Errorf("unable to release prefix %v:%w", child, err)
 	}
@@ -307,17 +315,17 @@ func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace strin
 	return nil
 }
 
-func (i *ipamer) PrefixFrom(ctx context.Context, cidr string) *Prefix {
+func (i *ipamer) PrefixFrom(ctx context.Context, cidr string) (*Prefix, error) {
 	namespace := namespaceFromContext(ctx)
 	ipprefix, err := netip.ParsePrefix(cidr)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	prefix, err := i.storage.ReadPrefix(ctx, ipprefix.Masked().String(), namespace)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return &prefix
+	return &prefix, nil
 }
 
 func (i *ipamer) AcquireSpecificIP(ctx context.Context, prefixCidr, specificIP string) (*IP, error) {
@@ -335,7 +343,10 @@ func (i *ipamer) AcquireSpecificIP(ctx context.Context, prefixCidr, specificIP s
 // If there is no free IP an NoIPAvailableError is returned.
 // If the Prefix is not found an NotFoundError is returned.
 func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, namespace, prefixCidr, specificIP string) (*IP, error) {
-	prefix := i.PrefixFrom(ctx, prefixCidr)
+	prefix, err := i.PrefixFrom(ctx, prefixCidr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s error:%s", ErrNotFound, prefixCidr, err.Error())
+	}
 	if prefix == nil {
 		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
 	}
@@ -392,8 +403,10 @@ func (i *ipamer) AcquireIP(ctx context.Context, prefixCidr string) (*IP, error) 
 
 func (i *ipamer) ReleaseIP(ctx context.Context, ip *IP) (*Prefix, error) {
 	err := i.ReleaseIPFromPrefix(ctx, ip.ParentPrefix, ip.IP.String())
-	prefix := i.PrefixFrom(ctx, ip.ParentPrefix)
-	return prefix, err
+	if err != nil {
+		return nil, err
+	}
+	return i.PrefixFrom(ctx, ip.ParentPrefix)
 }
 
 func (i *ipamer) ReleaseIPFromPrefix(ctx context.Context, prefixCidr, ip string) error {
@@ -405,7 +418,10 @@ func (i *ipamer) ReleaseIPFromPrefix(ctx context.Context, prefixCidr, ip string)
 
 // releaseIPFromPrefixInternal will release the given IP for later usage.
 func (i *ipamer) releaseIPFromPrefixInternal(ctx context.Context, namespace, prefixCidr, ip string) error {
-	prefix := i.PrefixFrom(ctx, prefixCidr)
+	prefix, err := i.PrefixFrom(ctx, prefixCidr)
+	if err != nil {
+		return fmt.Errorf("%w: unable to find prefix for cidr:%s error:%s", ErrNotFound, prefixCidr, err.Error())
+	}
 	if prefix == nil {
 		return fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
 	}
@@ -414,7 +430,7 @@ func (i *ipamer) releaseIPFromPrefixInternal(ctx context.Context, namespace, pre
 		return fmt.Errorf("%w: unable to release ip:%s because it is not allocated in prefix:%s", ErrNotFound, ip, prefixCidr)
 	}
 	delete(prefix.ips, ip)
-	_, err := i.storage.UpdatePrefix(ctx, *prefix, namespace)
+	_, err = i.storage.UpdatePrefix(ctx, *prefix, namespace)
 	if err != nil {
 		return fmt.Errorf("unable to release ip %v:%w", ip, err)
 	}

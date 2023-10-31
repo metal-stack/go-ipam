@@ -31,7 +31,8 @@ type Ipamer interface {
 	ReleaseChildPrefix(ctx context.Context, child *Prefix) error
 	// PrefixFrom will return a known Prefix.
 	// This operation is scoped to the root namespace unless a different namespace is provided in the context.
-	PrefixFrom(ctx context.Context, cidr string) *Prefix
+	// If the IP is not found an NotFoundError is returned, otherwise the underlying error
+	PrefixFrom(ctx context.Context, cidr string) (*Prefix, error)
 	// AcquireSpecificIP will acquire given IP and mark this IP as used, if already in use, return nil.
 	// If specificIP is empty, the next free IP is returned.
 	// If there is no free IP an NoIPAvailableError is returned.
