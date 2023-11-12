@@ -68,7 +68,10 @@ func (i *IPAMService) GetPrefix(ctx context.Context, req *connect.Request[v1.Get
 	if req.Msg.Namespace != nil {
 		ctx = goipam.NewContextWithNamespace(ctx, *req.Msg.Namespace)
 	}
-	resp := i.ipamer.PrefixFrom(ctx, req.Msg.Cidr)
+	resp, err := i.ipamer.PrefixFrom(ctx, req.Msg.Cidr)
+	if err != nil {
+		return &connect.Response[v1.GetPrefixResponse]{}, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not parsable:%w", req.Msg.Cidr, err.Error()))
+	}
 	if resp == nil {
 		return &connect.Response[v1.GetPrefixResponse]{}, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not found", req.Msg.Cidr))
 	}
@@ -95,7 +98,11 @@ func (i *IPAMService) ListPrefixes(ctx context.Context, req *connect.Request[v1.
 
 	var result []*v1.Prefix
 	for _, cidr := range resp {
-		p := i.ipamer.PrefixFrom(ctx, cidr)
+		p, err := i.ipamer.PrefixFrom(ctx, cidr)
+		if err != nil {
+			i.log.Warn("skipping prefix of cidr", "error", err)
+			continue
+		}
 		if p == nil {
 			i.log.Warn("skipping nil prefix of cidr", "cidr", cidr)
 			continue
@@ -144,12 +151,15 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Reque
 	if req.Msg.Namespace != nil {
 		ctx = goipam.NewContextWithNamespace(ctx, *req.Msg.Namespace)
 	}
-	prefix := i.ipamer.PrefixFrom(ctx, req.Msg.Cidr)
+	prefix, err := i.ipamer.PrefixFrom(ctx, req.Msg.Cidr)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not parsable:%s", req.Msg.Cidr, err.Error()))
+	}
 	if prefix == nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not found", req.Msg.Cidr))
 	}
 
-	err := i.ipamer.ReleaseChildPrefix(ctx, prefix)
+	err = i.ipamer.ReleaseChildPrefix(ctx, prefix)
 	if err != nil {
 		i.log.Error("releasechildprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -254,7 +264,10 @@ func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.P
 	if req.Msg.Namespace != nil {
 		ctx = goipam.NewContextWithNamespace(ctx, *req.Msg.Namespace)
 	}
-	p := i.ipamer.PrefixFrom(ctx, req.Msg.Cidr)
+	p, err := i.ipamer.PrefixFrom(ctx, req.Msg.Cidr)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("prefix:%q not parsable:%s", req.Msg.Cidr, err.Error()))
+	}
 	if p == nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("prefix:%q not found", req.Msg.Cidr))
 	}
