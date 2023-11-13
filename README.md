@@ -121,7 +121,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("Prefix:%q created", result.Msg.Prefix.Cidr)
+    fmt.Println("Prefix:%q created", result.Msg.GetPrefix().GetCidr())
 }
 ```
 

@@ -51,7 +51,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							fmt.Printf("prefix:%q created\n", result.Msg.Prefix.Cidr)
+							fmt.Printf("prefix:%q created\n", result.Msg.GetPrefix().GetCidr())
 							return nil
 						},
 					},
@@ -76,7 +76,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							fmt.Printf("child prefix:%q from %q created\n", result.Msg.Prefix.Cidr, result.Msg.Prefix.ParentCidr)
+							fmt.Printf("child prefix:%q from %q created\n", result.Msg.GetPrefix().GetCidr(), result.Msg.GetPrefix().GetParentCidr())
 							return nil
 						},
 					},
@@ -97,10 +97,10 @@ func main() {
 							if err != nil {
 								return err
 							}
-							if result.Msg == nil || result.Msg.Prefix == nil {
+							if result.Msg == nil || result.Msg.GetPrefix() == nil {
 								return fmt.Errorf("result contains no prefix")
 							}
-							fmt.Printf("child prefix:%q from %q released\n", result.Msg.Prefix.Cidr, result.Msg.Prefix.ParentCidr)
+							fmt.Printf("child prefix:%q from %q released\n", result.Msg.GetPrefix().GetCidr(), result.Msg.GetPrefix().GetParentCidr())
 							return nil
 						},
 					},
@@ -114,8 +114,8 @@ func main() {
 							if err != nil {
 								return err
 							}
-							for _, p := range result.Msg.Prefixes {
-								fmt.Printf("Prefix:%q parent:%q\n", p.Cidr, p.ParentCidr)
+							for _, p := range result.Msg.GetPrefixes() {
+								fmt.Printf("Prefix:%q parent:%q\n", p.GetCidr(), p.GetParentCidr())
 							}
 							return nil
 						},
@@ -137,7 +137,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							fmt.Printf("prefix:%q deleted\n", result.Msg.Prefix.Cidr)
+							fmt.Printf("prefix:%q deleted\n", result.Msg.GetPrefix().GetCidr())
 							return nil
 						},
 					},
@@ -165,7 +165,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							fmt.Printf("ip:%q acquired\n", result.Msg.Ip.Ip)
+							fmt.Printf("ip:%q acquired\n", result.Msg.GetIp().GetIp())
 							return nil
 						},
 					},
@@ -190,7 +190,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							fmt.Printf("ip:%q released\n", result.Msg.Ip.Ip)
+							fmt.Printf("ip:%q released\n", result.Msg.GetIp().GetIp())
 							return nil
 						},
 					},
@@ -209,7 +209,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							fmt.Println(result.Msg.Dump)
+							fmt.Println(result.Msg.GetDump())
 							return nil
 						},
 					},
