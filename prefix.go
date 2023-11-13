@@ -95,6 +95,7 @@ func (p *Prefix) GobDecode(buf []byte) error {
 	return decoder.Decode(&p.ParentCidr)
 }
 
+// TODO replace with maps.Copy
 func copyMap(m map[string]bool) map[string]bool {
 	cm := make(map[string]bool, len(m))
 	for k, v := range m {

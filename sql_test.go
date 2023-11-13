@@ -66,7 +66,7 @@ func Test_sql_CreatePrefix(t *testing.T) {
 		ps, err := db.ReadAllPrefixCidrs(ctx, defaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
-		require.Equal(t, 1, len(ps))
+		require.Len(t, ps, 1)
 	})
 }
 
@@ -107,7 +107,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		ps, err := db.ReadAllPrefixCidrs(ctx, defaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
-		require.Equal(t, 0, len(ps))
+		require.Empty(t, ps)
 
 		// One Prefix
 		prefix := Prefix{Cidr: "12.0.0.0/16"}
@@ -117,7 +117,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		ps, err = db.ReadAllPrefixCidrs(ctx, defaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
-		require.Equal(t, 1, len(ps))
+		require.Len(t, ps, 1)
 
 		// no Prefixes again
 		_, err = db.DeletePrefix(ctx, prefix, defaultNamespace)
@@ -125,7 +125,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		ps, err = db.ReadAllPrefixCidrs(ctx, defaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
-		require.Equal(t, 0, len(ps))
+		require.Empty(t, ps)
 	})
 }
 
