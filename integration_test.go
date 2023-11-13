@@ -209,7 +209,7 @@ func TestIntegrationP(t *testing.T) {
 		}
 	}
 	// FIXME the tenantsuper has 2 more prefixes acquired
-	require.Equal(t, int(tenantSuper1.Usage().AcquiredPrefixes)-2, len(childPrefixesOfTenantSuper))
+	require.Len(t, childPrefixesOfTenantSuper, int(tenantSuper1.Usage().AcquiredPrefixes)-2)
 
 	// Tenant super network 2
 	tenantSuper2 := ipam.PrefixFrom(ctx, "10.76.0.0/14")
@@ -269,7 +269,7 @@ func TestIntegrationP(t *testing.T) {
 			childPrefixesOfTenantSuper[pfx.String()] = false
 		}
 	}
-	require.Equal(t, int(tenantSuper2.Usage().AcquiredPrefixes), len(childPrefixesOfTenantSuper))
+	require.Len(t, childPrefixesOfTenantSuper, int(tenantSuper2.Usage().AcquiredPrefixes))
 
 	// Public Internet
 	publicInternet := ipam.PrefixFrom(ctx, "1.2.3.0/25")
@@ -388,7 +388,7 @@ func TestIntegrationEtcd(t *testing.T) {
 			childPrefixesOfTenantSuper[pfx.String()] = false
 		}
 	}
-	require.Equal(t, int(tenantSuper2.Usage().AcquiredPrefixes), len(childPrefixesOfTenantSuper))
+	require.Len(t, childPrefixesOfTenantSuper, int(tenantSuper2.Usage().AcquiredPrefixes))
 
 	// Public Internet
 	publicInternet, err := ipam.NewPrefix(ctx, "1.2.3.0/25")
