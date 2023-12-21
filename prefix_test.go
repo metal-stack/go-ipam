@@ -639,8 +639,9 @@ func TestIpamer_AcquireChildPrefixIPv4(t *testing.T) {
 
 		// Release Parent Prefix must not work
 		err = ipam.ReleaseChildPrefix(ctx, p3)
+		require.ErrorIs(t, err, ErrNotFound)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "prefix 172.17.0.0/24 is no child prefix")
+		require.Contains(t, err.Error(), "NotFound: unable to find prefix for cidr")
 	})
 }
 
@@ -709,8 +710,9 @@ func TestIpamer_AcquireChildPrefixIPv6(t *testing.T) {
 
 		// Release Parent Prefix must not work
 		err = ipam.ReleaseChildPrefix(ctx, p3)
+		require.ErrorIs(t, err, ErrNotFound)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "prefix 2001:db8:75a3::/120 is no child prefix")
+		require.Contains(t, err.Error(), "NotFound: unable to find prefix for cidr")
 	})
 }
 
@@ -842,8 +844,9 @@ func TestIpamer_AcquireSpecificChildPrefixIPv6(t *testing.T) {
 
 		// Release Parent Prefix must not work
 		err = ipam.ReleaseChildPrefix(ctx, p3)
+		require.ErrorIs(t, err, ErrNotFound)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "prefix 2001:db8:75a3::/120 is no child prefix")
+		require.Contains(t, err.Error(), "NotFound: unable to find prefix for cidr")
 	})
 }
 

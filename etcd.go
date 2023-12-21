@@ -139,7 +139,7 @@ func (e *etcd) ReadPrefix(ctx context.Context, prefix string, namespace string) 
 	}
 
 	if get.Count == 0 {
-		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+		return Prefix{}, fmt.Errorf("%w unable to read existing prefix:%v, error:%w", ErrNotFound, prefix, err)
 	}
 
 	return fromJSON(get.Kvs[0].Value)
