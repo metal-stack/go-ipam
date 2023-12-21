@@ -15,6 +15,7 @@ func Test_ReadPrefix(t *testing.T) {
 	// Prefix
 	p, err := m.ReadPrefix(ctx, "12.0.0.0/8", defaultNamespace)
 	require.Error(t, err)
+	require.ErrorIs(t, err, ErrNotFound)
 	require.Equal(t, "NotFound prefix 12.0.0.0/8 not found", err.Error())
 	require.Empty(t, p)
 
