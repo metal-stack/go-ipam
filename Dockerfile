@@ -10,6 +10,6 @@ WORKDIR /work
 COPY . .
 RUN make server client
 
-FROM alpine:3.18
+FROM alpine:3.19
 COPY --from=builder /work/bin/* /
 ENTRYPOINT [ "/server" ]
