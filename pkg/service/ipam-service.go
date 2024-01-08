@@ -34,14 +34,14 @@ func (i *IPAMService) CreatePrefix(ctx context.Context, req *connect.Request[v1.
 		i.log.Error("createprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	return &connect.Response[v1.CreatePrefixResponse]{
-		Msg: &v1.CreatePrefixResponse{
+	return connect.NewResponse(
+		&v1.CreatePrefixResponse{
 			Prefix: &v1.Prefix{
 				Cidr:       resp.Cidr,
 				ParentCidr: resp.ParentCidr,
 			},
 		},
-	}, nil
+	), nil
 }
 func (i *IPAMService) DeletePrefix(ctx context.Context, req *connect.Request[v1.DeletePrefixRequest]) (*connect.Response[v1.DeletePrefixResponse], error) {
 	i.log.Debug("deleteprefix", "req", req)
@@ -54,14 +54,14 @@ func (i *IPAMService) DeletePrefix(ctx context.Context, req *connect.Request[v1.
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
-	return &connect.Response[v1.DeletePrefixResponse]{
-		Msg: &v1.DeletePrefixResponse{
+	return connect.NewResponse(
+		&v1.DeletePrefixResponse{
 			Prefix: &v1.Prefix{
 				Cidr:       resp.Cidr,
 				ParentCidr: resp.ParentCidr,
 			},
 		},
-	}, nil
+	), nil
 }
 func (i *IPAMService) GetPrefix(ctx context.Context, req *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error) {
 	i.log.Debug("getprefix", "req", req)
@@ -70,20 +70,20 @@ func (i *IPAMService) GetPrefix(ctx context.Context, req *connect.Request[v1.Get
 	}
 	resp, err := i.ipamer.PrefixFrom(ctx, req.Msg.GetCidr())
 	if err != nil {
-		return &connect.Response[v1.GetPrefixResponse]{}, err
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if resp == nil {
-		return &connect.Response[v1.GetPrefixResponse]{}, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not found", req.Msg.GetCidr()))
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not found", req.Msg.GetCidr()))
 	}
 
-	return &connect.Response[v1.GetPrefixResponse]{
-		Msg: &v1.GetPrefixResponse{
+	return connect.NewResponse(
+		&v1.GetPrefixResponse{
 			Prefix: &v1.Prefix{
 				Cidr:       resp.Cidr,
 				ParentCidr: resp.ParentCidr,
 			},
 		},
-	}, nil
+	), nil
 }
 func (i *IPAMService) ListPrefixes(ctx context.Context, req *connect.Request[v1.ListPrefixesRequest]) (*connect.Response[v1.ListPrefixesResponse], error) {
 	i.log.Debug("listprefixes", "req", req)
@@ -99,21 +99,16 @@ func (i *IPAMService) ListPrefixes(ctx context.Context, req *connect.Request[v1.
 	var result []*v1.Prefix
 	for _, cidr := range resp {
 		p, err := i.ipamer.PrefixFrom(ctx, cidr)
-		if err != nil {
-			i.log.Warn("skipping prefix of cidr", "error", err)
-			continue
-		}
-		if p == nil {
-			i.log.Warn("skipping nil prefix of cidr", "cidr", cidr)
-			continue
+		if err != nil || p == nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		result = append(result, &v1.Prefix{Cidr: cidr, ParentCidr: p.ParentCidr})
 	}
-	return &connect.Response[v1.ListPrefixesResponse]{
-		Msg: &v1.ListPrefixesResponse{
+	return connect.NewResponse(
+		&v1.ListPrefixesResponse{
 			Prefixes: result,
 		},
-	}, nil
+	), nil
 }
 
 func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error) {
@@ -136,14 +131,14 @@ func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Reque
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
-	return &connect.Response[v1.AcquireChildPrefixResponse]{
-		Msg: &v1.AcquireChildPrefixResponse{
+	return connect.NewResponse(
+		&v1.AcquireChildPrefixResponse{
 			Prefix: &v1.Prefix{
 				Cidr:       resp.Cidr,
 				ParentCidr: resp.ParentCidr,
 			},
 		},
-	}, nil
+	), nil
 }
 
 func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error) {
@@ -164,14 +159,14 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Reque
 		i.log.Error("releasechildprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	return &connect.Response[v1.ReleaseChildPrefixResponse]{
-		Msg: &v1.ReleaseChildPrefixResponse{
+	return connect.NewResponse(
+		&v1.ReleaseChildPrefixResponse{
 			Prefix: &v1.Prefix{
 				Cidr:       prefix.Cidr,
 				ParentCidr: prefix.ParentCidr,
 			},
 		},
-	}, nil
+	), nil
 }
 func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error) {
 	i.log.Debug("acquireip", "req", req)
@@ -193,14 +188,14 @@ func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.Acq
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
-	return &connect.Response[v1.AcquireIPResponse]{
-		Msg: &v1.AcquireIPResponse{
+	return connect.NewResponse(
+		&v1.AcquireIPResponse{
 			Ip: &v1.IP{
 				Ip:           resp.IP.String(),
 				ParentPrefix: resp.ParentPrefix,
 			},
 		},
-	}, nil
+	), nil
 }
 func (i *IPAMService) ReleaseIP(ctx context.Context, req *connect.Request[v1.ReleaseIPRequest]) (*connect.Response[v1.ReleaseIPResponse], error) {
 	i.log.Debug("releaseip", "req", req)
@@ -221,14 +216,14 @@ func (i *IPAMService) ReleaseIP(ctx context.Context, req *connect.Request[v1.Rel
 		i.log.Error("releaseip", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	return &connect.Response[v1.ReleaseIPResponse]{
-		Msg: &v1.ReleaseIPResponse{
+	return connect.NewResponse(
+		&v1.ReleaseIPResponse{
 			Ip: &v1.IP{
 				Ip:           req.Msg.GetIp(),
 				ParentPrefix: resp.ParentCidr,
 			},
 		},
-	}, nil
+	), nil
 }
 func (i *IPAMService) Dump(ctx context.Context, req *connect.Request[v1.DumpRequest]) (*connect.Response[v1.DumpResponse], error) {
 	i.log.Debug("dump", "req", req)
@@ -240,11 +235,11 @@ func (i *IPAMService) Dump(ctx context.Context, req *connect.Request[v1.DumpRequ
 		i.log.Error("dump", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	return &connect.Response[v1.DumpResponse]{
-		Msg: &v1.DumpResponse{
+	return connect.NewResponse(
+		&v1.DumpResponse{
 			Dump: dump,
 		},
-	}, nil
+	), nil
 }
 
 func (i *IPAMService) Load(ctx context.Context, req *connect.Request[v1.LoadRequest]) (*connect.Response[v1.LoadResponse], error) {
@@ -257,7 +252,7 @@ func (i *IPAMService) Load(ctx context.Context, req *connect.Request[v1.LoadRequ
 		i.log.Error("load", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	return &connect.Response[v1.LoadResponse]{}, nil
+	return connect.NewResponse(&v1.LoadResponse{}), nil
 }
 func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error) {
 	i.log.Debug("prefixusage", "req", req)
@@ -272,15 +267,15 @@ func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.P
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("prefix:%q not found", req.Msg.GetCidr()))
 	}
 	u := p.Usage()
-	return &connect.Response[v1.PrefixUsageResponse]{
-		Msg: &v1.PrefixUsageResponse{
+	return connect.NewResponse(
+		&v1.PrefixUsageResponse{
 			AvailableIps:              u.AvailableIPs,
 			AcquiredIps:               u.AcquiredIPs,
 			AvailableSmallestPrefixes: u.AvailableSmallestPrefixes,
 			AvailablePrefixes:         u.AvailablePrefixes,
 			AcquiredPrefixes:          u.AcquiredPrefixes,
 		},
-	}, nil
+	), nil
 }
 
 func (i *IPAMService) CreateNamespace(ctx context.Context, req *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error) {
@@ -289,7 +284,7 @@ func (i *IPAMService) CreateNamespace(ctx context.Context, req *connect.Request[
 	if err != nil {
 		return nil, err
 	}
-	return &connect.Response[v1.CreateNamespaceResponse]{}, nil
+	return connect.NewResponse(&v1.CreateNamespaceResponse{}), nil
 }
 
 func (i *IPAMService) DeleteNamespace(ctx context.Context, req *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error) {
@@ -298,7 +293,7 @@ func (i *IPAMService) DeleteNamespace(ctx context.Context, req *connect.Request[
 	if err != nil {
 		return nil, err
 	}
-	return &connect.Response[v1.DeleteNamespaceResponse]{}, nil
+	return connect.NewResponse(&v1.DeleteNamespaceResponse{}), nil
 }
 
 func (i *IPAMService) ListNamespaces(ctx context.Context, req *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error) {
@@ -307,9 +302,9 @@ func (i *IPAMService) ListNamespaces(ctx context.Context, req *connect.Request[v
 	if err != nil {
 		return nil, err
 	}
-	return &connect.Response[v1.ListNamespacesResponse]{
-		Msg: &v1.ListNamespacesResponse{
+	return connect.NewResponse(
+		&v1.ListNamespacesResponse{
 			Namespace: res,
 		},
-	}, nil
+	), nil
 }
