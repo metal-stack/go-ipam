@@ -92,7 +92,7 @@ func (r *redis) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefi
 
 	result, err := r.rdb.HGet(ctx, namespace, prefix).Result()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+		return Prefix{}, fmt.Errorf("%w unable to read existing prefix:%v, error:%w", ErrNotFound, prefix, err)
 	}
 	return fromJSON([]byte(result))
 }

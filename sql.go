@@ -2,6 +2,8 @@ package ipam
 
 import (
 	"context"
+	dbsql "database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -85,6 +87,9 @@ func (s *sql) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefix,
 	var result []byte
 	err := s.db.GetContext(ctx, &result, "SELECT prefix FROM "+getTableName(namespace)+" WHERE cidr=$1", prefix)
 	if err != nil {
+		if errors.Is(err, dbsql.ErrNoRows) {
+			return Prefix{}, fmt.Errorf("%w prefix:%s not found:%s", ErrNotFound, prefix, err.Error())
+		}
 		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
 	return fromJSON(result)

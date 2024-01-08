@@ -44,7 +44,7 @@ func (m *memory) ReadPrefix(_ context.Context, prefix, namespace string) (Prefix
 	}
 	result, ok := m.prefixes[namespace][prefix]
 	if !ok {
-		return Prefix{}, fmt.Errorf("prefix %s not found", prefix)
+		return Prefix{}, fmt.Errorf("%w prefix %s not found", ErrNotFound, prefix)
 	}
 	return *result.deepCopy(), nil
 }

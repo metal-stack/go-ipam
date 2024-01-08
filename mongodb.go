@@ -114,7 +114,7 @@ func (m *mongodb) ReadPrefix(ctx context.Context, prefix string, namespace strin
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() != nil && errors.Is(r.Err(), mongo.ErrNoDocuments) {
-		return Prefix{}, fmt.Errorf(`prefix not found:%s, error:%w`, prefix, r.Err())
+		return Prefix{}, fmt.Errorf(`%w prefix not found:%s, error:%w`, ErrNotFound, prefix, r.Err())
 	} else if r.Err() != nil {
 		return Prefix{}, fmt.Errorf(`error while trying to find prefix:%s, error:%w`, prefix, r.Err())
 	}
