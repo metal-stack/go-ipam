@@ -174,12 +174,12 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 
 		count := 20
 		prefixes := make(chan string)
-		for i := 0; i < count; i++ {
+		for range count {
 			go acquirePrefix(t, ctx, db, parentCidr, prefixes)
 		}
 
 		prefixMap := make(map[string]bool)
-		for i := 0; i < count; i++ {
+		for range count {
 			p := <-prefixes
 			_, duplicate := prefixMap[p]
 			if duplicate {
@@ -219,12 +219,12 @@ func Test_ConcurrentAcquireIP(t *testing.T) {
 
 		count := 30
 		ips := make(chan string)
-		for i := 0; i < count; i++ {
+		for range count {
 			go acquireIP(t, ctx, db, parentCidr, ips)
 		}
 
 		ipMap := make(map[string]bool)
-		for i := 0; i < count; i++ {
+		for range count {
 			p := <-ips
 			_, duplicate := ipMap[p]
 			if duplicate {

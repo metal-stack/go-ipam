@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "latest-v23.1"
+		cockroachVersion = "latest-v23.2"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 	}
 	etcdVersion = os.Getenv("ETCD_VERSION")
 	if etcdVersion == "" {
-		etcdVersion = "v3.5.10"
+		etcdVersion = "v3.5.12"
 	}
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {

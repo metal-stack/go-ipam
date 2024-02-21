@@ -861,7 +861,7 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv6(t *testing.T) {
 
 		uniquePrefixes := make(map[string]bool)
 		// acquire all /120 prefixes (2^8 = 256)
-		for i := 0; i < 256; i++ {
+		for range 256 {
 			cp, err := ipam.AcquireChildPrefix(ctx, prefix.Cidr, 120)
 			require.NoError(t, err)
 			require.NotNil(t, cp)
@@ -893,7 +893,7 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv4(t *testing.T) {
 
 		uniquePrefixes := make(map[string]bool)
 		// acquire all /24 prefixes (2^8 = 256)
-		for i := 0; i < 256; i++ {
+		for range 256 {
 			cp, err := ipam.AcquireChildPrefix(ctx, prefix.Cidr, 24)
 			require.NoError(t, err)
 			require.NotNil(t, cp)
@@ -1218,7 +1218,7 @@ func TestIpamerAcquireIP(t *testing.T) {
 		cidr := "10.0.0.0/16"
 		p, err := ipam.NewPrefix(ctx, cidr)
 		require.NoError(t, err)
-		for n := 0; n < 10; n++ {
+		for range 10 {
 			if len(p.ips) != 2 {
 				t.Fatalf("expected 2 ips in prefix, got %d", len(p.ips))
 			}
@@ -1240,7 +1240,7 @@ func TestIpamerAcquireIPv6(t *testing.T) {
 		cidr := "2001:0db8:85a3::/120"
 		p, err := ipam.NewPrefix(ctx, cidr)
 		require.NoError(t, err)
-		for n := 0; n < 10; n++ {
+		for range 10 {
 			if len(p.ips) != 1 {
 				t.Fatalf("expected 1 ips in prefix, got %d", len(p.ips))
 			}
@@ -1470,7 +1470,7 @@ func TestAcquireIPParallel(t *testing.T) {
 			panic(err)
 		}
 		ips := make(map[string]bool)
-		for n := 0; n < ipsCount; n++ {
+		for range ipsCount {
 			g.Go(func() error {
 				ip, err := ipam.AcquireIP(ctx, p.Cidr)
 				if err != nil {
