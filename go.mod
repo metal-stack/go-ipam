@@ -55,7 +55,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/klauspost/compress v1.17.6 // indirect
+	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
@@ -68,7 +68,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/power-devops/perfstat v0.0.0-20240219145905-2259734c190a // indirect
+	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/client_model v0.6.0 // indirect
 	github.com/prometheus/common v0.47.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
@@ -102,6 +102,6 @@ require (
 	google.golang.org/genproto v0.0.0-20240221002015-b0ce06bbee7c // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240221002015-b0ce06bbee7c // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240221002015-b0ce06bbee7c // indirect
-	google.golang.org/grpc v1.61.1 // indirect
+	google.golang.org/grpc v1.62.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
