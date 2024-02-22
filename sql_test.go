@@ -175,7 +175,8 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 		count := 20
 		prefixes := make(chan string)
 		for range count {
-			go acquirePrefix(t, ctx, db, parentCidr, prefixes)
+			// FIXME migrate to errgroup
+			go acquirePrefix(t, ctx, db, parentCidr, prefixes) // nolint:testifylint
 		}
 
 		prefixMap := make(map[string]bool)
@@ -220,7 +221,8 @@ func Test_ConcurrentAcquireIP(t *testing.T) {
 		count := 30
 		ips := make(chan string)
 		for range count {
-			go acquireIP(t, ctx, db, parentCidr, ips)
+			// FIXME migrate to errgroup
+			go acquireIP(t, ctx, db, parentCidr, ips) // nolint:testifylint
 		}
 
 		ipMap := make(map[string]bool)
