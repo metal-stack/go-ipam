@@ -32,7 +32,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Lint
-      uses: golangci/golangci-lint-action@v3
+      uses: golangci/golangci-lint-action@v4
       with:
         args: -p bugs -p unused --timeout=3m
 
@@ -41,7 +41,7 @@ jobs:
         make proto
 
     - name: Check if there are changes
-      uses: tj-actions/verify-changed-files@v17
+      uses: tj-actions/verify-changed-files@v18
       id: verify-changed-files
 
     - name: Process changes
