@@ -15,10 +15,9 @@ import (
 )
 
 // Prefix is a expression of a ip with length and forms a classless network.
-// nolint:musttag
 type Prefix struct {
-	Cidr                   string          // The Cidr of this prefix
-	ParentCidr             string          // if this prefix is a child this is a pointer back
+	Cidr                   string          `json:"Cidr"`       // The Cidr of this prefix
+	ParentCidr             string          `json:"ParentCidr"` // if this prefix is a child this is a pointer back
 	isParent               bool            // if this Prefix has child prefixes, this is set to true
 	availableChildPrefixes map[string]bool // available child prefixes of this prefix
 	// TODO remove this in the next release
