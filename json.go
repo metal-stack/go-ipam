@@ -49,7 +49,6 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 }
 
 func (p Prefix) toJSON() ([]byte, error) {
-	// FIXME add json annotations to prefix without breaking changes to the existing structure
 	pj, err := json.Marshal(p.toPrefixJSON())
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%w", err)
