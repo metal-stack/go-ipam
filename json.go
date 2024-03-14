@@ -70,7 +70,7 @@ func (ps Prefixes) toJSON() ([]byte, error) {
 
 func fromJSON(js []byte) (Prefix, error) {
 	var pre prefixJSON
-	err := json.Unmarshal(js, &pre) // nolint:musttag
+	err := json.Unmarshal(js, &pre)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("unable to unmarshal prefix:%w", err)
 	}
