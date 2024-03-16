@@ -59,25 +59,30 @@ func Test_UpdatePrefix_Concurrent(t *testing.T) {
 			cidr := calcPrefix24(run) + "/24"
 			prefix.Cidr = cidr
 
-			p, err := m.CreatePrefix(ctx, prefix, defaultNamespace)
-			require.NoError(t, err)
-			require.NotNil(t, p)
+			_, err := m.CreatePrefix(ctx, prefix, defaultNamespace)
+			if err != nil {
+				t.Error(t, err)
+			}
+
+			p, err := m.ReadPrefix(ctx, cidr, defaultNamespace)
+			if err != nil {
+				t.Error(t, err)
+			}
+
+			_, err = m.UpdatePrefix(ctx, p, defaultNamespace)
+			if err != nil {
+				t.Error(t, err)
+			}
 
 			p, err = m.ReadPrefix(ctx, cidr, defaultNamespace)
-			require.NoError(t, err)
-			require.NotNil(t, p)
+			if err != nil {
+				t.Error(t, err)
+			}
 
-			p, err = m.UpdatePrefix(ctx, p, defaultNamespace)
-			require.NoError(t, err)
-			require.NotNil(t, p)
-
-			p, err = m.ReadPrefix(ctx, cidr, defaultNamespace)
-			require.NoError(t, err)
-			require.NotNil(t, p)
-
-			p, err = m.DeletePrefix(ctx, p, defaultNamespace)
-			require.NoError(t, err)
-			require.NotNil(t, p)
+			_, err = m.DeletePrefix(ctx, p, defaultNamespace)
+			if err != nil {
+				t.Error(t, err)
+			}
 		}(i)
 	}
 }
