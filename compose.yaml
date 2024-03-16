@@ -1,0 +1,32 @@
+---
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=ipam
+      - POSTGRES_PASSWORD=ipam
+      - POSTGRES_DB=ipam
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+  ipam:
+    image: ghcr.io/metal-stack/go-ipam:latest
+    environment:
+      - GOIPAM_PG_HOST=postgres
+      - GOIPAM_PG_PORT=5432
+      - GOIPAM_PG_USER=ipam
+      - GOIPAM_PG_PASSWORD=ipam
+      - GOIPAM_PG_DBNAME=ipam
+    restart: always
+    command:
+      postgres
+    ports:
+      - 9090:9090
+    depends_on:
+      - postgres
+volumes:
+  db_data:

@@ -133,6 +133,27 @@ There is also a `cli` provided in the container which can be used to make calls 
 docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
 ```
 
+## Docker Compose example
+
+Ensure you have docker with compose support installed. Then execute the following command:
+
+```bash
+docker compose up -d
+
+# check if up and running
+docker compose ls
+NAME                STATUS              CONFIG FILES
+go-ipam             running(2)          /your working dir/go-ipam/compose.yaml
+
+# Then execute the cli to create prefixes and acquire ips
+
+docker compose exec ipam /cli prefix create --cidr 192.168.0.0/16
+prefix:"192.168.0.0/16" created
+
+docker compose exec ipam /cli ip acquire --prefix  192.168.0.0/16
+ip:"192.168.0.1" acquired
+```
+
 ## Supported Databases & Performance
 
 | Database    | Acquire Child Prefix |  Acquire IP |  New Prefix | Prefix Overlap | Production-Ready | Geo-Redundant |
