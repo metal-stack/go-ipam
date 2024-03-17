@@ -155,6 +155,10 @@ prefix:"192.168.0.0/16" created
 
 docker compose exec ipam /cli ip acquire --prefix  192.168.0.0/16
 ip:"192.168.0.1" acquired
+
+# Queries can also made against the Rest api like so:
+
+curl -v -X POST -d '{}' -H 'Content-Type: application/json' localhost:9090/api.v1.IpamService/ListPrefixes
 ```
 
 ## Supported Databases & Performance

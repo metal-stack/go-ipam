@@ -16,6 +16,7 @@ services:
   ipam:
     image: go-ipam
     environment:
+      - GOIPAM_GRPC_SERVER_ENDPOINT=0.0.0.0:9090
       - GOIPAM_PG_HOST=postgres
       - GOIPAM_PG_PORT=5432
       - GOIPAM_PG_USER=ipam
