@@ -14,8 +14,9 @@ services:
     expose:
       - 5432
   ipam:
-    image: ghcr.io/metal-stack/go-ipam:latest
+    image: go-ipam
     environment:
+      - GOIPAM_GRPC_SERVER_ENDPOINT=0.0.0.0:9090
       - GOIPAM_PG_HOST=postgres
       - GOIPAM_PG_PORT=5432
       - GOIPAM_PG_USER=ipam
@@ -26,6 +27,12 @@ services:
       postgres
     ports:
       - 9090:9090
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr","localhost:9090"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
     depends_on:
       - postgres
 volumes:

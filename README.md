@@ -141,9 +141,12 @@ Ensure you have docker with compose support installed. Then execute the followin
 docker compose up -d
 
 # check if up and running
-docker compose ls
-NAME                STATUS              CONFIG FILES
-go-ipam             running(2)          /your working dir/go-ipam/compose.yaml
+docker compose ps
+
+NAME                 IMAGE             COMMAND                  SERVICE    CREATED          STATUS                    PORTS
+go-ipam-ipam-1       go-ipam           "/server postgres"       ipam       14 seconds ago   Up 13 seconds (healthy)   0.0.0.0:9090->9090/tcp, :::9090->9090/tcp
+go-ipam-postgres-1   postgres:alpine   "docker-entrypoint.s…"   postgres   8 minutes ago    Up 13 seconds             5432/tcp
+
 
 # Then execute the cli to create prefixes and acquire ips
 

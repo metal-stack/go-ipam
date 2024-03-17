@@ -103,6 +103,7 @@ func (s *server) Run() error {
 		ReadHeaderTimeout: 1 * time.Minute,
 	}
 
+	s.log.Info("started grpc server", "at", server.Addr)
 	err = server.ListenAndServe()
 	return err
 }
