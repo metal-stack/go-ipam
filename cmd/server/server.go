@@ -94,6 +94,10 @@ func (s *server) Run() error {
 		grpcreflect.NewStaticReflector(apiv1connect.IpamServiceName),
 		compress.WithAll(compress.LevelBalanced),
 	))
+	mux.Handle(grpcreflect.NewHandlerV1Alpha(
+		grpcreflect.NewStaticReflector(apiv1connect.IpamServiceName),
+		compress.WithAll(compress.LevelBalanced),
+	))
 
 	server := http.Server{
 		Addr: s.c.GrpcServerEndpoint,
