@@ -133,6 +133,34 @@ There is also a `cli` provided in the container which can be used to make calls 
 docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
 ```
 
+## Docker Compose example
+
+Ensure you have docker with compose support installed. Then execute the following command:
+
+```bash
+docker compose up -d
+
+# check if up and running
+docker compose ps
+
+NAME                 IMAGE             COMMAND                  SERVICE    CREATED          STATUS                    PORTS
+go-ipam-ipam-1       go-ipam           "/server postgres"       ipam       14 seconds ago   Up 13 seconds (healthy)   0.0.0.0:9090->9090/tcp, :::9090->9090/tcp
+go-ipam-postgres-1   postgres:alpine   "docker-entrypoint.s…"   postgres   8 minutes ago    Up 13 seconds             5432/tcp
+
+
+# Then execute the cli to create prefixes and acquire ips
+
+docker compose exec ipam /cli prefix create --cidr 192.168.0.0/16
+prefix:"192.168.0.0/16" created
+
+docker compose exec ipam /cli ip acquire --prefix  192.168.0.0/16
+ip:"192.168.0.1" acquired
+
+# Queries can also made against the Rest api like so:
+
+curl -v -X POST -d '{}' -H 'Content-Type: application/json' localhost:9090/api.v1.IpamService/ListPrefixes
+```
+
 ## Supported Databases & Performance
 
 | Database    | Acquire Child Prefix |  Acquire IP |  New Prefix | Prefix Overlap | Production-Ready | Geo-Redundant |

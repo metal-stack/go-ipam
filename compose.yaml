@@ -1,0 +1,39 @@
+---
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=ipam
+      - POSTGRES_PASSWORD=ipam
+      - POSTGRES_DB=ipam
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+  ipam:
+    image: go-ipam
+    environment:
+      - GOIPAM_GRPC_SERVER_ENDPOINT=0.0.0.0:9090
+      - GOIPAM_PG_HOST=postgres
+      - GOIPAM_PG_PORT=5432
+      - GOIPAM_PG_USER=ipam
+      - GOIPAM_PG_PASSWORD=ipam
+      - GOIPAM_PG_DBNAME=ipam
+    restart: always
+    command:
+      postgres
+    ports:
+      - 9090:9090
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr","localhost:9090"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      - postgres
+volumes:
+  db_data:
