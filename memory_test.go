@@ -52,7 +52,7 @@ func Test_UpdatePrefix_Concurrent(t *testing.T) {
 	ctx := context.Background()
 	m := NewMemory(ctx)
 
-	for i := 0; i < 50000; i++ {
+	for i := range 50000 {
 
 		go func(run int) {
 			prefix := Prefix{}
