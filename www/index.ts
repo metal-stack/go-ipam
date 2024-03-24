@@ -5,7 +5,7 @@ import {
     createConnectTransport,
 } from '@connectrpc/connect-web'
 import { IpamService } from '../js/api/v1/ipam_connect.ts'
-import { CreatePrefixRequest, Prefix } from '../js/api/v1/ipam_pb.ts'
+import { CreatePrefixRequest, ListPrefixesRequest, Prefix } from '../js/api/v1/ipam_pb.ts'
 
 
 // Make the Ipam Service client
@@ -24,7 +24,7 @@ const inputEl = document.getElementById("user-input") as HTMLInputElement;
 document.getElementById("user-input")?.addEventListener("keyup", (event) => {
     event.preventDefault();
     if (event.key === "Enter") {
-        document.getElementById("send-button")?.click();
+        // document.getElementById("send-button")?.click();
         createPrefix()
     }
 });
@@ -35,7 +35,7 @@ document.getElementById("send-button")?.addEventListener("click", (event) => {
 });
 
 // Adds a node to the DOM representing the conversation with Eliza
-function addNode(prefix?: Prefix): void {
+function refreshPrefixes(prefix?: Prefix): void {
     const divEl = document.createElement('div');
     const pEl = document.createElement('p');
 
@@ -51,6 +51,17 @@ function addNode(prefix?: Prefix): void {
     }
 }
 
+async function listPrefixes() {
+    const request = new ListPrefixesRequest({})
+    const response = await client.listPrefixes(request)
+
+    for (let index = 0; index < response.prefixes.length; index++) {
+        const prefix = response.prefixes[index];
+        console.log("prefix: ${prefix}")
+        refreshPrefixes(prefix)
+    }
+}
+
 async function createPrefix() {
     const cidr = inputEl?.value ?? '';
 
@@ -60,7 +71,6 @@ async function createPrefix() {
         cidr
     })
     const response = await client.createPrefix(request)
-    addNode(response.prefix);
-
+    listPrefixes();
     console.log("prefix created:" + response.prefix?.cidr)
 }

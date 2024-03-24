@@ -4358,7 +4358,7 @@ var IpamService = {
 };
 
 // www/index.ts
-var addNode = function(prefix) {
+var refreshPrefixes = function(prefix) {
   const divEl = document.createElement("div");
   const pEl = document.createElement("p");
   const respContainerEl = containerEl.appendChild(divEl);
@@ -4371,6 +4371,15 @@ var addNode = function(prefix) {
     respTextEl.innerText = "Unknown CIDR";
   }
 };
+async function listPrefixes() {
+  const request = new ListPrefixesRequest({});
+  const response = await client.listPrefixes(request);
+  for (let index = 0;index < response.prefixes.length; index++) {
+    const prefix = response.prefixes[index];
+    console.log("prefix: ${prefix}");
+    refreshPrefixes(prefix);
+  }
+}
 async function createPrefix() {
   const cidr = inputEl?.value ?? "";
   inputEl.value = "";
@@ -4378,7 +4387,7 @@ async function createPrefix() {
     cidr
   });
   const response = await client.createPrefix(request);
-  addNode(response.prefix);
+  listPrefixes();
   console.log("prefix created:" + response.prefix?.cidr);
 }
 var client = createPromiseClient(IpamService, createConnectTransport({
@@ -4388,14 +4397,11 @@ var containerEl = document.getElementById("conversation-container");
 var inputEl = document.getElementById("user-input");
 document.getElementById("user-input")?.addEventListener("keyup", (event) => {
   event.preventDefault();
-  console.log("event key:" + event.key);
   if (event.key === "Enter") {
-    document.getElementById("send-button")?.click();
     createPrefix();
   }
 });
 document.getElementById("send-button")?.addEventListener("click", (event) => {
   event.preventDefault();
-  console.log("event button:" + event.button);
   createPrefix();
 });
