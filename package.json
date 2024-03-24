@@ -1,0 +1,29 @@
+{
+  "name": "ipam",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run serve",
+    "serve": "tsc --noEmit && esbuild www/index.ts --serve=localhost:3000 --servedir=www --outdir=www --bundle --global-name=ipam",
+    "build": "bun build www/index.ts --bundle --outfile=www/index.js",
+    "typecheck": "tsc --noEmit",
+    "ci": "npm run generate && npm run typecheck && npm run build && npm run test"
+  },
+  "author": "Stefan",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@bufbuild/buf": "^1.30.0",
+    "@bufbuild/protobuf": "^1.8.0",
+    "@bufbuild/protoc-gen-es": "^1.8.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-web": "^1.4.0",
+    "@connectrpc/protoc-gen-connect-es": "^1.4.0",
+    "@types/jasmine": "^5.1.4",
+    "esbuild": "^0.20.2",
+    "jasmine": "^5.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.3"
+  }
+}

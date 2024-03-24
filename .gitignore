@@ -2,3 +2,4 @@
 .idea
 coverage.out
 bin
+node_modules

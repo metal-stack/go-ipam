@@ -75,8 +75,12 @@ func (s *server) Run() error {
 	}()
 
 	mux := http.NewServeMux()
+
+	fs := http.FileServer(http.Dir("./www"))
+
 	// The generated constructors return a path and a plain net/http
 	// handler.
+	mux.Handle("/", fs)
 	mux.Handle(
 		apiv1connect.NewIpamServiceHandler(
 			service.New(s.log, s.ipamer),
