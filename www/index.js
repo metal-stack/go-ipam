@@ -4358,31 +4358,29 @@ var IpamService = {
 };
 
 // www/index.ts
-var refreshPrefixes = function(prefix) {
+var refreshPrefixes = function(prefixes) {
   const divEl = document.createElement("div");
   const pEl = document.createElement("p");
   const respContainerEl = containerEl.appendChild(divEl);
   respContainerEl.className = `prefix-resp-container`;
   const respTextEl = respContainerEl.appendChild(pEl);
   respTextEl.className = "resp-text";
-  if (prefix !== undefined) {
-    respTextEl.innerText = prefix.cidr;
-  } else {
-    respTextEl.innerText = "Unknown CIDR";
+  for (let prefix of prefixes) {
+    if (prefix !== undefined) {
+      respTextEl.innerText = prefix.cidr;
+    } else {
+      respTextEl.innerText = "Unknown CIDR";
+    }
   }
 };
 async function listPrefixes() {
   const request = new ListPrefixesRequest({});
   const response = await client.listPrefixes(request);
-  for (let index = 0;index < response.prefixes.length; index++) {
-    const prefix = response.prefixes[index];
-    console.log("prefix: ${prefix}");
-    refreshPrefixes(prefix);
-  }
+  refreshPrefixes(response.prefixes);
 }
 async function createPrefix() {
-  const cidr = inputEl?.value ?? "";
-  inputEl.value = "";
+  const cidr = cidrInputEl?.value ?? "";
+  cidrInputEl.value = "";
   const request = new CreatePrefixRequest({
     cidr
   });
@@ -4393,15 +4391,15 @@ async function createPrefix() {
 var client = createPromiseClient(IpamService, createConnectTransport({
   baseUrl: "http://localhost:9090"
 }));
-var containerEl = document.getElementById("conversation-container");
-var inputEl = document.getElementById("user-input");
-document.getElementById("user-input")?.addEventListener("keyup", (event) => {
+var containerEl = document.getElementById("prefix-container");
+var cidrInputEl = document.getElementById("cidr-input");
+document.getElementById("cidr-input")?.addEventListener("keyup", (event) => {
   event.preventDefault();
   if (event.key === "Enter") {
     createPrefix();
   }
 });
-document.getElementById("send-button")?.addEventListener("click", (event) => {
+document.getElementById("create-prefix-button")?.addEventListener("click", (event) => {
   event.preventDefault();
   createPrefix();
 });
