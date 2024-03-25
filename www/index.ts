@@ -33,7 +33,6 @@ document.getElementById("create-prefix-button")?.addEventListener("click", (even
     createPrefix()
 });
 
-// Adds a node to the DOM representing the conversation with Eliza
 function refreshPrefixes(prefixes: Prefix[]): void {
     const divEl = document.createElement('div');
     const pEl = document.createElement('p');
@@ -56,7 +55,6 @@ function refreshPrefixes(prefixes: Prefix[]): void {
 async function listPrefixes() {
     const request = new ListPrefixesRequest({})
     const response = await client.listPrefixes(request)
-
     refreshPrefixes(response.prefixes)
 }
 

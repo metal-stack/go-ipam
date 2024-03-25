@@ -1,34 +1,33 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8"/>
-        <title>IPAM</title>
-        <!-- <link rel="stylesheet" type="text/css" href="app.css"/> -->
-    </head>
-    <body>
-        <div id="app">
-            <div>
-                <header class="app-header">
-                    <h1>IPAM</h1>
-                </header>
-                <div class="container">
-                    <div>
-                        <input
-                        id="cidr-input"
-                        type="text"
-                        class="text-input"
-                        />
-                        <button id="create-prefix-button">Create Prefix</button>
-                    </div>
-                    <div id="prefix-container">
-                        <div class="prefix-resp-container">
-                            <p class="resp-text">Prefixes</p>
-                        </div>
+
+<head>
+    <meta charset="utf-8" />
+    <title>IPAM</title>
+    <!-- <link rel="stylesheet" type="text/css" href="app.css"/> -->
+</head>
+
+<body>
+    <div id="app">
+        <div>
+            <header class="app-header">
+                <h1>IPAM</h1>
+            </header>
+            <div class="container">
+                <div>
+                    <input id="cidr-input" type="text" class="text-input" />
+                    <button id="create-prefix-button">Create Prefix</button>
+                </div>
+                <div id="prefix-container">
+                    <div class="prefix-resp-container">
+                        <p class="resp-text">Prefixes</p>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <script type="module" src="index.js" async></script>
-    </body>
+    </div>
+
+    <script type="module" src="index.js" async></script>
+</body>
+
 </html>
