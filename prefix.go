@@ -697,7 +697,6 @@ func (p *Prefix) Usage() Usage {
 // with ten attempts and jitter delay ~100ms
 // returns only error of last failed attempt
 func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
-
 	return retry.Do(
 		retryableFunc,
 		retry.RetryIf(func(err error) bool {

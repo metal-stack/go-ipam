@@ -219,6 +219,7 @@ func TestIpamer_ReleaseIPFromPrefixIPv6(t *testing.T) {
 		require.Contains(t, err.Error(), "NotFound: unable to find prefix for cidr:1001:0db8:85a3::/120")
 	})
 }
+
 func TestIpamer_AcquireSpecificIP(t *testing.T) {
 	ctx := context.Background()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
@@ -466,7 +467,6 @@ func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, c4)
 		require.Equal(t, "192.168.12.0/22", c4.String())
-
 	})
 }
 
@@ -878,9 +878,9 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv6(t *testing.T) {
 		s, _ = prefix.availablePrefixes()
 		require.Equal(t, uint64(0), s)
 		require.Equal(t, uint64(256), prefix.acquiredPrefixes())
-
 	})
 }
+
 func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv4(t *testing.T) {
 	ctx := context.Background()
 
@@ -910,12 +910,10 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv4(t *testing.T) {
 		s, _ = prefix.availablePrefixes()
 		require.Equal(t, uint64(0), s)
 		require.Equal(t, uint64(256), prefix.acquiredPrefixes())
-
 	})
 }
 
 func TestPrefix_Availableips(t *testing.T) {
-
 	tests := []struct {
 		name string
 		Cidr string
@@ -1254,6 +1252,7 @@ func TestIpamerAcquireIPv6(t *testing.T) {
 		require.NoError(t, err, "error deleting prefix:%v", err)
 	})
 }
+
 func TestIpamerAcquireAlreadyAquiredIPv4(t *testing.T) {
 	ctx := context.Background()
 
@@ -1275,6 +1274,7 @@ func TestIpamerAcquireAlreadyAquiredIPv4(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
 func TestIpamerAcquireAlreadyAquiredIPv6(t *testing.T) {
 	ctx := context.Background()
 
@@ -1296,6 +1296,7 @@ func TestIpamerAcquireAlreadyAquiredIPv6(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
 func TestGetHostAddresses(t *testing.T) {
 	ctx := context.Background()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
@@ -1353,8 +1354,8 @@ func TestGetHostAddressesIPv6(t *testing.T) {
 		require.Nil(t, ip)
 	})
 }
-func TestPrefixDeepCopy(t *testing.T) {
 
+func TestPrefixDeepCopy(t *testing.T) {
 	p1 := &Prefix{
 		Cidr:                   "4.1.1.0/24",
 		ParentCidr:             "4.1.0.0/16",
@@ -1538,6 +1539,7 @@ func Test_ipamer_DumpAndLoad(t *testing.T) {
 		require.Equal(t, prefix, newPrefix)
 	})
 }
+
 func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
 	ctx := context.Background()
 
@@ -1675,6 +1677,7 @@ func TestNamespaceFromContext(t *testing.T) {
 		})
 	}
 }
+
 func TestAvailablePrefixes(t *testing.T) {
 	testCases := []struct {
 		name                 string
