@@ -12,6 +12,11 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -187,7 +192,8 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 		req := testcontainers.ContainerRequest{
 			Image:        "quay.io/coreos/etcd:" + etcdVersion,
 			ExposedPorts: []string{"2379:2379", "2380:2380"},
-			Cmd: []string{"etcd",
+			Cmd: []string{
+				"etcd",
 				"--name", "etcd",
 				"--advertise-client-urls", "http://0.0.0.0:2379",
 				"--initial-advertise-peer-urls", "http://0.0.0.0:2380",
@@ -348,7 +354,6 @@ type docStorage struct {
 func newLocalFileWithCleanup() (*file, error) {
 	ctx := context.Background()
 	fp, err := os.CreateTemp("", "go-ipam-*.json")
-
 	if err != nil {
 		return nil, err
 	}
@@ -380,6 +385,7 @@ func newPostgresWithCleanup() (*extendedSQL, error) {
 
 	return ext, nil
 }
+
 func newCockroachWithCleanup() (*extendedSQL, error) {
 	c, s, err := startCockroach()
 	if err != nil {
@@ -393,6 +399,7 @@ func newCockroachWithCleanup() (*extendedSQL, error) {
 
 	return ext, nil
 }
+
 func newRedisWithCleanup() (*kvStorage, error) {
 	c, r, err := startRedis()
 	if err != nil {
@@ -406,6 +413,7 @@ func newRedisWithCleanup() (*kvStorage, error) {
 
 	return kv, nil
 }
+
 func newEtcdWithCleanup() (*kvEtcdStorage, error) {
 	c, r, err := startEtcd()
 	if err != nil {
@@ -493,6 +501,45 @@ func (sql *sql) cleanup() error {
 
 func (ds *docStorage) cleanup() error {
 	return ds.mongodb.DeleteAllPrefixes(context.Background(), defaultNamespace)
+}
+
+type kubeConfigMapWithCleanup struct {
+	Storage
+
+	client client.Client
+	ns     corev1.Namespace
+}
+
+func (k *kubeConfigMapWithCleanup) postCleanup() error {
+	if err := k.client.Delete(context.TODO(), &k.ns); err != nil {
+		return fmt.Errorf("error deleting namespace: %w", err)
+	}
+
+	return nil
+}
+
+func newKubeConfigMapWithCleanup() (kubeConfigMapWithCleanup, error) {
+	client := fake.NewClientBuilder().Build()
+
+	ns := corev1.Namespace{
+		ObjectMeta: ctrl.ObjectMeta{
+			Name: "go-ipam-test",
+		},
+	}
+	if err := client.Create(context.TODO(), &ns); err != nil {
+		return kubeConfigMapWithCleanup{}, fmt.Errorf("error creating namespace: %w", err)
+	}
+
+	storage, err := NewKubeConfigMap(context.Background(), client, types.NamespacedName{
+		Name:      "go-ipam-test",
+		Namespace: ns.Name,
+	})
+
+	return kubeConfigMapWithCleanup{
+		Storage: storage,
+		client:  client,
+		ns:      ns,
+	}, err
 }
 
 type benchMethod func(b *testing.B, ipam *ipamer)
@@ -590,8 +637,10 @@ func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
 	}
 }
 
-type provide func() Storage
-type providesql func() *sql
+type (
+	provide    func() Storage
+	providesql func() *sql
+)
 
 // storageProvider provides different storages
 type storageProvider struct {
@@ -703,6 +752,19 @@ func storageProviders() []storageProvider {
 				storage, err := newMongodbWithCleanup()
 				if err != nil {
 					panic(fmt.Sprintf(`error getting mongodb storage, error: %s`, err))
+				}
+				return storage
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "Kubernetes-ConfigMap",
+			provide: func() Storage {
+				storage, err := newKubeConfigMapWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf("failed to create new kube configmap storage, error: %v", err))
 				}
 				return storage
 			},

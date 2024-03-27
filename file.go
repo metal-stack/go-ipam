@@ -185,6 +185,7 @@ func (f *file) persist(ctx context.Context) (err error) {
 	f.modTime = f.getModTime()
 	return err
 }
+
 func (f *file) Name() string {
 	return "file"
 }
@@ -258,6 +259,7 @@ func (f *file) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string
 	}
 	return p, f.persist(ctx)
 }
+
 func (f *file) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (p Prefix, err error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
