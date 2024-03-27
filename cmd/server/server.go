@@ -45,6 +45,7 @@ func newServer(c config) *server {
 		log:     c.Log,
 	}
 }
+
 func (s *server) Run() error {
 	s.log.Info("starting go-ipam", "version", v.V, "backend", s.storage.Name())
 
@@ -74,14 +75,24 @@ func (s *server) Run() error {
 		}
 	}()
 
+	ipamService := service.New(s.log, s.ipamer)
+
 	mux := http.NewServeMux()
+
+	app := NewFrontend(s.log, ipamService, mux)
+	app.Serve()
+
 	// The generated constructors return a path and a plain net/http
 	// handler.
+	otelInterceptor, err := otelconnect.NewInterceptor(otelconnect.WithMeterProvider(provider))
+	if err != nil {
+		return err
+	}
 	mux.Handle(
 		apiv1connect.NewIpamServiceHandler(
-			service.New(s.log, s.ipamer),
+			ipamService,
 			connect.WithInterceptors(
-				otelconnect.NewInterceptor(otelconnect.WithMeterProvider(provider)),
+				otelInterceptor,
 			),
 		),
 	)
