@@ -184,7 +184,7 @@ The benchmarks above were performed using:
 * etcd:v3.5.9
 * mongodb:7
 
-### Database Version Compatability
+### Database Version Compatibility
 
 | Database    | Details                                                                                                                   |
 |-------------|---------------------------------------------------------------------------------------------------------------------------|
