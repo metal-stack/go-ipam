@@ -41,7 +41,7 @@ jobs:
         make proto
 
     - name: Check if there are changes
-      uses: tj-actions/verify-changed-files@v18
+      uses: tj-actions/verify-changed-files@v20
       id: verify-changed-files
 
     - name: Process changes
