@@ -33,7 +33,7 @@ func (m *memory) CreatePrefix(_ context.Context, prefix Prefix, namespace string
 	if ok {
 		return Prefix{}, fmt.Errorf("prefix already created:%v", prefix)
 	}
-	m.prefixes[namespace][prefix.Cidr] = *prefix.deepCopy()
+	m.prefixes[namespace][prefix.Cidr] = prefix
 	return prefix, nil
 }
 func (m *memory) ReadPrefix(_ context.Context, prefix, namespace string) (Prefix, error) {
@@ -107,7 +107,7 @@ func (m *memory) UpdatePrefix(_ context.Context, prefix Prefix, namespace string
 	if oldPrefix.version != oldVersion {
 		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
 	}
-	m.prefixes[namespace][prefix.Cidr] = *prefix.deepCopy()
+	m.prefixes[namespace][prefix.Cidr] = prefix
 	return prefix, nil
 }
 func (m *memory) DeletePrefix(_ context.Context, prefix Prefix, namespace string) (Prefix, error) {
@@ -117,7 +117,7 @@ func (m *memory) DeletePrefix(_ context.Context, prefix Prefix, namespace string
 		return Prefix{}, ErrNamespaceDoesNotExist
 	}
 	delete(m.prefixes[namespace], prefix.Cidr)
-	return *prefix.deepCopy(), nil
+	return prefix, nil
 }
 
 func (m *memory) CreateNamespace(_ context.Context, namespace string) error {
