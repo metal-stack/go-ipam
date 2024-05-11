@@ -375,11 +375,7 @@ func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, namespace, prefi
 			continue
 		}
 
-		acquired, err := i.acquireAndStore(ctx, namespace, prefix, ip)
-		if err != nil {
-			return nil, err
-		}
-		return acquired, nil
+		return i.acquireAndStore(ctx, namespace, prefix, ip)
 	}
 
 	return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
