@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"net/netip"
 	"strings"
@@ -36,8 +37,8 @@ func (p Prefix) deepCopy() *Prefix {
 		ParentCidr:             p.ParentCidr,
 		isParent:               p.isParent,
 		childPrefixLength:      p.childPrefixLength,
-		availableChildPrefixes: copyMap(p.availableChildPrefixes),
-		ips:                    copyMap(p.ips),
+		availableChildPrefixes: maps.Clone(p.availableChildPrefixes),
+		ips:                    maps.Clone(p.ips),
 		version:                p.version,
 	}
 }
@@ -93,15 +94,6 @@ func (p *Prefix) GobDecode(buf []byte) error {
 		return err
 	}
 	return decoder.Decode(&p.ParentCidr)
-}
-
-// TODO replace with maps.Copy
-func copyMap(m map[string]bool) map[string]bool {
-	cm := make(map[string]bool, len(m))
-	for k, v := range m {
-		cm[k] = v
-	}
-	return cm
 }
 
 // Usage of ips and child Prefixes of a Prefix
