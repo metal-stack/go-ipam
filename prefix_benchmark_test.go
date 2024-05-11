@@ -134,3 +134,37 @@ func BenchmarkAcquireSpecificIPInternal(b *testing.B) {
 		})
 	}
 }
+func BenchmarkUpdatePrefix(b *testing.B) {
+
+	benchmarks := []struct {
+		name  string
+		count int
+	}{
+		{name: "empty prefix", count: 0},
+		{name: "hundert ips allocated", count: 100},
+		{name: "thousand ips allocated", count: 1000},
+		{name: "two thousand ips allocated", count: 2000},
+		{name: "five thousand ips allocated", count: 5000},
+	}
+
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			ctx := context.Background()
+			storage := NewMemory(ctx)
+			ipamer := &ipamer{storage: storage}
+			testCidr := "10.0.0.0/8"
+			p, err := ipamer.NewPrefix(ctx, testCidr)
+			require.NoError(b, err)
+			for range bm.count {
+				_, err := ipamer.acquireSpecificIPInternal(ctx, "root", testCidr, "")
+				require.NoError(b, err)
+			}
+			for range b.N {
+				prefix, err := storage.ReadPrefix(ctx, p.Cidr, "root")
+				require.NoError(b, err)
+				_, err = storage.UpdatePrefix(ctx, prefix, "root")
+				require.NoError(b, err)
+			}
+		})
+	}
+}

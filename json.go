@@ -61,7 +61,7 @@ func (ps Prefixes) toJSON() ([]byte, error) {
 	for _, p := range ps {
 		pfxjs = append(pfxjs, p.toPrefixJSON())
 	}
-	pj, err := json.Marshal(pfxjs)
+	pj, err := json.Marshal(pfxjs) // nolint:musttag
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefixes:%w", err)
 	}
@@ -79,7 +79,7 @@ func fromJSON(js []byte) (Prefix, error) {
 
 func fromJSONs(js []byte) (Prefixes, error) {
 	var pres []prefixJSON
-	err := json.Unmarshal(js, &pres)
+	err := json.Unmarshal(js, &pres) // nolint:musttag
 	if err != nil {
 		return Prefixes{}, fmt.Errorf("unable to unmarshal prefixes:%w", err)
 	}
