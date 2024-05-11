@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkNewPrefix(b *testing.B) {
@@ -98,5 +100,37 @@ func BenchmarkPrefixOverlapping(b *testing.B) {
 		if err != nil {
 			b.Errorf("PrefixOverLapping error:%v", err)
 		}
+	}
+}
+
+func BenchmarkAcquireSpecificIPInternal(b *testing.B) {
+
+	benchmarks := []struct {
+		name  string
+		count int
+	}{
+		{name: "empty prefix", count: 0},
+		{name: "hundert ips allocated", count: 100},
+		{name: "thousand ips allocated", count: 1000},
+		{name: "two thousand ips allocated", count: 2000},
+		{name: "five thousand ips allocated", count: 5000},
+	}
+
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			ctx := context.Background()
+			ipamer := &ipamer{storage: NewMemory(ctx)}
+			testCidr := "10.0.0.0/8"
+			_, err := ipamer.NewPrefix(ctx, testCidr)
+			require.NoError(b, err)
+			for range bm.count {
+				_, err := ipamer.acquireSpecificIPInternal(ctx, "root", testCidr, "")
+				require.NoError(b, err)
+			}
+			for range b.N {
+				_, err := ipamer.acquireSpecificIPInternal(ctx, "root", testCidr, "")
+				require.NoError(b, err)
+			}
+		})
 	}
 }

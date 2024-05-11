@@ -1,6 +1,6 @@
 module github.com/metal-stack/go-ipam
 
-go 1.21
+go 1.22
 
 require (
 	connectrpc.com/connect v1.14.0
