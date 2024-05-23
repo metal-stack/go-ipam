@@ -34,7 +34,7 @@ func ExampleIpamer_NewPrefix() {
 	// Super Prefix  : 192.168.0.0/24
 	// Super Prefix IP1 : 192.168.0.1
 	// Super Prefix IP1 Parent : 192.168.0.0/24
-	// Super Prefix IP2 : 192.168.0.2
+	// Super Prefix IP2 : 192.168.0.254
 	// Super Prefix IP2 Parent : 192.168.0.0/24
 
 	_, err = ipamer.ReleaseIP(ctx, ip2)

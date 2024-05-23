@@ -367,18 +367,29 @@ func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, namespace, prefi
 		return i.acquireAndStore(ctx, namespace, prefix, specificIPnet)
 	}
 
-	iprange := netipx.RangeOfPrefix(ipnet)
-	for ip := iprange.From(); ipnet.Contains(ip); ip = ip.Next() {
-		ipstring := ip.String()
-		_, ok := prefix.ips[ipstring]
-		if ok {
+	ipsetbuilder := netipx.IPSetBuilder{}
+	ipsetbuilder.AddPrefix(ipnet)
+	for allocatedIP, ok := range prefix.ips {
+		if !ok {
 			continue
 		}
-
-		return i.acquireAndStore(ctx, namespace, prefix, ip)
+		ipsetbuilder.Remove(netip.MustParseAddr(allocatedIP))
+	}
+	ipset, err := ipsetbuilder.IPSet()
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
+	mask := 32
+	if ipnet.Addr().Is6() {
+		mask = 128
+	}
+
+	p, _, ok := ipset.RemoveFreePrefix(uint8(mask))
+	if !ok {
+		return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
+	}
+	return i.acquireAndStore(ctx, namespace, prefix, p.Addr())
 }
 
 func (i *ipamer) acquireAndStore(ctx context.Context, namespace string, prefix *Prefix, ip netip.Addr) (*IP, error) {
