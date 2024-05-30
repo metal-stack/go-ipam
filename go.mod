@@ -17,10 +17,10 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.31.0
 	github.com/urfave/cli/v2 v2.27.2
-	go.etcd.io/etcd/client/v3 v3.5.13
+	go.etcd.io/etcd/client/v3 v3.5.14
 	go.mongodb.org/mongo-driver v1.15.0
-	go.opentelemetry.io/otel/exporters/prometheus v0.48.0
-	go.opentelemetry.io/otel/sdk/metric v1.26.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.49.0
+	go.opentelemetry.io/otel/sdk/metric v1.27.0
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 	golang.org/x/net v0.25.0
 	golang.org/x/sync v0.7.0
@@ -48,7 +48,7 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-logr/logr v1.4.1 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -82,23 +82,23 @@ require (
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
-	github.com/xrash/smetrics v0.0.0-20240312152122-5f08fbb34913 // indirect
+	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240424034433-3c2c7870ae76 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.etcd.io/etcd/api/v3 v3.5.13 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.5.13 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.51.0 // indirect
-	go.opentelemetry.io/otel v1.26.0 // indirect
-	go.opentelemetry.io/otel/metric v1.26.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.26.0 // indirect
-	go.opentelemetry.io/otel/trace v1.26.0 // indirect
+	go.etcd.io/etcd/api/v3 v3.5.14 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.5.14 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0 // indirect
+	go.opentelemetry.io/otel v1.27.0 // indirect
+	go.opentelemetry.io/otel/metric v1.27.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.27.0 // indirect
+	go.opentelemetry.io/otel/trace v1.27.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240515191416-fc5f0ca64291 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240528184218-531527333157 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
 	google.golang.org/grpc v1.64.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
