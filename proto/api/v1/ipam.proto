@@ -19,6 +19,7 @@ service IpamService {
   rpc CreateNamespace(CreateNamespaceRequest) returns (CreateNamespaceResponse);
   rpc ListNamespaces(ListNamespacesRequest) returns (ListNamespacesResponse);
   rpc DeleteNamespace(DeleteNamespaceRequest) returns (DeleteNamespaceResponse);
+  rpc Version(VersionRequest) returns (VersionResponse);
 }
 
 message Prefix {
@@ -141,3 +142,12 @@ message DeleteNamespaceRequest {
 }
 
 message DeleteNamespaceResponse {}
+
+message VersionRequest {}
+
+message VersionResponse {
+  string version = 1;
+  string revision = 2;
+  string git_sha1 = 3;
+  string build_date = 4;
+}

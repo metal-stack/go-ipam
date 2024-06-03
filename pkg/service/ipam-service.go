@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 	goipam "github.com/metal-stack/go-ipam"
 	v1 "github.com/metal-stack/go-ipam/api/v1"
+	"github.com/metal-stack/v"
 )
 
 type IPAMService struct {
@@ -22,6 +23,15 @@ func New(log *slog.Logger, ipamer goipam.Ipamer) *IPAMService {
 		log:    log,
 		ipamer: ipamer,
 	}
+}
+
+func (i *IPAMService) Version(context.Context, *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error) {
+	return connect.NewResponse(&v1.VersionResponse{
+		Version:   v.Version,
+		Revision:  v.Revision,
+		GitSha1:   v.GitSHA1,
+		BuildDate: v.BuildDate,
+	}), nil
 }
 
 func (i *IPAMService) CreatePrefix(ctx context.Context, req *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error) {

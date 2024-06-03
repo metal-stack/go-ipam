@@ -69,6 +69,8 @@ const (
 	// IpamServiceDeleteNamespaceProcedure is the fully-qualified name of the IpamService's
 	// DeleteNamespace RPC.
 	IpamServiceDeleteNamespaceProcedure = "/api.v1.IpamService/DeleteNamespace"
+	// IpamServiceVersionProcedure is the fully-qualified name of the IpamService's Version RPC.
+	IpamServiceVersionProcedure = "/api.v1.IpamService/Version"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -88,6 +90,7 @@ var (
 	ipamServiceCreateNamespaceMethodDescriptor    = ipamServiceServiceDescriptor.Methods().ByName("CreateNamespace")
 	ipamServiceListNamespacesMethodDescriptor     = ipamServiceServiceDescriptor.Methods().ByName("ListNamespaces")
 	ipamServiceDeleteNamespaceMethodDescriptor    = ipamServiceServiceDescriptor.Methods().ByName("DeleteNamespace")
+	ipamServiceVersionMethodDescriptor            = ipamServiceServiceDescriptor.Methods().ByName("Version")
 )
 
 // IpamServiceClient is a client for the api.v1.IpamService service.
@@ -106,6 +109,7 @@ type IpamServiceClient interface {
 	CreateNamespace(context.Context, *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error)
 	ListNamespaces(context.Context, *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error)
 	DeleteNamespace(context.Context, *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error)
+	Version(context.Context, *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error)
 }
 
 // NewIpamServiceClient constructs a client for the api.v1.IpamService service. By default, it uses
@@ -202,6 +206,12 @@ func NewIpamServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(ipamServiceDeleteNamespaceMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		version: connect.NewClient[v1.VersionRequest, v1.VersionResponse](
+			httpClient,
+			baseURL+IpamServiceVersionProcedure,
+			connect.WithSchema(ipamServiceVersionMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -221,6 +231,7 @@ type ipamServiceClient struct {
 	createNamespace    *connect.Client[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse]
 	listNamespaces     *connect.Client[v1.ListNamespacesRequest, v1.ListNamespacesResponse]
 	deleteNamespace    *connect.Client[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse]
+	version            *connect.Client[v1.VersionRequest, v1.VersionResponse]
 }
 
 // CreatePrefix calls api.v1.IpamService.CreatePrefix.
@@ -293,6 +304,11 @@ func (c *ipamServiceClient) DeleteNamespace(ctx context.Context, req *connect.Re
 	return c.deleteNamespace.CallUnary(ctx, req)
 }
 
+// Version calls api.v1.IpamService.Version.
+func (c *ipamServiceClient) Version(ctx context.Context, req *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error) {
+	return c.version.CallUnary(ctx, req)
+}
+
 // IpamServiceHandler is an implementation of the api.v1.IpamService service.
 type IpamServiceHandler interface {
 	CreatePrefix(context.Context, *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error)
@@ -309,6 +325,7 @@ type IpamServiceHandler interface {
 	CreateNamespace(context.Context, *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error)
 	ListNamespaces(context.Context, *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error)
 	DeleteNamespace(context.Context, *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error)
+	Version(context.Context, *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error)
 }
 
 // NewIpamServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -401,6 +418,12 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(ipamServiceDeleteNamespaceMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	ipamServiceVersionHandler := connect.NewUnaryHandler(
+		IpamServiceVersionProcedure,
+		svc.Version,
+		connect.WithSchema(ipamServiceVersionMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/api.v1.IpamService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case IpamServiceCreatePrefixProcedure:
@@ -431,6 +454,8 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 			ipamServiceListNamespacesHandler.ServeHTTP(w, r)
 		case IpamServiceDeleteNamespaceProcedure:
 			ipamServiceDeleteNamespaceHandler.ServeHTTP(w, r)
+		case IpamServiceVersionProcedure:
+			ipamServiceVersionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -494,4 +519,8 @@ func (UnimplementedIpamServiceHandler) ListNamespaces(context.Context, *connect.
 
 func (UnimplementedIpamServiceHandler) DeleteNamespace(context.Context, *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.DeleteNamespace is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) Version(context.Context, *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.Version is not implemented"))
 }
