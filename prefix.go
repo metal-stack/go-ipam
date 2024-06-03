@@ -371,6 +371,7 @@ func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, namespace, prefi
 		if ok {
 			return nil, fmt.Errorf("%w: given ip:%s is already allocated", ErrAlreadyAllocated, specificIPnet)
 		}
+		return i.acquireAndStore(ctx, namespace, prefix, specificIPnet)
 	}
 
 	iprange := netipx.RangeOfPrefix(ipnet)
@@ -380,21 +381,23 @@ func (i *ipamer) acquireSpecificIPInternal(ctx context.Context, namespace, prefi
 		if ok {
 			continue
 		}
-		if specificIP == "" || specificIPnet.Compare(ip) == 0 {
-			acquired := &IP{
-				IP:           ip,
-				ParentPrefix: prefix.Cidr,
-			}
-			prefix.ips[ipstring] = true
-			_, err := i.storage.UpdatePrefix(ctx, *prefix, namespace)
-			if err != nil {
-				return nil, fmt.Errorf("unable to persist acquired ip:%v error:%w", prefix, err)
-			}
-			return acquired, nil
-		}
+		return i.acquireAndStore(ctx, namespace, prefix, ip)
 	}
 
 	return nil, fmt.Errorf("%w: no more ips in prefix: %s left, length of prefix.ips: %d", ErrNoIPAvailable, prefix.Cidr, len(prefix.ips))
+}
+
+func (i *ipamer) acquireAndStore(ctx context.Context, namespace string, prefix *Prefix, ip netip.Addr) (*IP, error) {
+	acquired := &IP{
+		IP:           ip,
+		ParentPrefix: prefix.Cidr,
+	}
+	prefix.ips[ip.String()] = true
+	_, err := i.storage.UpdatePrefix(ctx, *prefix, namespace)
+	if err != nil {
+		return nil, fmt.Errorf("unable to persist acquired ip:%v error:%w", prefix, err)
+	}
+	return acquired, nil
 }
 
 func (i *ipamer) AcquireIP(ctx context.Context, prefixCidr string) (*IP, error) {
