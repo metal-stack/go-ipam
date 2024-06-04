@@ -46,7 +46,7 @@ func newServer(c config) *server {
 	}
 }
 func (s *server) Run() error {
-	s.log.Info("starting go-ipam", "version", v.V, "backend", s.storage.Name())
+	s.log.Info("starting go-ipam", "version", v.V.String(), "backend", s.storage.Name())
 
 	// The exporter embeds a default OpenTelemetry Reader and
 	// implements prometheus.Collector, allowing it to be used as
