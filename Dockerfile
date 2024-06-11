@@ -1,5 +1,5 @@
-FROM alpine:3.19 as health-downloader
-ENV GRPC_HEALTH_PROBE_VERSION=v0.4.25 \
+FROM alpine:3.20 as health-downloader
+ENV GRPC_HEALTH_PROBE_VERSION=v0.4.26 \
     GRPC_HEALTH_PROBE_URL=https://github.com/grpc-ecosystem/grpc-health-probe/releases/download
 RUN apk -U add curl \
  && curl -fLso /bin/grpc_health_probe \
@@ -18,7 +18,7 @@ WORKDIR /work
 COPY . .
 RUN make server client
 
-FROM alpine:3.19
+FROM alpine:3.20
 COPY --from=health-downloader /bin/grpc_health_probe /bin/grpc_health_probe
 COPY --from=builder /work/bin/* /
 ENTRYPOINT [ "/server" ]

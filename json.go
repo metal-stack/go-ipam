@@ -7,13 +7,13 @@ import (
 
 type prefixJSON struct {
 	Prefix
-	Namespace              string
-	AvailableChildPrefixes map[string]bool // available child prefixes of this prefix
+	Namespace              string          `json:"Namespace"`
+	AvailableChildPrefixes map[string]bool `json:"AvailableChildPrefixes"` // available child prefixes of this prefix
 	// TODO remove this in the next release
-	ChildPrefixLength int             // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
-	IsParent          bool            // set to true if there are child prefixes
-	IPs               map[string]bool // The ips contained in this prefix
-	Version           int64           // Version is used for optimistic locking
+	ChildPrefixLength int             `json:"ChildPrefixLength"` // the length of the child prefixes. Legacy to migrate existing prefixes stored in the db to set the IsParent on reads.
+	IsParent          bool            `json:"IsParent"`          // set to true if there are child prefixes
+	IPs               map[string]bool `json:"IPs"`               // The ips contained in this prefix
+	Version           int64           `json:"Version"`           // Version is used for optimistic locking
 }
 
 func (p prefixJSON) toPrefix() Prefix {

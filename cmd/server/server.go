@@ -46,7 +46,7 @@ func newServer(c config) *server {
 	}
 }
 func (s *server) Run() error {
-	s.log.Info("starting go-ipam", "version", v.V, "backend", s.storage.Name())
+	s.log.Info("starting go-ipam", "version", v.V.String(), "backend", s.storage.Name())
 
 	// The exporter embeds a default OpenTelemetry Reader and
 	// implements prometheus.Collector, allowing it to be used as
@@ -74,6 +74,11 @@ func (s *server) Run() error {
 		}
 	}()
 
+	otelInterceptor, err := otelconnect.NewInterceptor(otelconnect.WithMeterProvider(provider))
+	if err != nil {
+		return err
+	}
+
 	mux := http.NewServeMux()
 	// The generated constructors return a path and a plain net/http
 	// handler.
@@ -81,7 +86,7 @@ func (s *server) Run() error {
 		apiv1connect.NewIpamServiceHandler(
 			service.New(s.log, s.ipamer),
 			connect.WithInterceptors(
-				otelconnect.NewInterceptor(otelconnect.WithMeterProvider(provider)),
+				otelInterceptor,
 			),
 		),
 	)

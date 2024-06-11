@@ -296,9 +296,8 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatalf("Error in cli: %v", err)
+		log.Fatalf("unable to start ipam service: %v", err)
 	}
-
 }
 
 func getConfig(ctx *cli.Context) config {
