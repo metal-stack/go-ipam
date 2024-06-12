@@ -12,6 +12,11 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -495,6 +500,45 @@ func (ds *docStorage) cleanup() error {
 	return ds.mongodb.DeleteAllPrefixes(context.Background(), defaultNamespace)
 }
 
+type kubeConfigMapWithCleanup struct {
+	Storage
+
+	client client.Client
+	ns     corev1.Namespace
+}
+
+func (k *kubeConfigMapWithCleanup) postCleanup() error {
+	if err := k.client.Delete(context.TODO(), &k.ns); err != nil {
+		return fmt.Errorf("error deleting namespace: %w", err)
+	}
+
+	return nil
+}
+
+func newKubeConfigMapWithCleanup() (kubeConfigMapWithCleanup, error) {
+	client := fake.NewClientBuilder().Build()
+
+	ns := corev1.Namespace{
+		ObjectMeta: ctrl.ObjectMeta{
+			Name: "go-ipam-test",
+		},
+	}
+	if err := client.Create(context.TODO(), &ns); err != nil {
+		return kubeConfigMapWithCleanup{}, fmt.Errorf("error creating namespace: %w", err)
+	}
+
+	storage, err := NewKubeConfigMap(context.Background(), client, types.NamespacedName{
+		Name:      "go-ipam-test",
+		Namespace: ns.Name,
+	})
+
+	return kubeConfigMapWithCleanup{
+		Storage: storage,
+		client:  client,
+		ns:      ns,
+	}, err
+}
+
 type benchMethod func(b *testing.B, ipam *ipamer)
 
 func benchWithBackends(b *testing.B, fn benchMethod) {
@@ -703,6 +747,19 @@ func storageProviders() []storageProvider {
 				storage, err := newMongodbWithCleanup()
 				if err != nil {
 					panic(fmt.Sprintf(`error getting mongodb storage, error: %s`, err))
+				}
+				return storage
+			},
+			providesql: func() *sql {
+				return nil
+			},
+		},
+		{
+			name: "Kubernetes-ConfigMap",
+			provide: func() Storage {
+				storage, err := newKubeConfigMapWithCleanup()
+				if err != nil {
+					panic(fmt.Sprintf("failed to create new kube configmap storage, error: %v", err))
 				}
 				return storage
 			},
