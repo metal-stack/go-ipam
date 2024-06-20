@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
 	"net/netip"
 
 	"connectrpc.com/connect"
+	"github.com/metal-stack/go-ipam"
 	goipam "github.com/metal-stack/go-ipam"
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/v"
@@ -189,6 +191,9 @@ func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.Acq
 		resp, err = i.ipamer.AcquireSpecificIP(ctx, req.Msg.GetPrefixCidr(), req.Msg.GetIp())
 		if err != nil {
 			i.log.Error("acquireip", "error", err)
+			if errors.Is(err, ipam.ErrAlreadyAllocated) {
+				return nil, connect.NewError(connect.CodeAlreadyExists, err)
+			}
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	} else {
@@ -224,6 +229,9 @@ func (i *IPAMService) ReleaseIP(ctx context.Context, req *connect.Request[v1.Rel
 	resp, err := i.ipamer.ReleaseIP(ctx, ip)
 	if err != nil {
 		i.log.Error("releaseip", "error", err)
+		if errors.Is(err, ipam.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return connect.NewResponse(
