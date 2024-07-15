@@ -1755,3 +1755,37 @@ func TestAvailablePrefixes(t *testing.T) {
 		})
 	}
 }
+
+func TestReleaseChildPrefixParallel(t *testing.T) {
+	ctx := context.Background()
+	g, _ := errgroup.WithContext(context.Background())
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		parent, err := ipam.NewPrefix(ctx, "192.168.0.0/16")
+		if err != nil {
+			panic(err)
+		}
+
+		var children []*Prefix
+
+		for i := range 100 {
+			child, err := ipam.AcquireChildPrefix(ctx, parent.Cidr, 22)
+			require.NoError(t, err, "happened for %d", i)
+			children = append(children, child)
+		}
+
+		for _, child := range children {
+			g.Go(func() error {
+				err := ipam.ReleaseChildPrefix(ctx, child)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			})
+		}
+
+		err = g.Wait()
+		require.NoError(t, err)
+	})
+}
