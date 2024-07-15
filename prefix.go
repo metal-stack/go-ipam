@@ -294,7 +294,7 @@ func (i *ipamer) ReleaseChildPrefix(ctx context.Context, child *Prefix) error {
 func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace string, child *Prefix) error {
 	parent, err := i.PrefixFrom(ctx, child.ParentCidr)
 	if err != nil {
-		return fmt.Errorf("%w: unable to find prefix for cidr:%s error:%s", ErrNotFound, child.ParentCidr, err.Error())
+		return fmt.Errorf("%w: unable to find parent prefix for cidr:%s error:%s", ErrNotFound, child.ParentCidr, err.Error())
 	}
 	if parent == nil {
 		return fmt.Errorf("prefix %s is no child prefix", child.Cidr)
@@ -306,11 +306,11 @@ func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace strin
 	parent.availableChildPrefixes[child.Cidr] = true
 	_, err = i.DeletePrefix(ctx, child.Cidr)
 	if err != nil {
-		return fmt.Errorf("unable to release prefix %v:%w", child, err)
+		return fmt.Errorf("unable to release child prefix %s:%w", child.Cidr, err)
 	}
 	_, err = i.storage.UpdatePrefix(ctx, *parent, namespace)
 	if err != nil {
-		return fmt.Errorf("unable to release prefix %v:%w", child, err)
+		return fmt.Errorf("unable to update parent prefix:%s to release child:%s %w", parent.Cidr, child.Cidr, err)
 	}
 	return nil
 }
