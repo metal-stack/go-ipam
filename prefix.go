@@ -296,7 +296,7 @@ func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace strin
 	if err != nil {
 		return fmt.Errorf("%w: unable to find prefix for cidr:%q error:%s", ErrNotFound, child.ParentCidr, err.Error())
 	}
-	if parent == nil || parent.isParent == false {
+	if parent == nil || !parent.isParent {
 		return fmt.Errorf("prefix:%q is no child prefix", child.Cidr)
 	}
 	if len(child.ips) > 2 {
