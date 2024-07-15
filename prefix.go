@@ -306,12 +306,12 @@ func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace strin
 	parent.availableChildPrefixes[child.Cidr] = true
 	_, err = i.storage.UpdatePrefix(ctx, *parent, namespace)
 	if err != nil {
-		return fmt.Errorf("unable to release prefix %v:%w", child, err)
+		return fmt.Errorf("unable to update parent to release child prefix %v:%w", child, err)
 	}
 
 	_, err = i.DeletePrefix(ctx, child.Cidr)
 	if err != nil {
-		return fmt.Errorf("unable to release prefix %v:%w", child, err)
+		return fmt.Errorf("unable to delete child prefix %v:%w", child, err)
 	}
 
 	return nil
