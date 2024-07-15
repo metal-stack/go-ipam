@@ -1755,3 +1755,51 @@ func TestAvailablePrefixes(t *testing.T) {
 		})
 	}
 }
+
+func TestChildPrefixParallel(t *testing.T) {
+	ctx := context.Background()
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		parent, err := ipam.NewPrefix(ctx, "192.168.0.0/14")
+		if err != nil {
+			panic(err)
+		}
+
+		var (
+			g1, _    = errgroup.WithContext(ctx)
+			children []*Prefix
+		)
+
+		for i := range 100 {
+			g1.Go(func() error {
+				child, err := ipam.AcquireChildPrefix(ctx, parent.Cidr, 22)
+				if err != nil {
+					return fmt.Errorf("error acquiring prefix %d: %w", i, err)
+				}
+
+				children = append(children, child)
+
+				return nil
+			})
+		}
+
+		err = g1.Wait()
+		require.NoError(t, err)
+
+		g2, _ := errgroup.WithContext(ctx)
+
+		for _, child := range children {
+			g2.Go(func() error {
+				err := ipam.ReleaseChildPrefix(ctx, child)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			})
+		}
+
+		err = g2.Wait()
+		require.NoError(t, err)
+	})
+}
