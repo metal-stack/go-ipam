@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 	}
 	etcdVersion = os.Getenv("ETCD_VERSION")
 	if etcdVersion == "" {
-		etcdVersion = "v3.5.12"
+		etcdVersion = "v3.5.14"
 	}
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {
