@@ -1756,9 +1756,8 @@ func TestAvailablePrefixes(t *testing.T) {
 	}
 }
 
-func TestReleaseChildPrefixParallel(t *testing.T) {
+func TestChildPrefixParallel(t *testing.T) {
 	ctx := context.Background()
-	g, _ := errgroup.WithContext(context.Background())
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		parent, err := ipam.NewPrefix(ctx, "192.168.0.0/14")
@@ -1766,16 +1765,31 @@ func TestReleaseChildPrefixParallel(t *testing.T) {
 			panic(err)
 		}
 
-		var children []*Prefix
+		var (
+			g1, _    = errgroup.WithContext(ctx)
+			children []*Prefix
+		)
 
 		for i := range 100 {
-			child, err := ipam.AcquireChildPrefix(ctx, parent.Cidr, 22)
-			require.NoError(t, err, "happened for %d", i)
-			children = append(children, child)
+			g1.Go(func() error {
+				child, err := ipam.AcquireChildPrefix(ctx, parent.Cidr, 22)
+				if err != nil {
+					return fmt.Errorf("error acquiring prefix %d: %w", i, err)
+				}
+
+				children = append(children, child)
+
+				return nil
+			})
 		}
 
+		err = g1.Wait()
+		require.NoError(t, err)
+
+		g2, _ := errgroup.WithContext(ctx)
+
 		for _, child := range children {
-			g.Go(func() error {
+			g2.Go(func() error {
 				err := ipam.ReleaseChildPrefix(ctx, child)
 				if err != nil {
 					return err
@@ -1785,7 +1799,7 @@ func TestReleaseChildPrefixParallel(t *testing.T) {
 			})
 		}
 
-		err = g.Wait()
+		err = g2.Wait()
 		require.NoError(t, err)
 	})
 }
