@@ -1761,7 +1761,7 @@ func TestReleaseChildPrefixParallel(t *testing.T) {
 	g, _ := errgroup.WithContext(context.Background())
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
-		parent, err := ipam.NewPrefix(ctx, "192.168.0.0/16")
+		parent, err := ipam.NewPrefix(ctx, "192.168.0.0/14")
 		if err != nil {
 			panic(err)
 		}
