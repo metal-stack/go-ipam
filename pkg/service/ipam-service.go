@@ -3,13 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 
 	"net/netip"
 
 	"connectrpc.com/connect"
-	"github.com/metal-stack/go-ipam"
 	goipam "github.com/metal-stack/go-ipam"
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/v"
@@ -43,6 +41,9 @@ func (i *IPAMService) CreatePrefix(ctx context.Context, req *connect.Request[v1.
 	}
 	resp, err := i.ipamer.NewPrefix(ctx, req.Msg.GetCidr())
 	if err != nil {
+		if errors.Is(err, goipam.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
 		i.log.Error("createprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -62,6 +63,9 @@ func (i *IPAMService) DeletePrefix(ctx context.Context, req *connect.Request[v1.
 	}
 	resp, err := i.ipamer.DeletePrefix(ctx, req.Msg.GetCidr())
 	if err != nil {
+		if errors.Is(err, goipam.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
 		i.log.Error("deleteprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -82,10 +86,10 @@ func (i *IPAMService) GetPrefix(ctx context.Context, req *connect.Request[v1.Get
 	}
 	resp, err := i.ipamer.PrefixFrom(ctx, req.Msg.GetCidr())
 	if err != nil {
+		if errors.Is(err, goipam.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	if resp == nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not found", req.Msg.GetCidr()))
 	}
 
 	return connect.NewResponse(
@@ -160,10 +164,11 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Reque
 	}
 	prefix, err := i.ipamer.PrefixFrom(ctx, req.Msg.GetCidr())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not parsable:%s", req.Msg.GetCidr(), err.Error()))
-	}
-	if prefix == nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("prefix:%q not found", req.Msg.GetCidr()))
+		if errors.Is(err, goipam.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		i.log.Error("releasechildprefix", "error", err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	err = i.ipamer.ReleaseChildPrefix(ctx, prefix)
@@ -191,7 +196,7 @@ func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.Acq
 		resp, err = i.ipamer.AcquireSpecificIP(ctx, req.Msg.GetPrefixCidr(), req.Msg.GetIp())
 		if err != nil {
 			i.log.Error("acquireip", "error", err)
-			if errors.Is(err, ipam.ErrAlreadyAllocated) {
+			if errors.Is(err, goipam.ErrAlreadyAllocated) {
 				return nil, connect.NewError(connect.CodeAlreadyExists, err)
 			}
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -199,6 +204,9 @@ func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.Acq
 	} else {
 		resp, err = i.ipamer.AcquireIP(ctx, req.Msg.GetPrefixCidr())
 		if err != nil {
+			if errors.Is(err, goipam.ErrNoIPAvailable) {
+				return nil, connect.NewError(connect.CodeNotFound, err)
+			}
 			i.log.Error("acquireip", "error", err)
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
@@ -229,7 +237,7 @@ func (i *IPAMService) ReleaseIP(ctx context.Context, req *connect.Request[v1.Rel
 	resp, err := i.ipamer.ReleaseIP(ctx, ip)
 	if err != nil {
 		i.log.Error("releaseip", "error", err)
-		if errors.Is(err, ipam.ErrNotFound) {
+		if errors.Is(err, goipam.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -279,10 +287,11 @@ func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.P
 	}
 	p, err := i.ipamer.PrefixFrom(ctx, req.Msg.GetCidr())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("prefix:%q not parsable:%s", req.Msg.GetCidr(), err.Error()))
-	}
-	if p == nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("prefix:%q not found", req.Msg.GetCidr()))
+		if errors.Is(err, goipam.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		i.log.Error("prefixusage", "error", err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	u := p.Usage()
 	return connect.NewResponse(
