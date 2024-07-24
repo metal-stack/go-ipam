@@ -196,12 +196,12 @@ func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, namespace, pare
 	}
 	ipprefix, err := netip.ParsePrefix(parent.Cidr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse parent.cidr:%s of parentCidr:%s %w", parent.Cidr, parentCidr, err)
 	}
 	if specificChildRequest {
 		childprefix, err = netip.ParsePrefix(childCidr)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to parse childCidr:%s %w", childCidr, err)
 		}
 		length = childprefix.Bits()
 	}
@@ -257,6 +257,11 @@ func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, namespace, pare
 			return nil, fmt.Errorf("specific prefix %s is not available in prefix %s", childCidr, parentCidr)
 		}
 		cp = childprefix
+	}
+
+	// Ensure acquired child prefix is valid
+	if !cp.IsValid() {
+		return nil, fmt.Errorf("acquired child prefix:%s is not valid", cp.String())
 	}
 
 	child := &Prefix{
