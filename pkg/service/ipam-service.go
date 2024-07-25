@@ -132,18 +132,23 @@ func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Reque
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
-	var resp *goipam.Prefix
-	var err error
+	var (
+		resp       *goipam.Prefix
+		err        error
+		parentCidr = req.Msg.GetCidr()
+		childCidr  = req.Msg.GetChildCidr()
+		length     = req.Msg.GetLength()
+	)
 	if req.Msg.GetChildCidr() != "" {
-		resp, err = i.ipamer.AcquireSpecificChildPrefix(ctx, req.Msg.GetCidr(), req.Msg.GetChildCidr())
+		resp, err = i.ipamer.AcquireSpecificChildPrefix(ctx, parentCidr, childCidr)
 		if err != nil {
-			i.log.Error("acquirechildprefix", "error", err)
+			i.log.Error("acquirechildprefix", "parent cidr", parentCidr, "child cidr", childCidr, "length", length, "error", err)
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	} else {
-		resp, err = i.ipamer.AcquireChildPrefix(ctx, req.Msg.GetCidr(), uint8(req.Msg.GetLength()))
+		resp, err = i.ipamer.AcquireChildPrefix(ctx, parentCidr, uint8(length))
 		if err != nil {
-			i.log.Error("acquirechildprefix", "error", err)
+			i.log.Error("acquirechildprefix", "parent cidr", parentCidr, "length", length, "error", err)
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
