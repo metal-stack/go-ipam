@@ -186,7 +186,7 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        "quay.io/coreos/etcd:" + etcdVersion,
-			ExposedPorts: []string{"2379:2379", "2380:2380"},
+			ExposedPorts: []string{"2379/tcp", "2380/tcp"},
 			Cmd: []string{"etcd",
 				"--name", "etcd",
 				"--advertise-client-urls", "http://0.0.0.0:2379",
@@ -194,6 +194,11 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 				"--listen-client-urls", "http://0.0.0.0:2379",
 				"--listen-peer-urls", "http://0.0.0.0:2380",
 			},
+			WaitingFor: wait.ForAll(
+				wait.ForLog("ready to serve client requests"),
+				wait.ForListeningPort("2379/tcp"),
+				wait.ForListeningPort("2380/tcp"),
+			),
 		}
 		etcdContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
