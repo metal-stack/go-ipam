@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	_ "net/http/pprof" // nolint:gosec
 	"time"
 
 	"connectrpc.com/connect"
@@ -70,6 +71,21 @@ func (s *server) Run() error {
 		err := ms.ListenAndServe()
 		if err != nil {
 			s.log.Error("unable to start metric endpoint", "error", err)
+			return
+		}
+	}()
+	go func() {
+		s.log.Info("starting pprof endpoint of :2113")
+		// inspect via
+		// go tool pprof -http :8080 localhost:2113/debug/pprof/heap
+		// go tool pprof -http :8080 localhost:2113/debug/pprof/goroutine
+		server := http.Server{
+			Addr:              ":2113",
+			ReadHeaderTimeout: 1 * time.Minute,
+		}
+		err := server.ListenAndServe()
+		if err != nil {
+			s.log.Error("failed to start pprof endpoint", "error", err)
 			return
 		}
 	}()

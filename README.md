@@ -145,6 +145,19 @@ There is also a `cli` provided in the container which can be used to make calls 
 docker run -it --rm --entrypoint /cli ghcr.io/metal-stack/go-ipam
 ```
 
+## Metrics
+
+```bash
+http://localhost:2112/metrics
+```
+
+## pprof
+
+```bash
+go tool pprof -http :8080 localhost:2113/debug/pprof/heap
+go tool pprof -http :8080 localhost:2113/debug/pprof/goroutine
+```
+
 ## Docker Compose example
 
 Ensure you have docker with compose support installed. Then execute the following command:
