@@ -46,7 +46,7 @@ func FuzzIpamer_AcquireIP(f *testing.F) {
 		if err == nil {
 			prefix, err := netip.ParsePrefix(prefixCIDR)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err.Error())
 			}
 			if prefix.Masked().String() != p.String() {
 				if err != nil {
