@@ -203,10 +203,10 @@ The benchmarks above were performed using:
 
 * cpu: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
 * postgres:16-alpine
-* cockroach:v23.1.0
-* redis:7.2-alpine
+* cockroach:v24.1.0
+* redis:7.4-alpine
 * keydb:alpine_x86_64_v6.3.1
-* etcd:v3.5.9
+* etcd:v3.5.15
 * mongodb:7
 
 ### Database Version Compatibility

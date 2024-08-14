@@ -550,7 +550,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 		require.Len(t, allPrefixes, 1)
 
 		err = ipam.ReleaseChildPrefix(ctx, c1)
-		require.Errorf(t, err, "unable to release prefix %s:delete prefix:%s not found", c1.Cidr)
+		require.Errorf(t, err, "unable to release prefix %s:delete prefix:%s not found", prefix.Cidr, c1.Cidr)
 
 		c3, err := ipam.AcquireChildPrefix(ctx, prefix.Cidr, 22)
 		require.NoError(t, err)
