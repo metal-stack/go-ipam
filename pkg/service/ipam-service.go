@@ -139,6 +139,9 @@ func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Reque
 		childCidr  = req.Msg.GetChildCidr()
 		length     = req.Msg.GetLength()
 	)
+	if length > 128 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("length must not be greater than 128"))
+	}
 	if req.Msg.GetChildCidr() != "" {
 		resp, err = i.ipamer.AcquireSpecificChildPrefix(ctx, parentCidr, childCidr)
 		if err != nil {
@@ -146,7 +149,7 @@ func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Reque
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	} else {
-		resp, err = i.ipamer.AcquireChildPrefix(ctx, parentCidr, uint8(length))
+		resp, err = i.ipamer.AcquireChildPrefix(ctx, parentCidr, uint8(length)) // nolint:gosec
 		if err != nil {
 			i.log.Error("acquirechildprefix", "parent cidr", parentCidr, "length", length, "error", err)
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)

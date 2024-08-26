@@ -233,7 +233,7 @@ func (i *ipamer) acquireChildPrefixInternal(ctx context.Context, namespace, pare
 	var cp netip.Prefix
 	if !specificChildRequest {
 		var ok bool
-		cp, _, ok = ipset.RemoveFreePrefix(uint8(length))
+		cp, _, ok = ipset.RemoveFreePrefix(uint8(length)) // nolint:gosec
 		if !ok {
 			pfxs := ipset.Prefixes()
 			if len(pfxs) == 0 {
