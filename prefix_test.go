@@ -409,7 +409,7 @@ func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/20")
 		require.NoError(t, err)
 		s, _ := prefix.availablePrefixes()
-		require.Equal(t, 1024, int(s))
+		require.Equal(t, uint64(1024), s)
 		require.Empty(t, prefix.acquiredPrefixes())
 		require.Empty(t, prefix.Usage().AcquiredPrefixes)
 
@@ -420,9 +420,9 @@ func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 		prefix, err = ipam.PrefixFrom(ctx, prefix.Cidr)
 		require.NoError(t, err)
 		s, _ = prefix.availablePrefixes()
-		require.Equal(t, 512, int(s))
-		require.Equal(t, 1, int(prefix.acquiredPrefixes()))
-		require.Equal(t, 1, int(prefix.Usage().AcquiredPrefixes))
+		require.Equal(t, uint64(512), s)
+		require.Equal(t, uint64(1), prefix.acquiredPrefixes())
+		require.Equal(t, uint64(1), prefix.Usage().AcquiredPrefixes)
 
 		// acquire 1/4the of the rest 192.168.8.0/22 = 192.168.8.0 - 192.168.11.254
 		c2, err := ipam.AcquireChildPrefix(ctx, prefix.Cidr, 22)
@@ -433,9 +433,9 @@ func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 		s, a := prefix.availablePrefixes()
 		// Next free must be 192.168.12.0/22
 		require.Equal(t, []string{"192.168.12.0/22"}, a)
-		require.Equal(t, 256, int(s))
-		require.Equal(t, 2, int(prefix.acquiredPrefixes()))
-		require.Equal(t, 2, int(prefix.Usage().AcquiredPrefixes))
+		require.Equal(t, uint64(256), s)
+		require.Equal(t, uint64(2), prefix.acquiredPrefixes())
+		require.Equal(t, uint64(2), prefix.Usage().AcquiredPrefixes)
 
 		// acquire impossible size
 		_, err = ipam.AcquireChildPrefix(ctx, prefix.Cidr, 21)
@@ -453,9 +453,9 @@ func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 		require.NoError(t, err)
 		s, a = prefix.availablePrefixes()
 		require.Equal(t, []string{"192.168.8.16/28", "192.168.8.32/27", "192.168.8.64/26", "192.168.8.128/25", "192.168.9.0/24", "192.168.10.0/23", "192.168.12.0/22"}, a)
-		require.Equal(t, 508, int(s))
-		require.Equal(t, 2, int(prefix.acquiredPrefixes()))
-		require.Equal(t, 2, int(prefix.Usage().AcquiredPrefixes))
+		require.Equal(t, uint64(508), s)
+		require.Equal(t, uint64(2), prefix.acquiredPrefixes())
+		require.Equal(t, uint64(2), prefix.Usage().AcquiredPrefixes)
 
 		// acquire impossible size
 		_, err = ipam.AcquireChildPrefix(ctx, prefix.Cidr, 21)

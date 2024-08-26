@@ -70,7 +70,7 @@ func main() {
 							c := client(ctx)
 							result, err := c.AcquireChildPrefix(context.Background(), connect.NewRequest(&v1.AcquireChildPrefixRequest{
 								Cidr:   ctx.String("parent"),
-								Length: uint32(ctx.Uint("length")),
+								Length: uint32(ctx.Uint("length")), // nolint:gosec
 							}))
 
 							if err != nil {
