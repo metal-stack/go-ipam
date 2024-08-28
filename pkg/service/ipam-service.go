@@ -35,7 +35,6 @@ func (i *IPAMService) Version(context.Context, *connect.Request[v1.VersionReques
 }
 
 func (i *IPAMService) CreatePrefix(ctx context.Context, req *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error) {
-	i.log.Debug("createprefix", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
@@ -44,7 +43,6 @@ func (i *IPAMService) CreatePrefix(ctx context.Context, req *connect.Request[v1.
 		if errors.Is(err, goipam.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
-		i.log.Error("createprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return connect.NewResponse(
@@ -57,7 +55,6 @@ func (i *IPAMService) CreatePrefix(ctx context.Context, req *connect.Request[v1.
 	), nil
 }
 func (i *IPAMService) DeletePrefix(ctx context.Context, req *connect.Request[v1.DeletePrefixRequest]) (*connect.Response[v1.DeletePrefixResponse], error) {
-	i.log.Debug("deleteprefix", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
@@ -66,7 +63,6 @@ func (i *IPAMService) DeletePrefix(ctx context.Context, req *connect.Request[v1.
 		if errors.Is(err, goipam.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
-		i.log.Error("deleteprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
@@ -80,7 +76,6 @@ func (i *IPAMService) DeletePrefix(ctx context.Context, req *connect.Request[v1.
 	), nil
 }
 func (i *IPAMService) GetPrefix(ctx context.Context, req *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error) {
-	i.log.Debug("getprefix", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
@@ -102,13 +97,11 @@ func (i *IPAMService) GetPrefix(ctx context.Context, req *connect.Request[v1.Get
 	), nil
 }
 func (i *IPAMService) ListPrefixes(ctx context.Context, req *connect.Request[v1.ListPrefixesRequest]) (*connect.Response[v1.ListPrefixesResponse], error) {
-	i.log.Debug("listprefixes", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
 	resp, err := i.ipamer.ReadAllPrefixCidrs(ctx)
 	if err != nil {
-		i.log.Error("listprefixes", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
@@ -128,7 +121,6 @@ func (i *IPAMService) ListPrefixes(ctx context.Context, req *connect.Request[v1.
 }
 
 func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error) {
-	i.log.Debug("acquirechildprefix", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
@@ -145,13 +137,11 @@ func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Reque
 	if req.Msg.GetChildCidr() != "" {
 		resp, err = i.ipamer.AcquireSpecificChildPrefix(ctx, parentCidr, childCidr)
 		if err != nil {
-			i.log.Error("acquirechildprefix", "parent cidr", parentCidr, "child cidr", childCidr, "length", length, "error", err)
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	} else {
 		resp, err = i.ipamer.AcquireChildPrefix(ctx, parentCidr, uint8(length)) // nolint:gosec
 		if err != nil {
-			i.log.Error("acquirechildprefix", "parent cidr", parentCidr, "length", length, "error", err)
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
@@ -166,7 +156,6 @@ func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *connect.Reque
 }
 
 func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error) {
-	i.log.Debug("releasechildprefix", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
@@ -175,13 +164,11 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Reque
 		if errors.Is(err, goipam.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
-		i.log.Error("releasechildprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	err = i.ipamer.ReleaseChildPrefix(ctx, prefix)
 	if err != nil {
-		i.log.Error("releasechildprefix", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return connect.NewResponse(
@@ -194,7 +181,6 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Reque
 	), nil
 }
 func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error) {
-	i.log.Debug("acquireip", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
@@ -203,7 +189,6 @@ func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.Acq
 	if req.Msg.GetIp() != "" {
 		resp, err = i.ipamer.AcquireSpecificIP(ctx, req.Msg.GetPrefixCidr(), req.Msg.GetIp())
 		if err != nil {
-			i.log.Error("acquireip", "error", err)
 			if errors.Is(err, goipam.ErrAlreadyAllocated) {
 				return nil, connect.NewError(connect.CodeAlreadyExists, err)
 			}
@@ -215,7 +200,6 @@ func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.Acq
 			if errors.Is(err, goipam.ErrNoIPAvailable) {
 				return nil, connect.NewError(connect.CodeNotFound, err)
 			}
-			i.log.Error("acquireip", "error", err)
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
@@ -229,13 +213,11 @@ func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.Acq
 	), nil
 }
 func (i *IPAMService) ReleaseIP(ctx context.Context, req *connect.Request[v1.ReleaseIPRequest]) (*connect.Response[v1.ReleaseIPResponse], error) {
-	i.log.Debug("releaseip", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
 	netip, err := netip.ParseAddr(req.Msg.GetIp())
 	if err != nil {
-		i.log.Error("releaseip", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	ip := &goipam.IP{
@@ -244,7 +226,6 @@ func (i *IPAMService) ReleaseIP(ctx context.Context, req *connect.Request[v1.Rel
 	}
 	resp, err := i.ipamer.ReleaseIP(ctx, ip)
 	if err != nil {
-		i.log.Error("releaseip", "error", err)
 		if errors.Is(err, goipam.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
@@ -260,13 +241,11 @@ func (i *IPAMService) ReleaseIP(ctx context.Context, req *connect.Request[v1.Rel
 	), nil
 }
 func (i *IPAMService) Dump(ctx context.Context, req *connect.Request[v1.DumpRequest]) (*connect.Response[v1.DumpResponse], error) {
-	i.log.Debug("dump", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
 	dump, err := i.ipamer.Dump(ctx)
 	if err != nil {
-		i.log.Error("dump", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return connect.NewResponse(
@@ -277,19 +256,16 @@ func (i *IPAMService) Dump(ctx context.Context, req *connect.Request[v1.DumpRequ
 }
 
 func (i *IPAMService) Load(ctx context.Context, req *connect.Request[v1.LoadRequest]) (*connect.Response[v1.LoadResponse], error) {
-	i.log.Debug("load", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
 	err := i.ipamer.Load(ctx, req.Msg.GetDump())
 	if err != nil {
-		i.log.Error("load", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return connect.NewResponse(&v1.LoadResponse{}), nil
 }
 func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error) {
-	i.log.Debug("prefixusage", "req", req)
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())
 	}
@@ -298,7 +274,6 @@ func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.P
 		if errors.Is(err, goipam.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
-		i.log.Error("prefixusage", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	u := p.Usage()
@@ -314,7 +289,6 @@ func (i *IPAMService) PrefixUsage(ctx context.Context, req *connect.Request[v1.P
 }
 
 func (i *IPAMService) CreateNamespace(ctx context.Context, req *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error) {
-	i.log.Debug("createnamespace", "req", req)
 	err := i.ipamer.CreateNamespace(ctx, req.Msg.GetNamespace())
 	if err != nil {
 		return nil, err
@@ -323,7 +297,6 @@ func (i *IPAMService) CreateNamespace(ctx context.Context, req *connect.Request[
 }
 
 func (i *IPAMService) DeleteNamespace(ctx context.Context, req *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error) {
-	i.log.Debug("deletenamespace", "req", req)
 	err := i.ipamer.DeleteNamespace(ctx, req.Msg.GetNamespace())
 	if err != nil {
 		return nil, err
@@ -332,7 +305,6 @@ func (i *IPAMService) DeleteNamespace(ctx context.Context, req *connect.Request[
 }
 
 func (i *IPAMService) ListNamespaces(ctx context.Context, req *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error) {
-	i.log.Debug("", "req", req)
 	res, err := i.ipamer.ListNamespaces(ctx)
 	if err != nil {
 		return nil, err

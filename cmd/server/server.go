@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -95,6 +96,8 @@ func (s *server) Run() error {
 		return err
 	}
 
+	loggingInterceptor := newLoggingInterceptor(s.log)
+
 	mux := http.NewServeMux()
 	// The generated constructors return a path and a plain net/http
 	// handler.
@@ -102,6 +105,7 @@ func (s *server) Run() error {
 		apiv1connect.NewIpamServiceHandler(
 			service.New(s.log, s.ipamer),
 			connect.WithInterceptors(
+				loggingInterceptor,
 				otelInterceptor,
 			),
 		),
@@ -131,4 +135,29 @@ func (s *server) Run() error {
 	s.log.Info("started grpc server", "at", server.Addr)
 	err = server.ListenAndServe()
 	return err
+}
+
+func newLoggingInterceptor(log *slog.Logger) connect.UnaryInterceptorFunc {
+	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+		return connect.UnaryFunc(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			var (
+				procedure = req.Spec().Procedure
+				request   = req.Any()
+			)
+			if procedure == apiv1connect.IpamServiceVersionProcedure {
+				return next(ctx, req)
+			}
+			log.Debug("call", "proc", procedure, "req", request)
+
+			response, err := next(ctx, req)
+			if err != nil {
+				log.Error("call", "proc", procedure, "error", err)
+			} else {
+				log.Debug("call", "proc", procedure, "req", request, "resp", response.Any())
+			}
+
+			return response, err
+		})
+	}
+	return connect.UnaryInterceptorFunc(interceptor)
 }
