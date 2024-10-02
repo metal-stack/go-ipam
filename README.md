@@ -202,7 +202,7 @@ curl -v -X POST -d '{}' -H 'Content-Type: application/json' localhost:9090/api.v
 The benchmarks above were performed using:
 
 * cpu: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
-* postgres:16-alpine
+* postgres:17-alpine
 * cockroach:v24.1.0
 * redis:7.4-alpine
 * keydb:alpine_x86_64_v6.3.1
