@@ -1,9 +1,7 @@
 ---
-version: "3.8"
-
 services:
   postgres:
-    image: postgres:alpine
+    image: postgres:17-alpine
     environment:
       - POSTGRES_USER=ipam
       - POSTGRES_PASSWORD=ipam
@@ -11,10 +9,17 @@ services:
     restart: always
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready" , "--dbname=ipam", "--username=ipam"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     expose:
       - 5432
   ipam:
     image: go-ipam
+    build:
+      context: .
     environment:
       - GOIPAM_GRPC_SERVER_ENDPOINT=0.0.0.0:9090
       - GOIPAM_PG_HOST=postgres
@@ -22,11 +27,13 @@ services:
       - GOIPAM_PG_USER=ipam
       - GOIPAM_PG_PASSWORD=ipam
       - GOIPAM_PG_DBNAME=ipam
+      - GOIPAM_LOG_LEVEL=debug
     restart: always
     command:
       postgres
     ports:
       - 9090:9090
+      - 2112:2112
     healthcheck:
       test: ["CMD", "/bin/grpc_health_probe", "-addr","localhost:9090"]
       interval: 10s
