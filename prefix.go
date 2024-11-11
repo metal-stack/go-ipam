@@ -29,7 +29,7 @@ type Prefix struct {
 type Prefixes []Prefix
 
 // deepCopy to a new Prefix
-func (p Prefix) deepCopy() *Prefix {
+func (p *Prefix) deepCopy() *Prefix {
 	return &Prefix{
 		Cidr:                   p.Cidr,
 		ParentCidr:             p.ParentCidr,
