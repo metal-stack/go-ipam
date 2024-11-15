@@ -18,7 +18,7 @@ WORKDIR /work
 COPY . .
 RUN make server client
 
-FROM gcr.io/distroless/static-debian12
+FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=health-downloader /bin/grpc_health_probe /bin/grpc_health_probe
 COPY --from=builder /work/bin/* /
 ENTRYPOINT [ "/server" ]
