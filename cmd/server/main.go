@@ -22,13 +22,13 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "grpc-server-endpoint",
-				Value:   "localhost:9090",
+				Value:   ":9090",
 				Usage:   "gRPC server endpoint",
 				EnvVars: []string{"GOIPAM_GRPC_SERVER_ENDPOINT"},
 			},
 			&cli.StringFlag{
 				Name:    "metrics-endpoint",
-				Value:   "localhost:2112",
+				Value:   ":2112",
 				Usage:   "metrics endpoint",
 				EnvVars: []string{"GOIPAM_METRICS_ENDPOINT"},
 			},

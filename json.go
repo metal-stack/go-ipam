@@ -33,7 +33,7 @@ func (p prefixJSON) toPrefix() Prefix {
 	}
 }
 
-func (p Prefix) toPrefixJSON() prefixJSON {
+func (p *Prefix) toPrefixJSON() prefixJSON {
 	return prefixJSON{
 		Prefix: Prefix{
 			Cidr:       p.Cidr,
@@ -48,7 +48,7 @@ func (p Prefix) toPrefixJSON() prefixJSON {
 	}
 }
 
-func (p Prefix) toJSON() ([]byte, error) {
+func (p *Prefix) toJSON() ([]byte, error) {
 	pj, err := json.Marshal(p.toPrefixJSON()) // nolint:musttag
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%w", err)
