@@ -73,26 +73,6 @@ const (
 	IpamServiceVersionProcedure = "/api.v1.IpamService/Version"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	ipamServiceServiceDescriptor                  = v1.File_api_v1_ipam_proto.Services().ByName("IpamService")
-	ipamServiceCreatePrefixMethodDescriptor       = ipamServiceServiceDescriptor.Methods().ByName("CreatePrefix")
-	ipamServiceDeletePrefixMethodDescriptor       = ipamServiceServiceDescriptor.Methods().ByName("DeletePrefix")
-	ipamServiceGetPrefixMethodDescriptor          = ipamServiceServiceDescriptor.Methods().ByName("GetPrefix")
-	ipamServiceListPrefixesMethodDescriptor       = ipamServiceServiceDescriptor.Methods().ByName("ListPrefixes")
-	ipamServicePrefixUsageMethodDescriptor        = ipamServiceServiceDescriptor.Methods().ByName("PrefixUsage")
-	ipamServiceAcquireChildPrefixMethodDescriptor = ipamServiceServiceDescriptor.Methods().ByName("AcquireChildPrefix")
-	ipamServiceReleaseChildPrefixMethodDescriptor = ipamServiceServiceDescriptor.Methods().ByName("ReleaseChildPrefix")
-	ipamServiceAcquireIPMethodDescriptor          = ipamServiceServiceDescriptor.Methods().ByName("AcquireIP")
-	ipamServiceReleaseIPMethodDescriptor          = ipamServiceServiceDescriptor.Methods().ByName("ReleaseIP")
-	ipamServiceDumpMethodDescriptor               = ipamServiceServiceDescriptor.Methods().ByName("Dump")
-	ipamServiceLoadMethodDescriptor               = ipamServiceServiceDescriptor.Methods().ByName("Load")
-	ipamServiceCreateNamespaceMethodDescriptor    = ipamServiceServiceDescriptor.Methods().ByName("CreateNamespace")
-	ipamServiceListNamespacesMethodDescriptor     = ipamServiceServiceDescriptor.Methods().ByName("ListNamespaces")
-	ipamServiceDeleteNamespaceMethodDescriptor    = ipamServiceServiceDescriptor.Methods().ByName("DeleteNamespace")
-	ipamServiceVersionMethodDescriptor            = ipamServiceServiceDescriptor.Methods().ByName("Version")
-)
-
 // IpamServiceClient is a client for the api.v1.IpamService service.
 type IpamServiceClient interface {
 	CreatePrefix(context.Context, *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error)
@@ -121,95 +101,96 @@ type IpamServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewIpamServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) IpamServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	ipamServiceMethods := v1.File_api_v1_ipam_proto.Services().ByName("IpamService").Methods()
 	return &ipamServiceClient{
 		createPrefix: connect.NewClient[v1.CreatePrefixRequest, v1.CreatePrefixResponse](
 			httpClient,
 			baseURL+IpamServiceCreatePrefixProcedure,
-			connect.WithSchema(ipamServiceCreatePrefixMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("CreatePrefix")),
 			connect.WithClientOptions(opts...),
 		),
 		deletePrefix: connect.NewClient[v1.DeletePrefixRequest, v1.DeletePrefixResponse](
 			httpClient,
 			baseURL+IpamServiceDeletePrefixProcedure,
-			connect.WithSchema(ipamServiceDeletePrefixMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("DeletePrefix")),
 			connect.WithClientOptions(opts...),
 		),
 		getPrefix: connect.NewClient[v1.GetPrefixRequest, v1.GetPrefixResponse](
 			httpClient,
 			baseURL+IpamServiceGetPrefixProcedure,
-			connect.WithSchema(ipamServiceGetPrefixMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("GetPrefix")),
 			connect.WithClientOptions(opts...),
 		),
 		listPrefixes: connect.NewClient[v1.ListPrefixesRequest, v1.ListPrefixesResponse](
 			httpClient,
 			baseURL+IpamServiceListPrefixesProcedure,
-			connect.WithSchema(ipamServiceListPrefixesMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("ListPrefixes")),
 			connect.WithClientOptions(opts...),
 		),
 		prefixUsage: connect.NewClient[v1.PrefixUsageRequest, v1.PrefixUsageResponse](
 			httpClient,
 			baseURL+IpamServicePrefixUsageProcedure,
-			connect.WithSchema(ipamServicePrefixUsageMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("PrefixUsage")),
 			connect.WithClientOptions(opts...),
 		),
 		acquireChildPrefix: connect.NewClient[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse](
 			httpClient,
 			baseURL+IpamServiceAcquireChildPrefixProcedure,
-			connect.WithSchema(ipamServiceAcquireChildPrefixMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("AcquireChildPrefix")),
 			connect.WithClientOptions(opts...),
 		),
 		releaseChildPrefix: connect.NewClient[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse](
 			httpClient,
 			baseURL+IpamServiceReleaseChildPrefixProcedure,
-			connect.WithSchema(ipamServiceReleaseChildPrefixMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("ReleaseChildPrefix")),
 			connect.WithClientOptions(opts...),
 		),
 		acquireIP: connect.NewClient[v1.AcquireIPRequest, v1.AcquireIPResponse](
 			httpClient,
 			baseURL+IpamServiceAcquireIPProcedure,
-			connect.WithSchema(ipamServiceAcquireIPMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("AcquireIP")),
 			connect.WithClientOptions(opts...),
 		),
 		releaseIP: connect.NewClient[v1.ReleaseIPRequest, v1.ReleaseIPResponse](
 			httpClient,
 			baseURL+IpamServiceReleaseIPProcedure,
-			connect.WithSchema(ipamServiceReleaseIPMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("ReleaseIP")),
 			connect.WithClientOptions(opts...),
 		),
 		dump: connect.NewClient[v1.DumpRequest, v1.DumpResponse](
 			httpClient,
 			baseURL+IpamServiceDumpProcedure,
-			connect.WithSchema(ipamServiceDumpMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("Dump")),
 			connect.WithClientOptions(opts...),
 		),
 		load: connect.NewClient[v1.LoadRequest, v1.LoadResponse](
 			httpClient,
 			baseURL+IpamServiceLoadProcedure,
-			connect.WithSchema(ipamServiceLoadMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("Load")),
 			connect.WithClientOptions(opts...),
 		),
 		createNamespace: connect.NewClient[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse](
 			httpClient,
 			baseURL+IpamServiceCreateNamespaceProcedure,
-			connect.WithSchema(ipamServiceCreateNamespaceMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("CreateNamespace")),
 			connect.WithClientOptions(opts...),
 		),
 		listNamespaces: connect.NewClient[v1.ListNamespacesRequest, v1.ListNamespacesResponse](
 			httpClient,
 			baseURL+IpamServiceListNamespacesProcedure,
-			connect.WithSchema(ipamServiceListNamespacesMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("ListNamespaces")),
 			connect.WithClientOptions(opts...),
 		),
 		deleteNamespace: connect.NewClient[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse](
 			httpClient,
 			baseURL+IpamServiceDeleteNamespaceProcedure,
-			connect.WithSchema(ipamServiceDeleteNamespaceMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("DeleteNamespace")),
 			connect.WithClientOptions(opts...),
 		),
 		version: connect.NewClient[v1.VersionRequest, v1.VersionResponse](
 			httpClient,
 			baseURL+IpamServiceVersionProcedure,
-			connect.WithSchema(ipamServiceVersionMethodDescriptor),
+			connect.WithSchema(ipamServiceMethods.ByName("Version")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -334,94 +315,95 @@ type IpamServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	ipamServiceMethods := v1.File_api_v1_ipam_proto.Services().ByName("IpamService").Methods()
 	ipamServiceCreatePrefixHandler := connect.NewUnaryHandler(
 		IpamServiceCreatePrefixProcedure,
 		svc.CreatePrefix,
-		connect.WithSchema(ipamServiceCreatePrefixMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("CreatePrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceDeletePrefixHandler := connect.NewUnaryHandler(
 		IpamServiceDeletePrefixProcedure,
 		svc.DeletePrefix,
-		connect.WithSchema(ipamServiceDeletePrefixMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("DeletePrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceGetPrefixHandler := connect.NewUnaryHandler(
 		IpamServiceGetPrefixProcedure,
 		svc.GetPrefix,
-		connect.WithSchema(ipamServiceGetPrefixMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("GetPrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceListPrefixesHandler := connect.NewUnaryHandler(
 		IpamServiceListPrefixesProcedure,
 		svc.ListPrefixes,
-		connect.WithSchema(ipamServiceListPrefixesMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("ListPrefixes")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServicePrefixUsageHandler := connect.NewUnaryHandler(
 		IpamServicePrefixUsageProcedure,
 		svc.PrefixUsage,
-		connect.WithSchema(ipamServicePrefixUsageMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("PrefixUsage")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceAcquireChildPrefixHandler := connect.NewUnaryHandler(
 		IpamServiceAcquireChildPrefixProcedure,
 		svc.AcquireChildPrefix,
-		connect.WithSchema(ipamServiceAcquireChildPrefixMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("AcquireChildPrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceReleaseChildPrefixHandler := connect.NewUnaryHandler(
 		IpamServiceReleaseChildPrefixProcedure,
 		svc.ReleaseChildPrefix,
-		connect.WithSchema(ipamServiceReleaseChildPrefixMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("ReleaseChildPrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceAcquireIPHandler := connect.NewUnaryHandler(
 		IpamServiceAcquireIPProcedure,
 		svc.AcquireIP,
-		connect.WithSchema(ipamServiceAcquireIPMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("AcquireIP")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceReleaseIPHandler := connect.NewUnaryHandler(
 		IpamServiceReleaseIPProcedure,
 		svc.ReleaseIP,
-		connect.WithSchema(ipamServiceReleaseIPMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("ReleaseIP")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceDumpHandler := connect.NewUnaryHandler(
 		IpamServiceDumpProcedure,
 		svc.Dump,
-		connect.WithSchema(ipamServiceDumpMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("Dump")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceLoadHandler := connect.NewUnaryHandler(
 		IpamServiceLoadProcedure,
 		svc.Load,
-		connect.WithSchema(ipamServiceLoadMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("Load")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceCreateNamespaceHandler := connect.NewUnaryHandler(
 		IpamServiceCreateNamespaceProcedure,
 		svc.CreateNamespace,
-		connect.WithSchema(ipamServiceCreateNamespaceMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("CreateNamespace")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceListNamespacesHandler := connect.NewUnaryHandler(
 		IpamServiceListNamespacesProcedure,
 		svc.ListNamespaces,
-		connect.WithSchema(ipamServiceListNamespacesMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("ListNamespaces")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceDeleteNamespaceHandler := connect.NewUnaryHandler(
 		IpamServiceDeleteNamespaceProcedure,
 		svc.DeleteNamespace,
-		connect.WithSchema(ipamServiceDeleteNamespaceMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("DeleteNamespace")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceVersionHandler := connect.NewUnaryHandler(
 		IpamServiceVersionProcedure,
 		svc.Version,
-		connect.WithSchema(ipamServiceVersionMethodDescriptor),
+		connect.WithSchema(ipamServiceMethods.ByName("Version")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/api.v1.IpamService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
