@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.23
+    - name: Set up Go 1.24
       uses: actions/setup-go@v5
       with:
-        go-version: "1.23"
+        go-version: "1.24"
         cache: false
       id: go
 
@@ -89,10 +89,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.23
+    - name: Set up Go 1.24
       uses: actions/setup-go@v5
       with:
-        go-version: "1.23"
+        go-version: "1.24"
         cache: false
       id: go
 
@@ -101,4 +101,18 @@ jobs:
 
     - name: run benchmark
       run: |
-        make bench
+        make bench | tee output.txt
+
+    - name: Download previous benchmark data
+      uses: actions/cache@v4
+      with:
+        path: ./cache
+        key: ${{ runner.os }}-benchmark
+
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'go'
+        output-file-path: output.txt
+        external-data-json-path: ./cache/benchmark-data.json
+        fail-on-alert: true
