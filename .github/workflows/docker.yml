@@ -115,4 +115,6 @@ jobs:
         tool: 'go'
         output-file-path: output.txt
         external-data-json-path: ./cache/benchmark-data.json
+         # GitHub API token to make a commit comment
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         fail-on-alert: true
