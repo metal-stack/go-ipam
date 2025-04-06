@@ -9,7 +9,7 @@ import (
 func BenchmarkNewPrefix(b *testing.B) {
 	ctx := context.Background()
 	benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
-		for range b.N {
+		for b.Loop() {
 			p, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
 			if err != nil {
 				panic(err)
@@ -33,7 +33,7 @@ func BenchmarkAcquireIP(b *testing.B) {
 		if err != nil {
 			panic(err)
 		}
-		for range b.N {
+		for b.Loop() {
 			ip, err := ipam.AcquireIP(ctx, p.Cidr)
 			if err != nil {
 				panic(err)
@@ -72,7 +72,7 @@ func BenchmarkAcquireChildPrefix(b *testing.B) {
 			if err != nil {
 				panic(err)
 			}
-			for range b.N {
+			for b.Loop() {
 				p, err := ipam.AcquireChildPrefix(ctx, p.Cidr, test.childLength)
 				if err != nil {
 					panic(err)
@@ -93,7 +93,7 @@ func BenchmarkAcquireChildPrefix(b *testing.B) {
 func BenchmarkPrefixOverlapping(b *testing.B) {
 	existingPrefixes := []string{"192.168.0.0/24", "10.0.0.0/8"}
 	newPrefixes := []string{"192.168.1.0/24", "11.0.0.0/8"}
-	for range b.N {
+	for b.Loop() {
 		err := PrefixesOverlapping(existingPrefixes, newPrefixes)
 		if err != nil {
 			b.Errorf("PrefixOverLapping error:%v", err)

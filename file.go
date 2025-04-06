@@ -105,7 +105,7 @@ func (f *file) getModTime() time.Time {
 // after https://github.com/metal-stack/go-ipam/issues/111 is addressed
 func (f *file) reload(ctx context.Context) (err error) {
 	// don't do anything when file modification time didn't changed
-	if modTime := f.getModTime(); modTime != nullModTime && modTime == f.modTime {
+	if modTime := f.getModTime(); !modTime.Equal(nullModTime) && modTime.Equal(f.modTime) {
 		return nil
 	}
 

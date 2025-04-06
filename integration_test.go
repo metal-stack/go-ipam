@@ -15,7 +15,9 @@ func TestIntegration(t *testing.T) {
 
 	_, storage, err := startPostgres()
 	require.NoError(t, err)
-	defer storage.db.Close()
+	defer func() {
+		_ = storage.db.Close()
+	}()
 	dump, err := os.ReadFile("testdata/ipamt.dump.sql")
 	require.NoError(t, err)
 	require.NotNil(t, dump)
@@ -155,7 +157,9 @@ func TestIntegrationP(t *testing.T) {
 	ctx := context.Background()
 	_, storage, err := startPostgres()
 	require.NoError(t, err)
-	defer storage.db.Close()
+	defer func() {
+		_ = storage.db.Close()
+	}()
 	dump, err := os.ReadFile("testdata/ipamp.dump.sql")
 	require.NoError(t, err)
 	require.NotNil(t, dump)
