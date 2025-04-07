@@ -468,8 +468,8 @@ func (f *file) postCleanup() error {
 
 // cleanup database before test
 func (e *extendedSQL) cleanup() error {
-	tx := e.sql.db.MustBegin()
-	_, err := e.sql.db.Exec("TRUNCATE TABLE prefixes")
+	tx := e.db.MustBegin()
+	_, err := e.db.Exec("TRUNCATE TABLE prefixes")
 	if err != nil {
 		return err
 	}
@@ -478,12 +478,12 @@ func (e *extendedSQL) cleanup() error {
 
 // cleanup database before test
 func (kv *kvStorage) cleanup() error {
-	return kv.redis.DeleteAllPrefixes(context.Background(), defaultNamespace)
+	return kv.DeleteAllPrefixes(context.Background(), defaultNamespace)
 }
 
 // cleanup database before test
 func (kv *kvEtcdStorage) cleanup() error {
-	return kv.etcd.DeleteAllPrefixes(context.Background(), defaultNamespace)
+	return kv.DeleteAllPrefixes(context.Background(), defaultNamespace)
 }
 
 // cleanup database before test
@@ -497,7 +497,7 @@ func (sql *sql) cleanup() error {
 }
 
 func (ds *docStorage) cleanup() error {
-	return ds.mongodb.DeleteAllPrefixes(context.Background(), defaultNamespace)
+	return ds.DeleteAllPrefixes(context.Background(), defaultNamespace)
 }
 
 type benchMethod func(b *testing.B, ipam *ipamer)
@@ -537,7 +537,6 @@ type testMethod func(t *testing.T, ipam *ipamer)
 func testWithBackends(t *testing.T, fn testMethod) {
 	t.Helper()
 	// prevent testcontainer logging mangle test and benchmark output
-	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
 		if backend != "" && backend != storageProvider.name {
 			continue
@@ -572,7 +571,6 @@ type sqlTestMethod func(t *testing.T, sql *sql)
 func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
 	t.Helper()
 	// prevent testcontainer logging mangle test and benchmark output
-	testcontainers.WithLogger(testcontainers.TestLogger(t))
 	for _, storageProvider := range storageProviders() {
 		if backend != "" && backend != storageProvider.name {
 			continue
