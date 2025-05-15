@@ -80,6 +80,7 @@ func startPostgres() (container testcontainers.Container, db *sql, err error) {
 			Image:        "postgres:" + pgVersion,
 			ExposedPorts: []string{"5432/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
+			Tmpfs:        map[string]string{"/var/lib/postgresql/data": "rw"},
 			WaitingFor: wait.ForAll(
 				wait.ForLog("database system is ready to accept connections"),
 				wait.ForListeningPort("5432/tcp"),
@@ -152,6 +153,7 @@ func startRedis() (container testcontainers.Container, s *redis, err error) {
 		req := testcontainers.ContainerRequest{
 			Image:        "redis:" + redisVersion,
 			ExposedPorts: []string{"6379/tcp"},
+			Tmpfs:        map[string]string{"/data": "rw"},
 			WaitingFor: wait.ForAll(
 				wait.ForLog("Ready to accept connections"),
 				wait.ForListeningPort("6379/tcp"),

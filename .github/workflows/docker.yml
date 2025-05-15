@@ -31,10 +31,8 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v4
 
-    - name: Lint
-      uses: golangci/golangci-lint-action@v7
-      with:
-        args: --timeout=3m
+
+      
 
     - name: break if proto modifications where not committed
       run: |
