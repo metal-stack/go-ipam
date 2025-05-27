@@ -25,7 +25,7 @@ func main() {
 				Name:    "grpc-server-endpoint",
 				Value:   "http://localhost:9090",
 				Usage:   "gRPC server endpoint",
-				EnvVars: []string{"GOIPAM_GRPC_SERVER_ENDPOINT"},
+				EnvVars: []string{"GOIPAM_CLI_GRPC_SERVER_ENDPOINT"},
 			},
 		},
 		Commands: []*cli.Command{
