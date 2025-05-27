@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
-		cockroachVersion = "latest-v25.1"
+		cockroachVersion = "latest-v24.3"
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
