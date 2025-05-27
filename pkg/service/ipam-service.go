@@ -180,6 +180,15 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Reque
 		},
 	), nil
 }
+
+// PrefixesOverlapping implements apiv1connect.IpamServiceHandler.
+func (*IPAMService) PrefixesOverlapping(_ context.Context, req *connect.Request[v1.PrefixesOverlappingRequest]) (*connect.Response[v1.PrefixesOverlappingResponse], error) {
+	err := goipam.PrefixesOverlapping(req.Msg.ExistingPrefixes, req.Msg.NewPrefixes)
+	return connect.NewResponse(
+		&v1.PrefixesOverlappingResponse{},
+	), err
+}
+
 func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error) {
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())

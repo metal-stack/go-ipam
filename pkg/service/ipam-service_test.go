@@ -161,3 +161,33 @@ func TestIpamService(t *testing.T) {
 		}
 	})
 }
+
+func TestIPAMService_PrefixesOverlapping(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		req     *v1.PrefixesOverlappingRequest
+		wantErr bool
+	}{
+		{
+			name:    "not overlapping",
+			req:     &v1.PrefixesOverlappingRequest{ExistingPrefixes: []string{"10.0.0.0/8"}, NewPrefixes: []string{"11.0.0.0/8"}},
+			wantErr: false,
+		},
+		{
+			name:    "overlapping",
+			req:     &v1.PrefixesOverlappingRequest{ExistingPrefixes: []string{"10.0.0.0/8"}, NewPrefixes: []string{"10.1.0.0/16"}},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			i := &IPAMService{}
+			_, err := i.PrefixesOverlapping(t.Context(), connect.NewRequest(tt.req))
+			if (err != nil) != tt.wantErr {
+				t.Errorf("IPAMService.PrefixesOverlapping() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}

@@ -10,6 +10,7 @@ service IpamService {
   rpc GetPrefix(GetPrefixRequest) returns (GetPrefixResponse);
   rpc ListPrefixes(ListPrefixesRequest) returns (ListPrefixesResponse);
   rpc PrefixUsage(PrefixUsageRequest) returns (PrefixUsageResponse);
+  rpc PrefixesOverlapping(PrefixesOverlappingRequest) returns (PrefixesOverlappingResponse);
   rpc AcquireChildPrefix(AcquireChildPrefixRequest) returns (AcquireChildPrefixResponse);
   rpc ReleaseChildPrefix(ReleaseChildPrefixRequest) returns (ReleaseChildPrefixResponse);
   rpc AcquireIP(AcquireIPRequest) returns (AcquireIPResponse);
@@ -64,6 +65,17 @@ message PrefixUsageRequest {
   string cidr = 1;
   optional string namespace = 2;
 }
+
+// PrefixesOverlappingRequest check two slices of prefixes if they overlap
+message PrefixesOverlappingRequest {
+  // Existing prefixes to check against new prefixes overlapping
+  repeated string existing_prefixes = 1;
+  // New prefixes to check if they overlap against existing prefixes
+  repeated string new_prefixes = 2;
+}
+
+// PrefixesOverlappingResponse returns without an error if prefixes do not overlap
+message PrefixesOverlappingResponse {}
 
 message PrefixUsageResponse {
   // AvailableIPs the number of available IPs if this is not a parent prefix

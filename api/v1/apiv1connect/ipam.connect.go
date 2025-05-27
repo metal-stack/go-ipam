@@ -46,6 +46,9 @@ const (
 	IpamServiceListPrefixesProcedure = "/api.v1.IpamService/ListPrefixes"
 	// IpamServicePrefixUsageProcedure is the fully-qualified name of the IpamService's PrefixUsage RPC.
 	IpamServicePrefixUsageProcedure = "/api.v1.IpamService/PrefixUsage"
+	// IpamServicePrefixesOverlappingProcedure is the fully-qualified name of the IpamService's
+	// PrefixesOverlapping RPC.
+	IpamServicePrefixesOverlappingProcedure = "/api.v1.IpamService/PrefixesOverlapping"
 	// IpamServiceAcquireChildPrefixProcedure is the fully-qualified name of the IpamService's
 	// AcquireChildPrefix RPC.
 	IpamServiceAcquireChildPrefixProcedure = "/api.v1.IpamService/AcquireChildPrefix"
@@ -80,6 +83,7 @@ type IpamServiceClient interface {
 	GetPrefix(context.Context, *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error)
 	ListPrefixes(context.Context, *connect.Request[v1.ListPrefixesRequest]) (*connect.Response[v1.ListPrefixesResponse], error)
 	PrefixUsage(context.Context, *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error)
+	PrefixesOverlapping(context.Context, *connect.Request[v1.PrefixesOverlappingRequest]) (*connect.Response[v1.PrefixesOverlappingResponse], error)
 	AcquireChildPrefix(context.Context, *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error)
 	ReleaseChildPrefix(context.Context, *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error)
 	AcquireIP(context.Context, *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error)
@@ -131,6 +135,12 @@ func NewIpamServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			httpClient,
 			baseURL+IpamServicePrefixUsageProcedure,
 			connect.WithSchema(ipamServiceMethods.ByName("PrefixUsage")),
+			connect.WithClientOptions(opts...),
+		),
+		prefixesOverlapping: connect.NewClient[v1.PrefixesOverlappingRequest, v1.PrefixesOverlappingResponse](
+			httpClient,
+			baseURL+IpamServicePrefixesOverlappingProcedure,
+			connect.WithSchema(ipamServiceMethods.ByName("PrefixesOverlapping")),
 			connect.WithClientOptions(opts...),
 		),
 		acquireChildPrefix: connect.NewClient[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse](
@@ -198,21 +208,22 @@ func NewIpamServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // ipamServiceClient implements IpamServiceClient.
 type ipamServiceClient struct {
-	createPrefix       *connect.Client[v1.CreatePrefixRequest, v1.CreatePrefixResponse]
-	deletePrefix       *connect.Client[v1.DeletePrefixRequest, v1.DeletePrefixResponse]
-	getPrefix          *connect.Client[v1.GetPrefixRequest, v1.GetPrefixResponse]
-	listPrefixes       *connect.Client[v1.ListPrefixesRequest, v1.ListPrefixesResponse]
-	prefixUsage        *connect.Client[v1.PrefixUsageRequest, v1.PrefixUsageResponse]
-	acquireChildPrefix *connect.Client[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse]
-	releaseChildPrefix *connect.Client[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse]
-	acquireIP          *connect.Client[v1.AcquireIPRequest, v1.AcquireIPResponse]
-	releaseIP          *connect.Client[v1.ReleaseIPRequest, v1.ReleaseIPResponse]
-	dump               *connect.Client[v1.DumpRequest, v1.DumpResponse]
-	load               *connect.Client[v1.LoadRequest, v1.LoadResponse]
-	createNamespace    *connect.Client[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse]
-	listNamespaces     *connect.Client[v1.ListNamespacesRequest, v1.ListNamespacesResponse]
-	deleteNamespace    *connect.Client[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse]
-	version            *connect.Client[v1.VersionRequest, v1.VersionResponse]
+	createPrefix        *connect.Client[v1.CreatePrefixRequest, v1.CreatePrefixResponse]
+	deletePrefix        *connect.Client[v1.DeletePrefixRequest, v1.DeletePrefixResponse]
+	getPrefix           *connect.Client[v1.GetPrefixRequest, v1.GetPrefixResponse]
+	listPrefixes        *connect.Client[v1.ListPrefixesRequest, v1.ListPrefixesResponse]
+	prefixUsage         *connect.Client[v1.PrefixUsageRequest, v1.PrefixUsageResponse]
+	prefixesOverlapping *connect.Client[v1.PrefixesOverlappingRequest, v1.PrefixesOverlappingResponse]
+	acquireChildPrefix  *connect.Client[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse]
+	releaseChildPrefix  *connect.Client[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse]
+	acquireIP           *connect.Client[v1.AcquireIPRequest, v1.AcquireIPResponse]
+	releaseIP           *connect.Client[v1.ReleaseIPRequest, v1.ReleaseIPResponse]
+	dump                *connect.Client[v1.DumpRequest, v1.DumpResponse]
+	load                *connect.Client[v1.LoadRequest, v1.LoadResponse]
+	createNamespace     *connect.Client[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse]
+	listNamespaces      *connect.Client[v1.ListNamespacesRequest, v1.ListNamespacesResponse]
+	deleteNamespace     *connect.Client[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse]
+	version             *connect.Client[v1.VersionRequest, v1.VersionResponse]
 }
 
 // CreatePrefix calls api.v1.IpamService.CreatePrefix.
@@ -238,6 +249,11 @@ func (c *ipamServiceClient) ListPrefixes(ctx context.Context, req *connect.Reque
 // PrefixUsage calls api.v1.IpamService.PrefixUsage.
 func (c *ipamServiceClient) PrefixUsage(ctx context.Context, req *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error) {
 	return c.prefixUsage.CallUnary(ctx, req)
+}
+
+// PrefixesOverlapping calls api.v1.IpamService.PrefixesOverlapping.
+func (c *ipamServiceClient) PrefixesOverlapping(ctx context.Context, req *connect.Request[v1.PrefixesOverlappingRequest]) (*connect.Response[v1.PrefixesOverlappingResponse], error) {
+	return c.prefixesOverlapping.CallUnary(ctx, req)
 }
 
 // AcquireChildPrefix calls api.v1.IpamService.AcquireChildPrefix.
@@ -297,6 +313,7 @@ type IpamServiceHandler interface {
 	GetPrefix(context.Context, *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error)
 	ListPrefixes(context.Context, *connect.Request[v1.ListPrefixesRequest]) (*connect.Response[v1.ListPrefixesResponse], error)
 	PrefixUsage(context.Context, *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error)
+	PrefixesOverlapping(context.Context, *connect.Request[v1.PrefixesOverlappingRequest]) (*connect.Response[v1.PrefixesOverlappingResponse], error)
 	AcquireChildPrefix(context.Context, *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error)
 	ReleaseChildPrefix(context.Context, *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error)
 	AcquireIP(context.Context, *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error)
@@ -344,6 +361,12 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 		IpamServicePrefixUsageProcedure,
 		svc.PrefixUsage,
 		connect.WithSchema(ipamServiceMethods.ByName("PrefixUsage")),
+		connect.WithHandlerOptions(opts...),
+	)
+	ipamServicePrefixesOverlappingHandler := connect.NewUnaryHandler(
+		IpamServicePrefixesOverlappingProcedure,
+		svc.PrefixesOverlapping,
+		connect.WithSchema(ipamServiceMethods.ByName("PrefixesOverlapping")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceAcquireChildPrefixHandler := connect.NewUnaryHandler(
@@ -418,6 +441,8 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 			ipamServiceListPrefixesHandler.ServeHTTP(w, r)
 		case IpamServicePrefixUsageProcedure:
 			ipamServicePrefixUsageHandler.ServeHTTP(w, r)
+		case IpamServicePrefixesOverlappingProcedure:
+			ipamServicePrefixesOverlappingHandler.ServeHTTP(w, r)
 		case IpamServiceAcquireChildPrefixProcedure:
 			ipamServiceAcquireChildPrefixHandler.ServeHTTP(w, r)
 		case IpamServiceReleaseChildPrefixProcedure:
@@ -465,6 +490,10 @@ func (UnimplementedIpamServiceHandler) ListPrefixes(context.Context, *connect.Re
 
 func (UnimplementedIpamServiceHandler) PrefixUsage(context.Context, *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.PrefixUsage is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) PrefixesOverlapping(context.Context, *connect.Request[v1.PrefixesOverlappingRequest]) (*connect.Response[v1.PrefixesOverlappingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.PrefixesOverlapping is not implemented"))
 }
 
 func (UnimplementedIpamServiceHandler) AcquireChildPrefix(context.Context, *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error) {
