@@ -1,13 +1,12 @@
 package ipam
 
 import (
-	"context"
 	"fmt"
 	"testing"
 )
 
 func BenchmarkNewPrefix(b *testing.B) {
-	ctx := context.Background()
+	ctx := b.Context()
 	benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
 		for b.Loop() {
 			p, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
@@ -26,7 +25,7 @@ func BenchmarkNewPrefix(b *testing.B) {
 }
 
 func BenchmarkAcquireIP(b *testing.B) {
-	ctx := context.Background()
+	ctx := b.Context()
 	testCidr := "10.0.0.0/16"
 	benchWithBackends(b, func(b *testing.B, ipam *ipamer) {
 		p, err := ipam.NewPrefix(ctx, testCidr)
@@ -54,7 +53,7 @@ func BenchmarkAcquireIP(b *testing.B) {
 }
 
 func BenchmarkAcquireChildPrefix(b *testing.B) {
-	ctx := context.Background()
+	ctx := b.Context()
 	benchmarks := []struct {
 		name         string
 		parentLength uint8

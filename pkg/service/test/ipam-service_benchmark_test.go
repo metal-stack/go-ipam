@@ -1,7 +1,7 @@
 package test
 
 import (
-	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -14,11 +14,12 @@ import (
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/go-ipam/pkg/service"
+	"github.com/stretchr/testify/require"
 )
 
 // BenchmarkGrpcImpact located in a separate package to prevent import cycles.
 func BenchmarkGrpcImpact(b *testing.B) {
-	ctx := context.Background()
+	ctx := b.Context()
 	ipam := goipam.New(ctx)
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
@@ -57,111 +58,116 @@ func BenchmarkGrpcImpact(b *testing.B) {
 
 	benchmarks := []struct {
 		name string
-		f    func()
+		f    func() error
 	}{
 		{
 			name: "library",
-			f: func() {
+			f: func() error {
 				p, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
 				if err != nil {
-					panic(err)
+					return err
 				}
 				if p == nil {
-					panic("Prefix nil")
+					return fmt.Errorf("Prefix nil:%w", err)
 				}
 				_, err = ipam.DeletePrefix(ctx, p.Cidr)
 				if err != nil {
-					panic(err)
+					return err
 				}
+				return nil
 			},
 		},
 		{
 			name: "grpc",
-			f: func() {
+			f: func() error {
 				p, err := grpc.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
-					panic(err)
+					return err
 				}
 				if p == nil {
-					panic("Prefix nil")
+					return fmt.Errorf("Prefix nil:%w", err)
 				}
 				_, err = grpc.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
-					panic(err)
+					return err
 				}
+				return nil
 			},
 		},
 		{
 			name: "grpc-no-compression",
-			f: func() {
+			f: func() error {
 				p, err := grpcUncompressed.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
-					panic(err)
+					return err
 				}
 				if p == nil {
-					panic("Prefix nil")
+					return fmt.Errorf("Prefix nil:%w", err)
 				}
 				_, err = grpcUncompressed.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
-					panic(err)
+					return err
 				}
+				return nil
 			},
 		},
 		{
 			name: "http",
-			f: func() {
+			f: func() error {
 				p, err := httpclient.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
-					panic(err)
+					return err
 				}
 				if p == nil {
-					panic("Prefix nil")
+					return fmt.Errorf("Prefix nil:%w", err)
 				}
 				_, err = httpclient.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
-					panic(err)
+					return err
 				}
+				return nil
 			},
 		},
 		{
 			name: "http-no-compression",
-			f: func() {
+			f: func() error {
 				p, err := httpclientUncompressed.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
-					panic(err)
+					return err
 				}
 				if p == nil {
-					panic("Prefix nil")
+					return fmt.Errorf("Prefix nil:%w", err)
 				}
 				_, err = httpclientUncompressed.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
 				}))
 				if err != nil {
-					panic(err)
+					return err
 				}
+				return nil
 			},
 		},
 	}
 
 	for _, bm := range benchmarks {
-		bm := bm
 		b.Run(bm.name, func(b *testing.B) {
 			for b.Loop() {
-				bm.f()
+				err := bm.f()
+				require.NoError(b, err)
 			}
 		})
 	}
