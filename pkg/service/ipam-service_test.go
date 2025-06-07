@@ -43,25 +43,25 @@ func TestIpamService(t *testing.T) {
 	t.Run("CreateDeleteGetPrefix", func(t *testing.T) {
 		counter := 0
 		for _, client := range clients {
-			result, err := client.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
+			result, err := client.CreatePrefix(t.Context(), connect.NewRequest(&v1.CreatePrefixRequest{
 				Cidr: fmt.Sprintf("192.169.%d.0/24", counter),
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, result.Msg.GetPrefix().GetCidr(), fmt.Sprintf("192.169.%d.0/24", counter))
 
-			getresult, err := client.GetPrefix(context.Background(), connect.NewRequest(&v1.GetPrefixRequest{
+			getresult, err := client.GetPrefix(t.Context(), connect.NewRequest(&v1.GetPrefixRequest{
 				Cidr: fmt.Sprintf("192.169.%d.0/24", counter),
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, getresult.Msg.GetPrefix().GetCidr(), fmt.Sprintf("192.169.%d.0/24", counter))
 
-			deleteresult, err := client.DeletePrefix(context.Background(), connect.NewRequest(&v1.DeletePrefixRequest{
+			deleteresult, err := client.DeletePrefix(t.Context(), connect.NewRequest(&v1.DeletePrefixRequest{
 				Cidr: fmt.Sprintf("192.169.%d.0/24", counter),
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, deleteresult.Msg.GetPrefix().GetCidr(), fmt.Sprintf("192.169.%d.0/24", counter))
 
-			_, err = client.GetPrefix(context.Background(), connect.NewRequest(&v1.GetPrefixRequest{
+			_, err = client.GetPrefix(t.Context(), connect.NewRequest(&v1.GetPrefixRequest{
 				Cidr: fmt.Sprintf("192.169.%d.0/24", counter),
 			}))
 			// FIXME with PrefixFrom returns error refactoring
@@ -75,20 +75,20 @@ func TestIpamService(t *testing.T) {
 	t.Run("AcquireReleaseChildPrefix", func(t *testing.T) {
 		counter := 0
 		for _, client := range clients {
-			result, err := client.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
+			result, err := client.CreatePrefix(t.Context(), connect.NewRequest(&v1.CreatePrefixRequest{
 				Cidr: fmt.Sprintf("192.167.%d.0/24", counter),
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, result.Msg.GetPrefix().GetCidr(), fmt.Sprintf("192.167.%d.0/24", counter))
 
-			acquireresult, err := client.AcquireChildPrefix(context.Background(), connect.NewRequest(&v1.AcquireChildPrefixRequest{
+			acquireresult, err := client.AcquireChildPrefix(t.Context(), connect.NewRequest(&v1.AcquireChildPrefixRequest{
 				Cidr:   fmt.Sprintf("192.167.%d.0/24", counter),
 				Length: 28,
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, acquireresult.Msg.GetPrefix().GetCidr(), fmt.Sprintf("192.167.%d.0/28", counter))
 
-			releaseresult, err := client.ReleaseChildPrefix(context.Background(), connect.NewRequest(&v1.ReleaseChildPrefixRequest{
+			releaseresult, err := client.ReleaseChildPrefix(t.Context(), connect.NewRequest(&v1.ReleaseChildPrefixRequest{
 				Cidr: acquireresult.Msg.GetPrefix().GetCidr(),
 			}))
 			require.NoError(t, err)
@@ -101,19 +101,19 @@ func TestIpamService(t *testing.T) {
 	t.Run("AcquireReleaseIP", func(t *testing.T) {
 		counter := 0
 		for _, client := range clients {
-			result, err := client.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
+			result, err := client.CreatePrefix(t.Context(), connect.NewRequest(&v1.CreatePrefixRequest{
 				Cidr: fmt.Sprintf("192.166.%d.0/24", counter),
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, result.Msg.GetPrefix().GetCidr(), fmt.Sprintf("192.166.%d.0/24", counter))
 
-			acquireresult, err := client.AcquireIP(context.Background(), connect.NewRequest(&v1.AcquireIPRequest{
+			acquireresult, err := client.AcquireIP(t.Context(), connect.NewRequest(&v1.AcquireIPRequest{
 				PrefixCidr: fmt.Sprintf("192.166.%d.0/24", counter),
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, acquireresult.Msg.GetIp().GetIp(), fmt.Sprintf("192.166.%d.1", counter))
 
-			releaseresult, err := client.ReleaseIP(context.Background(), connect.NewRequest(&v1.ReleaseIPRequest{
+			releaseresult, err := client.ReleaseIP(t.Context(), connect.NewRequest(&v1.ReleaseIPRequest{
 				PrefixCidr: fmt.Sprintf("192.166.%d.0/24", counter),
 				Ip:         acquireresult.Msg.GetIp().GetIp(),
 			}))
@@ -128,31 +128,31 @@ func TestIpamService(t *testing.T) {
 		counter := 0
 		for _, client := range clients {
 			namespace := fmt.Sprintf("testns-%d", counter)
-			_, err := client.CreateNamespace(context.Background(), connect.NewRequest(&v1.CreateNamespaceRequest{Namespace: namespace}))
+			_, err := client.CreateNamespace(t.Context(), connect.NewRequest(&v1.CreateNamespaceRequest{Namespace: namespace}))
 			require.NoError(t, err)
 
-			result, err := client.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
+			result, err := client.CreatePrefix(t.Context(), connect.NewRequest(&v1.CreatePrefixRequest{
 				Cidr:      "192.169.0.0/24",
 				Namespace: &namespace,
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, "192.169.0.0/24", result.Msg.GetPrefix().GetCidr())
 
-			getresult, err := client.GetPrefix(context.Background(), connect.NewRequest(&v1.GetPrefixRequest{
+			getresult, err := client.GetPrefix(t.Context(), connect.NewRequest(&v1.GetPrefixRequest{
 				Cidr:      "192.169.0.0/24",
 				Namespace: &namespace,
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, "192.169.0.0/24", getresult.Msg.GetPrefix().GetCidr())
 
-			deleteresult, err := client.DeletePrefix(context.Background(), connect.NewRequest(&v1.DeletePrefixRequest{
+			deleteresult, err := client.DeletePrefix(t.Context(), connect.NewRequest(&v1.DeletePrefixRequest{
 				Cidr:      "192.169.0.0/24",
 				Namespace: &namespace,
 			}))
 			require.NoError(t, err)
 			assert.Equal(t, "192.169.0.0/24", deleteresult.Msg.GetPrefix().GetCidr())
 
-			_, err = client.GetPrefix(context.Background(), connect.NewRequest(&v1.GetPrefixRequest{
+			_, err = client.GetPrefix(t.Context(), connect.NewRequest(&v1.GetPrefixRequest{
 				Cidr:      "192.169.0.0/24",
 				Namespace: &namespace,
 			}))

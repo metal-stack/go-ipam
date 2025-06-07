@@ -1,13 +1,12 @@
 package ipam
 
 import (
-	"context"
 	"net/netip"
 	"testing"
 )
 
 func FuzzIpamer_AcquireIP(f *testing.F) {
-	ctx := context.Background()
+	ctx := f.Context()
 	tests := []struct {
 		name       string
 		prefixCIDR string

@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"context"
-
 	"github.com/stretchr/testify/require"
 )
 
 func Test_ReadPrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	m := NewMemory(ctx)
 
 	// Prefix
@@ -32,7 +30,7 @@ func Test_ReadPrefix(t *testing.T) {
 }
 
 func Test_UpdatePrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	m := NewMemory(ctx)
 
 	prefix := Prefix{}
@@ -50,7 +48,7 @@ func Test_UpdatePrefix(t *testing.T) {
 
 // ensure that locks on memory storage work
 func Test_UpdatePrefix_Concurrent(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	m := NewMemory(ctx)
 
 	for i := range 50000 {
