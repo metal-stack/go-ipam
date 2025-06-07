@@ -589,98 +589,6 @@ func (x *PrefixUsageRequest) GetNamespace() string {
 	return ""
 }
 
-// PrefixesOverlappingRequest check two slices of prefixes if they overlap
-type PrefixesOverlappingRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Existing prefixes to check against new prefixes overlapping
-	ExistingPrefixes []string `protobuf:"bytes,1,rep,name=existing_prefixes,json=existingPrefixes,proto3" json:"existing_prefixes,omitempty"`
-	// New prefixes to check if they overlap against existing prefixes
-	NewPrefixes   []string `protobuf:"bytes,2,rep,name=new_prefixes,json=newPrefixes,proto3" json:"new_prefixes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PrefixesOverlappingRequest) Reset() {
-	*x = PrefixesOverlappingRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PrefixesOverlappingRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PrefixesOverlappingRequest) ProtoMessage() {}
-
-func (x *PrefixesOverlappingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PrefixesOverlappingRequest.ProtoReflect.Descriptor instead.
-func (*PrefixesOverlappingRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *PrefixesOverlappingRequest) GetExistingPrefixes() []string {
-	if x != nil {
-		return x.ExistingPrefixes
-	}
-	return nil
-}
-
-func (x *PrefixesOverlappingRequest) GetNewPrefixes() []string {
-	if x != nil {
-		return x.NewPrefixes
-	}
-	return nil
-}
-
-// PrefixesOverlappingResponse returns without an error if prefixes do not overlap
-type PrefixesOverlappingResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PrefixesOverlappingResponse) Reset() {
-	*x = PrefixesOverlappingResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PrefixesOverlappingResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PrefixesOverlappingResponse) ProtoMessage() {}
-
-func (x *PrefixesOverlappingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PrefixesOverlappingResponse.ProtoReflect.Descriptor instead.
-func (*PrefixesOverlappingResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{13}
-}
-
 type PrefixUsageResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// AvailableIPs the number of available IPs if this is not a parent prefix
@@ -701,7 +609,7 @@ type PrefixUsageResponse struct {
 
 func (x *PrefixUsageResponse) Reset() {
 	*x = PrefixUsageResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[14]
+	mi := &file_api_v1_ipam_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -713,7 +621,7 @@ func (x *PrefixUsageResponse) String() string {
 func (*PrefixUsageResponse) ProtoMessage() {}
 
 func (x *PrefixUsageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[14]
+	mi := &file_api_v1_ipam_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -726,7 +634,7 @@ func (x *PrefixUsageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrefixUsageResponse.ProtoReflect.Descriptor instead.
 func (*PrefixUsageResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{14}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *PrefixUsageResponse) GetAvailableIps() uint64 {
@@ -776,7 +684,7 @@ type AcquireChildPrefixRequest struct {
 
 func (x *AcquireChildPrefixRequest) Reset() {
 	*x = AcquireChildPrefixRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[15]
+	mi := &file_api_v1_ipam_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -788,7 +696,7 @@ func (x *AcquireChildPrefixRequest) String() string {
 func (*AcquireChildPrefixRequest) ProtoMessage() {}
 
 func (x *AcquireChildPrefixRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[15]
+	mi := &file_api_v1_ipam_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -801,7 +709,7 @@ func (x *AcquireChildPrefixRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcquireChildPrefixRequest.ProtoReflect.Descriptor instead.
 func (*AcquireChildPrefixRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{15}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AcquireChildPrefixRequest) GetCidr() string {
@@ -842,7 +750,7 @@ type ReleaseChildPrefixRequest struct {
 
 func (x *ReleaseChildPrefixRequest) Reset() {
 	*x = ReleaseChildPrefixRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[16]
+	mi := &file_api_v1_ipam_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -854,7 +762,7 @@ func (x *ReleaseChildPrefixRequest) String() string {
 func (*ReleaseChildPrefixRequest) ProtoMessage() {}
 
 func (x *ReleaseChildPrefixRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[16]
+	mi := &file_api_v1_ipam_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -867,7 +775,7 @@ func (x *ReleaseChildPrefixRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseChildPrefixRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseChildPrefixRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{16}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ReleaseChildPrefixRequest) GetCidr() string {
@@ -894,7 +802,7 @@ type IP struct {
 
 func (x *IP) Reset() {
 	*x = IP{}
-	mi := &file_api_v1_ipam_proto_msgTypes[17]
+	mi := &file_api_v1_ipam_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -906,7 +814,7 @@ func (x *IP) String() string {
 func (*IP) ProtoMessage() {}
 
 func (x *IP) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[17]
+	mi := &file_api_v1_ipam_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -919,7 +827,7 @@ func (x *IP) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IP.ProtoReflect.Descriptor instead.
 func (*IP) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{17}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *IP) GetIp() string {
@@ -946,7 +854,7 @@ type AcquireIPResponse struct {
 
 func (x *AcquireIPResponse) Reset() {
 	*x = AcquireIPResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[18]
+	mi := &file_api_v1_ipam_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -958,7 +866,7 @@ func (x *AcquireIPResponse) String() string {
 func (*AcquireIPResponse) ProtoMessage() {}
 
 func (x *AcquireIPResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[18]
+	mi := &file_api_v1_ipam_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -971,7 +879,7 @@ func (x *AcquireIPResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcquireIPResponse.ProtoReflect.Descriptor instead.
 func (*AcquireIPResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{18}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AcquireIPResponse) GetIp() *IP {
@@ -997,7 +905,7 @@ type ReleaseIPResponse struct {
 
 func (x *ReleaseIPResponse) Reset() {
 	*x = ReleaseIPResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[19]
+	mi := &file_api_v1_ipam_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1009,7 +917,7 @@ func (x *ReleaseIPResponse) String() string {
 func (*ReleaseIPResponse) ProtoMessage() {}
 
 func (x *ReleaseIPResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[19]
+	mi := &file_api_v1_ipam_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1022,7 +930,7 @@ func (x *ReleaseIPResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseIPResponse.ProtoReflect.Descriptor instead.
 func (*ReleaseIPResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{19}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ReleaseIPResponse) GetIp() *IP {
@@ -1043,7 +951,7 @@ type AcquireIPRequest struct {
 
 func (x *AcquireIPRequest) Reset() {
 	*x = AcquireIPRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[20]
+	mi := &file_api_v1_ipam_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1055,7 +963,7 @@ func (x *AcquireIPRequest) String() string {
 func (*AcquireIPRequest) ProtoMessage() {}
 
 func (x *AcquireIPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[20]
+	mi := &file_api_v1_ipam_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1068,7 +976,7 @@ func (x *AcquireIPRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcquireIPRequest.ProtoReflect.Descriptor instead.
 func (*AcquireIPRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{20}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *AcquireIPRequest) GetPrefixCidr() string {
@@ -1103,7 +1011,7 @@ type ReleaseIPRequest struct {
 
 func (x *ReleaseIPRequest) Reset() {
 	*x = ReleaseIPRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[21]
+	mi := &file_api_v1_ipam_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1115,7 +1023,7 @@ func (x *ReleaseIPRequest) String() string {
 func (*ReleaseIPRequest) ProtoMessage() {}
 
 func (x *ReleaseIPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[21]
+	mi := &file_api_v1_ipam_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1128,7 +1036,7 @@ func (x *ReleaseIPRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseIPRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseIPRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{21}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ReleaseIPRequest) GetPrefixCidr() string {
@@ -1161,7 +1069,7 @@ type DumpRequest struct {
 
 func (x *DumpRequest) Reset() {
 	*x = DumpRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[22]
+	mi := &file_api_v1_ipam_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1173,7 +1081,7 @@ func (x *DumpRequest) String() string {
 func (*DumpRequest) ProtoMessage() {}
 
 func (x *DumpRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[22]
+	mi := &file_api_v1_ipam_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1186,7 +1094,7 @@ func (x *DumpRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DumpRequest.ProtoReflect.Descriptor instead.
 func (*DumpRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{22}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *DumpRequest) GetNamespace() string {
@@ -1205,7 +1113,7 @@ type DumpResponse struct {
 
 func (x *DumpResponse) Reset() {
 	*x = DumpResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[23]
+	mi := &file_api_v1_ipam_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1217,7 +1125,7 @@ func (x *DumpResponse) String() string {
 func (*DumpResponse) ProtoMessage() {}
 
 func (x *DumpResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[23]
+	mi := &file_api_v1_ipam_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1230,7 +1138,7 @@ func (x *DumpResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DumpResponse.ProtoReflect.Descriptor instead.
 func (*DumpResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{23}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *DumpResponse) GetDump() string {
@@ -1250,7 +1158,7 @@ type LoadRequest struct {
 
 func (x *LoadRequest) Reset() {
 	*x = LoadRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[24]
+	mi := &file_api_v1_ipam_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1262,7 +1170,7 @@ func (x *LoadRequest) String() string {
 func (*LoadRequest) ProtoMessage() {}
 
 func (x *LoadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[24]
+	mi := &file_api_v1_ipam_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1275,7 +1183,7 @@ func (x *LoadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadRequest.ProtoReflect.Descriptor instead.
 func (*LoadRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{24}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *LoadRequest) GetDump() string {
@@ -1300,7 +1208,7 @@ type LoadResponse struct {
 
 func (x *LoadResponse) Reset() {
 	*x = LoadResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[25]
+	mi := &file_api_v1_ipam_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1312,7 +1220,7 @@ func (x *LoadResponse) String() string {
 func (*LoadResponse) ProtoMessage() {}
 
 func (x *LoadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[25]
+	mi := &file_api_v1_ipam_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1325,7 +1233,7 @@ func (x *LoadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadResponse.ProtoReflect.Descriptor instead.
 func (*LoadResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{25}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{23}
 }
 
 type CreateNamespaceRequest struct {
@@ -1337,7 +1245,7 @@ type CreateNamespaceRequest struct {
 
 func (x *CreateNamespaceRequest) Reset() {
 	*x = CreateNamespaceRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[26]
+	mi := &file_api_v1_ipam_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1349,7 +1257,7 @@ func (x *CreateNamespaceRequest) String() string {
 func (*CreateNamespaceRequest) ProtoMessage() {}
 
 func (x *CreateNamespaceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[26]
+	mi := &file_api_v1_ipam_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1362,7 +1270,7 @@ func (x *CreateNamespaceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateNamespaceRequest.ProtoReflect.Descriptor instead.
 func (*CreateNamespaceRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{26}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CreateNamespaceRequest) GetNamespace() string {
@@ -1380,7 +1288,7 @@ type CreateNamespaceResponse struct {
 
 func (x *CreateNamespaceResponse) Reset() {
 	*x = CreateNamespaceResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[27]
+	mi := &file_api_v1_ipam_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1392,7 +1300,7 @@ func (x *CreateNamespaceResponse) String() string {
 func (*CreateNamespaceResponse) ProtoMessage() {}
 
 func (x *CreateNamespaceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[27]
+	mi := &file_api_v1_ipam_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1405,7 +1313,7 @@ func (x *CreateNamespaceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateNamespaceResponse.ProtoReflect.Descriptor instead.
 func (*CreateNamespaceResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{27}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{25}
 }
 
 type ListNamespacesRequest struct {
@@ -1416,7 +1324,7 @@ type ListNamespacesRequest struct {
 
 func (x *ListNamespacesRequest) Reset() {
 	*x = ListNamespacesRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[28]
+	mi := &file_api_v1_ipam_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1428,7 +1336,7 @@ func (x *ListNamespacesRequest) String() string {
 func (*ListNamespacesRequest) ProtoMessage() {}
 
 func (x *ListNamespacesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[28]
+	mi := &file_api_v1_ipam_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1441,7 +1349,7 @@ func (x *ListNamespacesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNamespacesRequest.ProtoReflect.Descriptor instead.
 func (*ListNamespacesRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{28}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{26}
 }
 
 type ListNamespacesResponse struct {
@@ -1453,7 +1361,7 @@ type ListNamespacesResponse struct {
 
 func (x *ListNamespacesResponse) Reset() {
 	*x = ListNamespacesResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[29]
+	mi := &file_api_v1_ipam_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1465,7 +1373,7 @@ func (x *ListNamespacesResponse) String() string {
 func (*ListNamespacesResponse) ProtoMessage() {}
 
 func (x *ListNamespacesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[29]
+	mi := &file_api_v1_ipam_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1478,7 +1386,7 @@ func (x *ListNamespacesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNamespacesResponse.ProtoReflect.Descriptor instead.
 func (*ListNamespacesResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{29}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ListNamespacesResponse) GetNamespace() []string {
@@ -1497,7 +1405,7 @@ type DeleteNamespaceRequest struct {
 
 func (x *DeleteNamespaceRequest) Reset() {
 	*x = DeleteNamespaceRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[30]
+	mi := &file_api_v1_ipam_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1509,7 +1417,7 @@ func (x *DeleteNamespaceRequest) String() string {
 func (*DeleteNamespaceRequest) ProtoMessage() {}
 
 func (x *DeleteNamespaceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[30]
+	mi := &file_api_v1_ipam_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1522,7 +1430,7 @@ func (x *DeleteNamespaceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteNamespaceRequest.ProtoReflect.Descriptor instead.
 func (*DeleteNamespaceRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{30}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *DeleteNamespaceRequest) GetNamespace() string {
@@ -1540,7 +1448,7 @@ type DeleteNamespaceResponse struct {
 
 func (x *DeleteNamespaceResponse) Reset() {
 	*x = DeleteNamespaceResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[31]
+	mi := &file_api_v1_ipam_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1552,7 +1460,7 @@ func (x *DeleteNamespaceResponse) String() string {
 func (*DeleteNamespaceResponse) ProtoMessage() {}
 
 func (x *DeleteNamespaceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[31]
+	mi := &file_api_v1_ipam_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1565,7 +1473,7 @@ func (x *DeleteNamespaceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteNamespaceResponse.ProtoReflect.Descriptor instead.
 func (*DeleteNamespaceResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{31}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{29}
 }
 
 type VersionRequest struct {
@@ -1576,7 +1484,7 @@ type VersionRequest struct {
 
 func (x *VersionRequest) Reset() {
 	*x = VersionRequest{}
-	mi := &file_api_v1_ipam_proto_msgTypes[32]
+	mi := &file_api_v1_ipam_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1588,7 +1496,7 @@ func (x *VersionRequest) String() string {
 func (*VersionRequest) ProtoMessage() {}
 
 func (x *VersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[32]
+	mi := &file_api_v1_ipam_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1601,7 +1509,7 @@ func (x *VersionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VersionRequest.ProtoReflect.Descriptor instead.
 func (*VersionRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{32}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{30}
 }
 
 type VersionResponse struct {
@@ -1616,7 +1524,7 @@ type VersionResponse struct {
 
 func (x *VersionResponse) Reset() {
 	*x = VersionResponse{}
-	mi := &file_api_v1_ipam_proto_msgTypes[33]
+	mi := &file_api_v1_ipam_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1628,7 +1536,7 @@ func (x *VersionResponse) String() string {
 func (*VersionResponse) ProtoMessage() {}
 
 func (x *VersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_ipam_proto_msgTypes[33]
+	mi := &file_api_v1_ipam_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1641,7 +1549,7 @@ func (x *VersionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VersionResponse.ProtoReflect.Descriptor instead.
 func (*VersionResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_ipam_proto_rawDescGZIP(), []int{33}
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *VersionResponse) GetVersion() string {
@@ -1716,11 +1624,7 @@ const file_api_v1_ipam_proto_rawDesc = "" +
 	"\x04cidr\x18\x01 \x01(\tR\x04cidr\x12!\n" +
 	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
 	"\n" +
-	"_namespace\"l\n" +
-	"\x1aPrefixesOverlappingRequest\x12+\n" +
-	"\x11existing_prefixes\x18\x01 \x03(\tR\x10existingPrefixes\x12!\n" +
-	"\fnew_prefixes\x18\x02 \x03(\tR\vnewPrefixes\"\x1d\n" +
-	"\x1bPrefixesOverlappingResponse\"\xf9\x01\n" +
+	"_namespace\"\xf9\x01\n" +
 	"\x13PrefixUsageResponse\x12#\n" +
 	"\ravailable_ips\x18\x01 \x01(\x04R\favailableIps\x12!\n" +
 	"\facquired_ips\x18\x02 \x01(\x04R\vacquiredIps\x12>\n" +
@@ -1795,14 +1699,13 @@ const file_api_v1_ipam_proto_rawDesc = "" +
 	"\brevision\x18\x02 \x01(\tR\brevision\x12\x19\n" +
 	"\bgit_sha1\x18\x03 \x01(\tR\agitSha1\x12\x1d\n" +
 	"\n" +
-	"build_date\x18\x04 \x01(\tR\tbuildDate2\xb1\t\n" +
+	"build_date\x18\x04 \x01(\tR\tbuildDate2\xd1\b\n" +
 	"\vIpamService\x12I\n" +
 	"\fCreatePrefix\x12\x1b.api.v1.CreatePrefixRequest\x1a\x1c.api.v1.CreatePrefixResponse\x12I\n" +
 	"\fDeletePrefix\x12\x1b.api.v1.DeletePrefixRequest\x1a\x1c.api.v1.DeletePrefixResponse\x12@\n" +
 	"\tGetPrefix\x12\x18.api.v1.GetPrefixRequest\x1a\x19.api.v1.GetPrefixResponse\x12I\n" +
 	"\fListPrefixes\x12\x1b.api.v1.ListPrefixesRequest\x1a\x1c.api.v1.ListPrefixesResponse\x12F\n" +
-	"\vPrefixUsage\x12\x1a.api.v1.PrefixUsageRequest\x1a\x1b.api.v1.PrefixUsageResponse\x12^\n" +
-	"\x13PrefixesOverlapping\x12\".api.v1.PrefixesOverlappingRequest\x1a#.api.v1.PrefixesOverlappingResponse\x12[\n" +
+	"\vPrefixUsage\x12\x1a.api.v1.PrefixUsageRequest\x1a\x1b.api.v1.PrefixUsageResponse\x12[\n" +
 	"\x12AcquireChildPrefix\x12!.api.v1.AcquireChildPrefixRequest\x1a\".api.v1.AcquireChildPrefixResponse\x12[\n" +
 	"\x12ReleaseChildPrefix\x12!.api.v1.ReleaseChildPrefixRequest\x1a\".api.v1.ReleaseChildPrefixResponse\x12@\n" +
 	"\tAcquireIP\x12\x18.api.v1.AcquireIPRequest\x1a\x19.api.v1.AcquireIPResponse\x12@\n" +
@@ -1828,42 +1731,40 @@ func file_api_v1_ipam_proto_rawDescGZIP() []byte {
 	return file_api_v1_ipam_proto_rawDescData
 }
 
-var file_api_v1_ipam_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_api_v1_ipam_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_api_v1_ipam_proto_goTypes = []any{
-	(*Prefix)(nil),                      // 0: api.v1.Prefix
-	(*CreatePrefixResponse)(nil),        // 1: api.v1.CreatePrefixResponse
-	(*DeletePrefixResponse)(nil),        // 2: api.v1.DeletePrefixResponse
-	(*GetPrefixResponse)(nil),           // 3: api.v1.GetPrefixResponse
-	(*AcquireChildPrefixResponse)(nil),  // 4: api.v1.AcquireChildPrefixResponse
-	(*ReleaseChildPrefixResponse)(nil),  // 5: api.v1.ReleaseChildPrefixResponse
-	(*CreatePrefixRequest)(nil),         // 6: api.v1.CreatePrefixRequest
-	(*DeletePrefixRequest)(nil),         // 7: api.v1.DeletePrefixRequest
-	(*GetPrefixRequest)(nil),            // 8: api.v1.GetPrefixRequest
-	(*ListPrefixesRequest)(nil),         // 9: api.v1.ListPrefixesRequest
-	(*ListPrefixesResponse)(nil),        // 10: api.v1.ListPrefixesResponse
-	(*PrefixUsageRequest)(nil),          // 11: api.v1.PrefixUsageRequest
-	(*PrefixesOverlappingRequest)(nil),  // 12: api.v1.PrefixesOverlappingRequest
-	(*PrefixesOverlappingResponse)(nil), // 13: api.v1.PrefixesOverlappingResponse
-	(*PrefixUsageResponse)(nil),         // 14: api.v1.PrefixUsageResponse
-	(*AcquireChildPrefixRequest)(nil),   // 15: api.v1.AcquireChildPrefixRequest
-	(*ReleaseChildPrefixRequest)(nil),   // 16: api.v1.ReleaseChildPrefixRequest
-	(*IP)(nil),                          // 17: api.v1.IP
-	(*AcquireIPResponse)(nil),           // 18: api.v1.AcquireIPResponse
-	(*ReleaseIPResponse)(nil),           // 19: api.v1.ReleaseIPResponse
-	(*AcquireIPRequest)(nil),            // 20: api.v1.AcquireIPRequest
-	(*ReleaseIPRequest)(nil),            // 21: api.v1.ReleaseIPRequest
-	(*DumpRequest)(nil),                 // 22: api.v1.DumpRequest
-	(*DumpResponse)(nil),                // 23: api.v1.DumpResponse
-	(*LoadRequest)(nil),                 // 24: api.v1.LoadRequest
-	(*LoadResponse)(nil),                // 25: api.v1.LoadResponse
-	(*CreateNamespaceRequest)(nil),      // 26: api.v1.CreateNamespaceRequest
-	(*CreateNamespaceResponse)(nil),     // 27: api.v1.CreateNamespaceResponse
-	(*ListNamespacesRequest)(nil),       // 28: api.v1.ListNamespacesRequest
-	(*ListNamespacesResponse)(nil),      // 29: api.v1.ListNamespacesResponse
-	(*DeleteNamespaceRequest)(nil),      // 30: api.v1.DeleteNamespaceRequest
-	(*DeleteNamespaceResponse)(nil),     // 31: api.v1.DeleteNamespaceResponse
-	(*VersionRequest)(nil),              // 32: api.v1.VersionRequest
-	(*VersionResponse)(nil),             // 33: api.v1.VersionResponse
+	(*Prefix)(nil),                     // 0: api.v1.Prefix
+	(*CreatePrefixResponse)(nil),       // 1: api.v1.CreatePrefixResponse
+	(*DeletePrefixResponse)(nil),       // 2: api.v1.DeletePrefixResponse
+	(*GetPrefixResponse)(nil),          // 3: api.v1.GetPrefixResponse
+	(*AcquireChildPrefixResponse)(nil), // 4: api.v1.AcquireChildPrefixResponse
+	(*ReleaseChildPrefixResponse)(nil), // 5: api.v1.ReleaseChildPrefixResponse
+	(*CreatePrefixRequest)(nil),        // 6: api.v1.CreatePrefixRequest
+	(*DeletePrefixRequest)(nil),        // 7: api.v1.DeletePrefixRequest
+	(*GetPrefixRequest)(nil),           // 8: api.v1.GetPrefixRequest
+	(*ListPrefixesRequest)(nil),        // 9: api.v1.ListPrefixesRequest
+	(*ListPrefixesResponse)(nil),       // 10: api.v1.ListPrefixesResponse
+	(*PrefixUsageRequest)(nil),         // 11: api.v1.PrefixUsageRequest
+	(*PrefixUsageResponse)(nil),        // 12: api.v1.PrefixUsageResponse
+	(*AcquireChildPrefixRequest)(nil),  // 13: api.v1.AcquireChildPrefixRequest
+	(*ReleaseChildPrefixRequest)(nil),  // 14: api.v1.ReleaseChildPrefixRequest
+	(*IP)(nil),                         // 15: api.v1.IP
+	(*AcquireIPResponse)(nil),          // 16: api.v1.AcquireIPResponse
+	(*ReleaseIPResponse)(nil),          // 17: api.v1.ReleaseIPResponse
+	(*AcquireIPRequest)(nil),           // 18: api.v1.AcquireIPRequest
+	(*ReleaseIPRequest)(nil),           // 19: api.v1.ReleaseIPRequest
+	(*DumpRequest)(nil),                // 20: api.v1.DumpRequest
+	(*DumpResponse)(nil),               // 21: api.v1.DumpResponse
+	(*LoadRequest)(nil),                // 22: api.v1.LoadRequest
+	(*LoadResponse)(nil),               // 23: api.v1.LoadResponse
+	(*CreateNamespaceRequest)(nil),     // 24: api.v1.CreateNamespaceRequest
+	(*CreateNamespaceResponse)(nil),    // 25: api.v1.CreateNamespaceResponse
+	(*ListNamespacesRequest)(nil),      // 26: api.v1.ListNamespacesRequest
+	(*ListNamespacesResponse)(nil),     // 27: api.v1.ListNamespacesResponse
+	(*DeleteNamespaceRequest)(nil),     // 28: api.v1.DeleteNamespaceRequest
+	(*DeleteNamespaceResponse)(nil),    // 29: api.v1.DeleteNamespaceResponse
+	(*VersionRequest)(nil),             // 30: api.v1.VersionRequest
+	(*VersionResponse)(nil),            // 31: api.v1.VersionResponse
 }
 var file_api_v1_ipam_proto_depIdxs = []int32{
 	0,  // 0: api.v1.CreatePrefixResponse.prefix:type_name -> api.v1.Prefix
@@ -1872,42 +1773,40 @@ var file_api_v1_ipam_proto_depIdxs = []int32{
 	0,  // 3: api.v1.AcquireChildPrefixResponse.prefix:type_name -> api.v1.Prefix
 	0,  // 4: api.v1.ReleaseChildPrefixResponse.prefix:type_name -> api.v1.Prefix
 	0,  // 5: api.v1.ListPrefixesResponse.prefixes:type_name -> api.v1.Prefix
-	17, // 6: api.v1.AcquireIPResponse.ip:type_name -> api.v1.IP
-	17, // 7: api.v1.ReleaseIPResponse.ip:type_name -> api.v1.IP
+	15, // 6: api.v1.AcquireIPResponse.ip:type_name -> api.v1.IP
+	15, // 7: api.v1.ReleaseIPResponse.ip:type_name -> api.v1.IP
 	6,  // 8: api.v1.IpamService.CreatePrefix:input_type -> api.v1.CreatePrefixRequest
 	7,  // 9: api.v1.IpamService.DeletePrefix:input_type -> api.v1.DeletePrefixRequest
 	8,  // 10: api.v1.IpamService.GetPrefix:input_type -> api.v1.GetPrefixRequest
 	9,  // 11: api.v1.IpamService.ListPrefixes:input_type -> api.v1.ListPrefixesRequest
 	11, // 12: api.v1.IpamService.PrefixUsage:input_type -> api.v1.PrefixUsageRequest
-	12, // 13: api.v1.IpamService.PrefixesOverlapping:input_type -> api.v1.PrefixesOverlappingRequest
-	15, // 14: api.v1.IpamService.AcquireChildPrefix:input_type -> api.v1.AcquireChildPrefixRequest
-	16, // 15: api.v1.IpamService.ReleaseChildPrefix:input_type -> api.v1.ReleaseChildPrefixRequest
-	20, // 16: api.v1.IpamService.AcquireIP:input_type -> api.v1.AcquireIPRequest
-	21, // 17: api.v1.IpamService.ReleaseIP:input_type -> api.v1.ReleaseIPRequest
-	22, // 18: api.v1.IpamService.Dump:input_type -> api.v1.DumpRequest
-	24, // 19: api.v1.IpamService.Load:input_type -> api.v1.LoadRequest
-	26, // 20: api.v1.IpamService.CreateNamespace:input_type -> api.v1.CreateNamespaceRequest
-	28, // 21: api.v1.IpamService.ListNamespaces:input_type -> api.v1.ListNamespacesRequest
-	30, // 22: api.v1.IpamService.DeleteNamespace:input_type -> api.v1.DeleteNamespaceRequest
-	32, // 23: api.v1.IpamService.Version:input_type -> api.v1.VersionRequest
-	1,  // 24: api.v1.IpamService.CreatePrefix:output_type -> api.v1.CreatePrefixResponse
-	2,  // 25: api.v1.IpamService.DeletePrefix:output_type -> api.v1.DeletePrefixResponse
-	3,  // 26: api.v1.IpamService.GetPrefix:output_type -> api.v1.GetPrefixResponse
-	10, // 27: api.v1.IpamService.ListPrefixes:output_type -> api.v1.ListPrefixesResponse
-	14, // 28: api.v1.IpamService.PrefixUsage:output_type -> api.v1.PrefixUsageResponse
-	13, // 29: api.v1.IpamService.PrefixesOverlapping:output_type -> api.v1.PrefixesOverlappingResponse
-	4,  // 30: api.v1.IpamService.AcquireChildPrefix:output_type -> api.v1.AcquireChildPrefixResponse
-	5,  // 31: api.v1.IpamService.ReleaseChildPrefix:output_type -> api.v1.ReleaseChildPrefixResponse
-	18, // 32: api.v1.IpamService.AcquireIP:output_type -> api.v1.AcquireIPResponse
-	19, // 33: api.v1.IpamService.ReleaseIP:output_type -> api.v1.ReleaseIPResponse
-	23, // 34: api.v1.IpamService.Dump:output_type -> api.v1.DumpResponse
-	25, // 35: api.v1.IpamService.Load:output_type -> api.v1.LoadResponse
-	27, // 36: api.v1.IpamService.CreateNamespace:output_type -> api.v1.CreateNamespaceResponse
-	29, // 37: api.v1.IpamService.ListNamespaces:output_type -> api.v1.ListNamespacesResponse
-	31, // 38: api.v1.IpamService.DeleteNamespace:output_type -> api.v1.DeleteNamespaceResponse
-	33, // 39: api.v1.IpamService.Version:output_type -> api.v1.VersionResponse
-	24, // [24:40] is the sub-list for method output_type
-	8,  // [8:24] is the sub-list for method input_type
+	13, // 13: api.v1.IpamService.AcquireChildPrefix:input_type -> api.v1.AcquireChildPrefixRequest
+	14, // 14: api.v1.IpamService.ReleaseChildPrefix:input_type -> api.v1.ReleaseChildPrefixRequest
+	18, // 15: api.v1.IpamService.AcquireIP:input_type -> api.v1.AcquireIPRequest
+	19, // 16: api.v1.IpamService.ReleaseIP:input_type -> api.v1.ReleaseIPRequest
+	20, // 17: api.v1.IpamService.Dump:input_type -> api.v1.DumpRequest
+	22, // 18: api.v1.IpamService.Load:input_type -> api.v1.LoadRequest
+	24, // 19: api.v1.IpamService.CreateNamespace:input_type -> api.v1.CreateNamespaceRequest
+	26, // 20: api.v1.IpamService.ListNamespaces:input_type -> api.v1.ListNamespacesRequest
+	28, // 21: api.v1.IpamService.DeleteNamespace:input_type -> api.v1.DeleteNamespaceRequest
+	30, // 22: api.v1.IpamService.Version:input_type -> api.v1.VersionRequest
+	1,  // 23: api.v1.IpamService.CreatePrefix:output_type -> api.v1.CreatePrefixResponse
+	2,  // 24: api.v1.IpamService.DeletePrefix:output_type -> api.v1.DeletePrefixResponse
+	3,  // 25: api.v1.IpamService.GetPrefix:output_type -> api.v1.GetPrefixResponse
+	10, // 26: api.v1.IpamService.ListPrefixes:output_type -> api.v1.ListPrefixesResponse
+	12, // 27: api.v1.IpamService.PrefixUsage:output_type -> api.v1.PrefixUsageResponse
+	4,  // 28: api.v1.IpamService.AcquireChildPrefix:output_type -> api.v1.AcquireChildPrefixResponse
+	5,  // 29: api.v1.IpamService.ReleaseChildPrefix:output_type -> api.v1.ReleaseChildPrefixResponse
+	16, // 30: api.v1.IpamService.AcquireIP:output_type -> api.v1.AcquireIPResponse
+	17, // 31: api.v1.IpamService.ReleaseIP:output_type -> api.v1.ReleaseIPResponse
+	21, // 32: api.v1.IpamService.Dump:output_type -> api.v1.DumpResponse
+	23, // 33: api.v1.IpamService.Load:output_type -> api.v1.LoadResponse
+	25, // 34: api.v1.IpamService.CreateNamespace:output_type -> api.v1.CreateNamespaceResponse
+	27, // 35: api.v1.IpamService.ListNamespaces:output_type -> api.v1.ListNamespacesResponse
+	29, // 36: api.v1.IpamService.DeleteNamespace:output_type -> api.v1.DeleteNamespaceResponse
+	31, // 37: api.v1.IpamService.Version:output_type -> api.v1.VersionResponse
+	23, // [23:38] is the sub-list for method output_type
+	8,  // [8:23] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name
@@ -1923,20 +1822,20 @@ func file_api_v1_ipam_proto_init() {
 	file_api_v1_ipam_proto_msgTypes[8].OneofWrappers = []any{}
 	file_api_v1_ipam_proto_msgTypes[9].OneofWrappers = []any{}
 	file_api_v1_ipam_proto_msgTypes[11].OneofWrappers = []any{}
-	file_api_v1_ipam_proto_msgTypes[15].OneofWrappers = []any{}
+	file_api_v1_ipam_proto_msgTypes[13].OneofWrappers = []any{}
+	file_api_v1_ipam_proto_msgTypes[14].OneofWrappers = []any{}
 	file_api_v1_ipam_proto_msgTypes[16].OneofWrappers = []any{}
 	file_api_v1_ipam_proto_msgTypes[18].OneofWrappers = []any{}
+	file_api_v1_ipam_proto_msgTypes[19].OneofWrappers = []any{}
 	file_api_v1_ipam_proto_msgTypes[20].OneofWrappers = []any{}
-	file_api_v1_ipam_proto_msgTypes[21].OneofWrappers = []any{}
 	file_api_v1_ipam_proto_msgTypes[22].OneofWrappers = []any{}
-	file_api_v1_ipam_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_ipam_proto_rawDesc), len(file_api_v1_ipam_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   34,
+			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
