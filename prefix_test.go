@@ -39,7 +39,7 @@ func (i *ipamer) getHostAddresses(ctx context.Context, prefix string) ([]string,
 }
 
 func TestIPRangeOverlapping(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	i := New(ctx)
 
 	cidr := "10.10.10.0/24"
@@ -52,7 +52,7 @@ func TestIPRangeOverlapping(t *testing.T) {
 }
 
 func TestIpamer_AcquireIP(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	type fields struct {
 		prefixCIDR  string
 		namespace   string
@@ -176,7 +176,7 @@ func TestIpamer_AcquireIP(t *testing.T) {
 }
 
 func TestIpamer_ReleaseIPFromPrefixIPv4(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
@@ -196,7 +196,7 @@ func TestIpamer_ReleaseIPFromPrefixIPv4(t *testing.T) {
 }
 
 func TestIpamer_ReleaseIPFromPrefixIPv6(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "2001:0db8:85a3::/120")
@@ -220,7 +220,7 @@ func TestIpamer_ReleaseIPFromPrefixIPv6(t *testing.T) {
 	})
 }
 func TestIpamer_AcquireSpecificIP(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		// IPv4
 		prefix, err := ipam.NewPrefix(ctx, "192.168.99.0/24")
@@ -323,7 +323,7 @@ func TestIpamer_AcquireSpecificIP(t *testing.T) {
 }
 
 func TestIpamer_AcquireIPCountsIPv4(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
@@ -361,7 +361,7 @@ func TestIpamer_AcquireIPCountsIPv4(t *testing.T) {
 }
 
 func TestIpamer_AcquireIPCountsIPv6(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "2001:0db8:85a3::/120")
@@ -399,7 +399,7 @@ func TestIpamer_AcquireIPCountsIPv6(t *testing.T) {
 }
 
 func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		allPrefixes, err := ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
 		require.NoError(t, err)
@@ -471,7 +471,7 @@ func TestIpamer_AcquireChildPrefixFragmented(t *testing.T) {
 }
 
 func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		allPrefixes, err := ipam.storage.ReadAllPrefixes(ctx, defaultNamespace)
@@ -575,7 +575,7 @@ func TestIpamer_AcquireChildPrefixCounts(t *testing.T) {
 }
 
 func TestIpamer_AcquireChildPrefixIPv4(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/20")
@@ -646,7 +646,7 @@ func TestIpamer_AcquireChildPrefixIPv4(t *testing.T) {
 }
 
 func TestIpamer_AcquireChildPrefixIPv6(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "2001:0db8:85a3::/116")
@@ -717,7 +717,7 @@ func TestIpamer_AcquireChildPrefixIPv6(t *testing.T) {
 }
 
 func TestIpamer_AcquireSpecificChildPrefixIPv4(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/20")
 		require.NoError(t, err)
@@ -780,7 +780,7 @@ func TestIpamer_AcquireSpecificChildPrefixIPv4(t *testing.T) {
 }
 
 func TestIpamer_AcquireSpecificChildPrefixIPv6(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "2001:0db8:85a3::/116")
@@ -851,7 +851,7 @@ func TestIpamer_AcquireSpecificChildPrefixIPv6(t *testing.T) {
 }
 
 func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv6(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "2001:0db8:85a3::/112")
 		require.NoError(t, err)
@@ -882,7 +882,7 @@ func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv6(t *testing.T) {
 	})
 }
 func TestIpamer_AcquireChildPrefixNoDuplicatesUntilFullIPv4(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/16")
@@ -966,7 +966,7 @@ func TestPrefix_Availableips(t *testing.T) {
 }
 
 func TestIpamer_PrefixesOverlapping(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tests := []struct {
 		name             string
@@ -1052,7 +1052,7 @@ func TestIpamer_PrefixesOverlapping(t *testing.T) {
 }
 
 func TestIpamer_NewPrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tests := []struct {
 		name        string
@@ -1135,7 +1135,7 @@ func TestIpamer_NewPrefix(t *testing.T) {
 }
 
 func TestIpamer_DeletePrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		// IPv4
@@ -1178,7 +1178,7 @@ func TestIpamer_DeletePrefix(t *testing.T) {
 }
 
 func TestIpamer_PrefixFrom(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.PrefixFrom(ctx, "192.168.0.0/20")
@@ -1212,7 +1212,7 @@ func TestIpamer_PrefixFrom(t *testing.T) {
 }
 
 func TestIpamerAcquireIP(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "10.0.0.0/16"
@@ -1234,7 +1234,7 @@ func TestIpamerAcquireIP(t *testing.T) {
 }
 
 func TestIpamerAcquireIPv6(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "2001:0db8:85a3::/120"
@@ -1255,7 +1255,7 @@ func TestIpamerAcquireIPv6(t *testing.T) {
 	})
 }
 func TestIpamerAcquireAlreadyAcquiredIPv4(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "192.168.0.0/16"
@@ -1276,7 +1276,7 @@ func TestIpamerAcquireAlreadyAcquiredIPv4(t *testing.T) {
 	})
 }
 func TestIpamerAcquireAlreadyAcquiredIPv6(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "2001:0db8:85a3::/64"
@@ -1297,7 +1297,7 @@ func TestIpamerAcquireAlreadyAcquiredIPv6(t *testing.T) {
 	})
 }
 func TestGetHostAddresses(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "4.1.0.0/24"
 		ips, err := ipam.getHostAddresses(ctx, cidr)
@@ -1326,7 +1326,7 @@ func TestGetHostAddresses(t *testing.T) {
 }
 
 func TestGetHostAddressesIPv6(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		cidr := "2001:0db8:85a3::/120"
 		ips, err := ipam.getHostAddresses(ctx, cidr)
@@ -1377,7 +1377,7 @@ func TestPrefixDeepCopy(t *testing.T) {
 }
 
 func TestGob(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
 		require.NoError(t, err)
@@ -1459,7 +1459,7 @@ func TestPrefix_availablePrefixes(t *testing.T) {
 }
 
 func TestAcquireIPParallel(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	ipsCount := 50
 	g, _ := errgroup.WithContext(context.Background())
 
@@ -1510,7 +1510,7 @@ func TestAcquireIPParallel(t *testing.T) {
 }
 
 func Test_ipamer_DumpAndLoad(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
@@ -1539,7 +1539,7 @@ func Test_ipamer_DumpAndLoad(t *testing.T) {
 	})
 }
 func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		const cidr = "192.168.0.0/20"
@@ -1557,7 +1557,7 @@ func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
 }
 
 func TestIpamer_NamespacedOps(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		err := ipam.CreateNamespace(ctx, "testns1")
 		require.NoError(t, err)
@@ -1757,7 +1757,7 @@ func TestAvailablePrefixes(t *testing.T) {
 }
 
 func TestChildPrefixParallel(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
 		parent, err := ipam.NewPrefix(ctx, "192.168.0.0/14")

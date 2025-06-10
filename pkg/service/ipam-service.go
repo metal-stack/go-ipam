@@ -180,6 +180,7 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *connect.Reque
 		},
 	), nil
 }
+
 func (i *IPAMService) AcquireIP(ctx context.Context, req *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error) {
 	if req.Msg.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.Msg.GetNamespace())

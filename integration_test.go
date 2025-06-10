@@ -1,7 +1,6 @@
 package ipam
 
 import (
-	"context"
 	"net/netip"
 	"os"
 	"strings"
@@ -11,9 +10,9 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
-	_, storage, err := startPostgres()
+	_, storage, err := startPostgres(ctx)
 	require.NoError(t, err)
 	defer func() {
 		_ = storage.db.Close()
@@ -154,8 +153,8 @@ func TestIntegration(t *testing.T) {
 	// require.Equal(t, childPrefixCount, tenantSuper.Usage().AcquiredPrefixes)
 }
 func TestIntegrationP(t *testing.T) {
-	ctx := context.Background()
-	_, storage, err := startPostgres()
+	ctx := t.Context()
+	_, storage, err := startPostgres(ctx)
 	require.NoError(t, err)
 	defer func() {
 		_ = storage.db.Close()
@@ -314,8 +313,8 @@ func TestIntegrationP(t *testing.T) {
 
 }
 func TestIntegrationEtcd(t *testing.T) {
-	ctx := context.Background()
-	_, storage, err := startEtcd()
+	ctx := t.Context()
+	_, storage, err := startEtcd(ctx)
 	require.NoError(t, err)
 
 	ipam := NewWithStorage(storage)

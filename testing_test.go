@@ -72,8 +72,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func startPostgres() (container testcontainers.Container, db *sql, err error) {
-	ctx := context.Background()
+func startPostgres(ctx context.Context) (container testcontainers.Container, db *sql, err error) {
 	pgOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
@@ -109,8 +108,7 @@ func startPostgres() (container testcontainers.Container, db *sql, err error) {
 	return pgContainer, db, err
 }
 
-func startCockroach() (container testcontainers.Container, dn *sql, err error) {
-	ctx := context.Background()
+func startCockroach(ctx context.Context) (container testcontainers.Container, dn *sql, err error) {
 	crOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
@@ -146,8 +144,7 @@ func startCockroach() (container testcontainers.Container, dn *sql, err error) {
 	return crContainer, db, err
 }
 
-func startRedis() (container testcontainers.Container, s *redis, err error) {
-	ctx := context.Background()
+func startRedis(ctx context.Context) (container testcontainers.Container, s *redis, err error) {
 	redisOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
@@ -182,8 +179,7 @@ func startRedis() (container testcontainers.Container, s *redis, err error) {
 	return redisContainer, db, nil
 }
 
-func startEtcd() (container testcontainers.Container, s *etcd, err error) {
-	ctx := context.Background()
+func startEtcd(ctx context.Context) (container testcontainers.Container, s *etcd, err error) {
 	etcdOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
@@ -225,8 +221,7 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 	return etcdContainer, db, nil
 }
 
-func startMongodb() (container testcontainers.Container, s *mongodb, err error) {
-	ctx := context.Background()
+func startMongodb(ctx context.Context) (container testcontainers.Container, s *mongodb, err error) {
 
 	mdbOnce.Do(func() {
 		var err error
@@ -277,8 +272,7 @@ func startMongodb() (container testcontainers.Container, s *mongodb, err error) 
 	return mdbContainer, db, err
 }
 
-func startKeyDB() (container testcontainers.Container, s *redis, err error) {
-	ctx := context.Background()
+func startKeyDB(ctx context.Context) (container testcontainers.Container, s *redis, err error) {
 	keyDBOnce.Do(func() {
 		var err error
 		req := testcontainers.ContainerRequest{
@@ -374,8 +368,8 @@ func newLocalFileWithCleanup() (*file, error) {
 	}, nil
 }
 
-func newPostgresWithCleanup() (*extendedSQL, error) {
-	c, s, err := startPostgres()
+func newPostgresWithCleanup(ctx context.Context) (*extendedSQL, error) {
+	c, s, err := startPostgres(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -387,8 +381,8 @@ func newPostgresWithCleanup() (*extendedSQL, error) {
 
 	return ext, nil
 }
-func newCockroachWithCleanup() (*extendedSQL, error) {
-	c, s, err := startCockroach()
+func newCockroachWithCleanup(ctx context.Context) (*extendedSQL, error) {
+	c, s, err := startCockroach(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -400,8 +394,8 @@ func newCockroachWithCleanup() (*extendedSQL, error) {
 
 	return ext, nil
 }
-func newRedisWithCleanup() (*kvStorage, error) {
-	c, r, err := startRedis()
+func newRedisWithCleanup(ctx context.Context) (*kvStorage, error) {
+	c, r, err := startRedis(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -413,8 +407,8 @@ func newRedisWithCleanup() (*kvStorage, error) {
 
 	return kv, nil
 }
-func newEtcdWithCleanup() (*kvEtcdStorage, error) {
-	c, r, err := startEtcd()
+func newEtcdWithCleanup(ctx context.Context) (*kvEtcdStorage, error) {
+	c, r, err := startEtcd(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -427,8 +421,8 @@ func newEtcdWithCleanup() (*kvEtcdStorage, error) {
 	return kv, nil
 }
 
-func newKeyDBWithCleanup() (*kvStorage, error) {
-	c, r, err := startKeyDB()
+func newKeyDBWithCleanup(ctx context.Context) (*kvStorage, error) {
+	c, r, err := startKeyDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -441,8 +435,8 @@ func newKeyDBWithCleanup() (*kvStorage, error) {
 	return kv, nil
 }
 
-func newMongodbWithCleanup() (*docStorage, error) {
-	c, s, err := startMongodb()
+func newMongodbWithCleanup(ctx context.Context) (*docStorage, error) {
+	c, s, err := startMongodb(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -505,7 +499,7 @@ func (ds *docStorage) cleanup() error {
 type benchMethod func(b *testing.B, ipam *ipamer)
 
 func benchWithBackends(b *testing.B, fn benchMethod) {
-	for _, storageProvider := range storageProviders() {
+	for _, storageProvider := range storageProviders(b.Context()) {
 		if backend != "" && backend != storageProvider.name {
 			continue
 		}
@@ -539,7 +533,7 @@ type testMethod func(t *testing.T, ipam *ipamer)
 func testWithBackends(t *testing.T, fn testMethod) {
 	t.Helper()
 	// prevent testcontainer logging mangle test and benchmark output
-	for _, storageProvider := range storageProviders() {
+	for _, storageProvider := range storageProviders(t.Context()) {
 		if backend != "" && backend != storageProvider.name {
 			continue
 		}
@@ -573,7 +567,7 @@ type sqlTestMethod func(t *testing.T, sql *sql)
 func testWithSQLBackends(t *testing.T, fn sqlTestMethod) {
 	t.Helper()
 	// prevent testcontainer logging mangle test and benchmark output
-	for _, storageProvider := range storageProviders() {
+	for _, storageProvider := range storageProviders(t.Context()) {
 		if backend != "" && backend != storageProvider.name {
 			continue
 		}
@@ -605,12 +599,12 @@ type storageProvider struct {
 	providesql providesql
 }
 
-func storageProviders() []storageProvider {
+func storageProviders(ctx context.Context) []storageProvider {
 	return []storageProvider{
 		{
 			name: "Memory",
 			provide: func() Storage {
-				return NewMemory(context.Background())
+				return NewMemory(ctx)
 			},
 			providesql: func() *sql {
 				return nil
@@ -632,14 +626,14 @@ func storageProviders() []storageProvider {
 		{
 			name: "Postgres",
 			provide: func() Storage {
-				storage, err := newPostgresWithCleanup()
+				storage, err := newPostgresWithCleanup(ctx)
 				if err != nil {
 					panic("error getting postgres storage")
 				}
 				return storage
 			},
 			providesql: func() *sql {
-				storage, err := newPostgresWithCleanup()
+				storage, err := newPostgresWithCleanup(ctx)
 				if err != nil {
 					panic("error getting postgres storage")
 				}
@@ -649,14 +643,14 @@ func storageProviders() []storageProvider {
 		{
 			name: "Cockroach",
 			provide: func() Storage {
-				storage, err := newCockroachWithCleanup()
+				storage, err := newCockroachWithCleanup(ctx)
 				if err != nil {
 					panic("error getting cockroach storage")
 				}
 				return storage
 			},
 			providesql: func() *sql {
-				storage, err := newCockroachWithCleanup()
+				storage, err := newCockroachWithCleanup(ctx)
 				if err != nil {
 					panic("error getting cockroach storage")
 				}
@@ -666,7 +660,7 @@ func storageProviders() []storageProvider {
 		{
 			name: "Redis",
 			provide: func() Storage {
-				s, err := newRedisWithCleanup()
+				s, err := newRedisWithCleanup(ctx)
 				if err != nil {
 					panic(fmt.Sprintf("unable to start redis:%s", err))
 				}
@@ -679,7 +673,7 @@ func storageProviders() []storageProvider {
 		{
 			name: "Etcd",
 			provide: func() Storage {
-				s, err := newEtcdWithCleanup()
+				s, err := newEtcdWithCleanup(ctx)
 				if err != nil {
 					panic(fmt.Sprintf("unable to start etcd:%s", err))
 				}
@@ -692,7 +686,7 @@ func storageProviders() []storageProvider {
 		{
 			name: "KeyDB",
 			provide: func() Storage {
-				s, err := newKeyDBWithCleanup()
+				s, err := newKeyDBWithCleanup(ctx)
 				if err != nil {
 					panic(fmt.Sprintf("unable to start keydb:%s", err))
 				}
@@ -705,7 +699,7 @@ func storageProviders() []storageProvider {
 		{
 			name: "MongoDB",
 			provide: func() Storage {
-				storage, err := newMongodbWithCleanup()
+				storage, err := newMongodbWithCleanup(ctx)
 				if err != nil {
 					panic(fmt.Sprintf(`error getting mongodb storage, error: %s`, err))
 				}
