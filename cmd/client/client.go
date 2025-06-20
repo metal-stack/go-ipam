@@ -11,12 +11,12 @@ import (
 	v1 "github.com/metal-stack/go-ipam/api/v1"
 	"github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 	"github.com/metal-stack/v"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func main() {
 
-	app := &cli.App{
+	app := &cli.Command{
 		Name:    "cli",
 		Usage:   "cli for go-ipam",
 		Version: v.V.String(),
@@ -25,7 +25,7 @@ func main() {
 				Name:    "grpc-server-endpoint",
 				Value:   "http://localhost:9090",
 				Usage:   "gRPC server endpoint",
-				EnvVars: []string{"GOIPAM_CLI_GRPC_SERVER_ENDPOINT"},
+				Sources: cli.EnvVars("GOIPAM_CLI_GRPC_SERVER_ENDPOINT"),
 			},
 		},
 		Commands: []*cli.Command{
@@ -33,7 +33,7 @@ func main() {
 				Name:    "prefix",
 				Aliases: []string{"p"},
 				Usage:   "prefix manipulation",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:  "create",
 						Usage: "create a prefix",
@@ -42,10 +42,10 @@ func main() {
 								Name: "cidr",
 							},
 						},
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
 							result, err := c.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
-								Cidr: ctx.String("cidr"),
+								Cidr: cmd.String("cidr"),
 							}))
 
 							if err != nil {
@@ -66,11 +66,11 @@ func main() {
 								Name: "length",
 							},
 						},
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
 							result, err := c.AcquireChildPrefix(context.Background(), connect.NewRequest(&v1.AcquireChildPrefixRequest{
-								Cidr:   ctx.String("parent"),
-								Length: uint32(ctx.Uint("length")), // nolint:gosec
+								Cidr:   cmd.String("parent"),
+								Length: uint32(cmd.Uint("length")), // nolint:gosec
 							}))
 
 							if err != nil {
@@ -88,10 +88,10 @@ func main() {
 								Name: "cidr",
 							},
 						},
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
+						Action: func(cctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
 							result, err := c.ReleaseChildPrefix(context.Background(), connect.NewRequest(&v1.ReleaseChildPrefixRequest{
-								Cidr: ctx.String("cidr"),
+								Cidr: cmd.String("cidr"),
 							}))
 
 							if err != nil {
@@ -107,8 +107,8 @@ func main() {
 					{
 						Name:  "list",
 						Usage: "list all prefixes",
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
 							result, err := c.ListPrefixes(context.Background(), connect.NewRequest(&v1.ListPrefixesRequest{}))
 
 							if err != nil {
@@ -128,10 +128,10 @@ func main() {
 								Name: "cidr",
 							},
 						},
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
 							result, err := c.DeletePrefix(context.Background(), connect.NewRequest(&v1.DeletePrefixRequest{
-								Cidr: ctx.String("cidr"),
+								Cidr: cmd.String("cidr"),
 							}))
 
 							if err != nil {
@@ -147,7 +147,7 @@ func main() {
 				Name:    "ip",
 				Aliases: []string{"i"},
 				Usage:   "ip manipulation",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:  "acquire",
 						Usage: "acquire a ip",
@@ -156,10 +156,10 @@ func main() {
 								Name: "prefix",
 							},
 						},
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
 							result, err := c.AcquireIP(context.Background(), connect.NewRequest(&v1.AcquireIPRequest{
-								PrefixCidr: ctx.String("prefix"),
+								PrefixCidr: cmd.String("prefix"),
 							}))
 
 							if err != nil {
@@ -180,11 +180,11 @@ func main() {
 								Name: "prefix",
 							},
 						},
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
 							result, err := c.ReleaseIP(context.Background(), connect.NewRequest(&v1.ReleaseIPRequest{
-								Ip:         ctx.String("ip"),
-								PrefixCidr: ctx.String("prefix"),
+								Ip:         cmd.String("ip"),
+								PrefixCidr: cmd.String("prefix"),
 							}))
 
 							if err != nil {
@@ -199,12 +199,12 @@ func main() {
 			{
 				Name:  "backup",
 				Usage: "create and restore a backup",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:  "create",
 						Usage: "create a json file of the whole ipam db for backup purpose",
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
 							result, err := c.Dump(context.Background(), connect.NewRequest(&v1.DumpRequest{}))
 							if err != nil {
 								return err
@@ -221,9 +221,9 @@ func main() {
 								Name: "file",
 							},
 						},
-						Action: func(ctx *cli.Context) error {
-							c := client(ctx)
-							json, err := os.ReadFile(ctx.String("file"))
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							c := client(cmd)
+							json, err := os.ReadFile(cmd.String("file"))
 							if err != nil {
 								return err
 							}
@@ -242,18 +242,18 @@ func main() {
 			},
 		},
 	}
-	err := app.Run(os.Args)
+	err := app.Run(context.Background(), os.Args)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
 
-func client(ctx *cli.Context) apiv1connect.IpamServiceClient {
+func client(cmd *cli.Command) apiv1connect.IpamServiceClient {
 
 	return apiv1connect.NewIpamServiceClient(
 		http.DefaultClient,
-		ctx.String("grpc-server-endpoint"),
+		cmd.String("grpc-server-endpoint"),
 		connect.WithGRPC(),
 		compress.WithAll(compress.LevelBalanced),
 	)
