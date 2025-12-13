@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	pgVersion = os.Getenv("PG_VERSION")
 	if pgVersion == "" {
-		pgVersion = "17-alpine"
+		pgVersion = "18-alpine"
 	}
 	cockroachVersion = os.Getenv("COCKROACH_VERSION")
 	if cockroachVersion == "" {
@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
-		redisVersion = "7.4-alpine"
+		redisVersion = "8.4-alpine"
 	}
 	keyDBVersion = os.Getenv("KEYDB_VERSION")
 	if keyDBVersion == "" {
@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 	}
 	etcdVersion = os.Getenv("ETCD_VERSION")
 	if etcdVersion == "" {
-		etcdVersion = "v3.5.19"
+		etcdVersion = "v3.6.6"
 	}
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {
@@ -79,7 +79,7 @@ func startPostgres(ctx context.Context) (container testcontainers.Container, db 
 			Image:        "postgres:" + pgVersion,
 			ExposedPorts: []string{"5432/tcp"},
 			Env:          map[string]string{"POSTGRES_PASSWORD": "password"},
-			Tmpfs:        map[string]string{"/var/lib/postgresql/data": "rw"},
+			Tmpfs:        map[string]string{"/var/lib/postgresql": "rw"},
 			WaitingFor: wait.ForAll(
 				wait.ForLog("database system is ready to accept connections"),
 				wait.ForListeningPort("5432/tcp"),

@@ -47,7 +47,8 @@ func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 	db := &mongodb{
 		db:         m.Database(config.DatabaseName),
 		namespaces: make(map[string]struct{}),
-		lock:       sync.RWMutex{}}
+		lock:       sync.RWMutex{},
+	}
 	if err := db.CreateNamespace(ctx, defaultNamespace); err != nil {
 		return nil, err
 	}
