@@ -75,21 +75,21 @@ const (
 
 // IpamServiceClient is a client for the api.v1.IpamService service.
 type IpamServiceClient interface {
-	CreatePrefix(context.Context, *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error)
-	DeletePrefix(context.Context, *connect.Request[v1.DeletePrefixRequest]) (*connect.Response[v1.DeletePrefixResponse], error)
-	GetPrefix(context.Context, *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error)
-	ListPrefixes(context.Context, *connect.Request[v1.ListPrefixesRequest]) (*connect.Response[v1.ListPrefixesResponse], error)
-	PrefixUsage(context.Context, *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error)
-	AcquireChildPrefix(context.Context, *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error)
-	ReleaseChildPrefix(context.Context, *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error)
-	AcquireIP(context.Context, *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error)
-	ReleaseIP(context.Context, *connect.Request[v1.ReleaseIPRequest]) (*connect.Response[v1.ReleaseIPResponse], error)
-	Dump(context.Context, *connect.Request[v1.DumpRequest]) (*connect.Response[v1.DumpResponse], error)
-	Load(context.Context, *connect.Request[v1.LoadRequest]) (*connect.Response[v1.LoadResponse], error)
-	CreateNamespace(context.Context, *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error)
-	ListNamespaces(context.Context, *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error)
-	DeleteNamespace(context.Context, *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error)
-	Version(context.Context, *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error)
+	CreatePrefix(context.Context, *v1.CreatePrefixRequest) (*v1.CreatePrefixResponse, error)
+	DeletePrefix(context.Context, *v1.DeletePrefixRequest) (*v1.DeletePrefixResponse, error)
+	GetPrefix(context.Context, *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error)
+	ListPrefixes(context.Context, *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error)
+	PrefixUsage(context.Context, *v1.PrefixUsageRequest) (*v1.PrefixUsageResponse, error)
+	AcquireChildPrefix(context.Context, *v1.AcquireChildPrefixRequest) (*v1.AcquireChildPrefixResponse, error)
+	ReleaseChildPrefix(context.Context, *v1.ReleaseChildPrefixRequest) (*v1.ReleaseChildPrefixResponse, error)
+	AcquireIP(context.Context, *v1.AcquireIPRequest) (*v1.AcquireIPResponse, error)
+	ReleaseIP(context.Context, *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error)
+	Dump(context.Context, *v1.DumpRequest) (*v1.DumpResponse, error)
+	Load(context.Context, *v1.LoadRequest) (*v1.LoadResponse, error)
+	CreateNamespace(context.Context, *v1.CreateNamespaceRequest) (*v1.CreateNamespaceResponse, error)
+	ListNamespaces(context.Context, *v1.ListNamespacesRequest) (*v1.ListNamespacesResponse, error)
+	DeleteNamespace(context.Context, *v1.DeleteNamespaceRequest) (*v1.DeleteNamespaceResponse, error)
+	Version(context.Context, *v1.VersionRequest) (*v1.VersionResponse, error)
 }
 
 // NewIpamServiceClient constructs a client for the api.v1.IpamService service. By default, it uses
@@ -216,97 +216,157 @@ type ipamServiceClient struct {
 }
 
 // CreatePrefix calls api.v1.IpamService.CreatePrefix.
-func (c *ipamServiceClient) CreatePrefix(ctx context.Context, req *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error) {
-	return c.createPrefix.CallUnary(ctx, req)
+func (c *ipamServiceClient) CreatePrefix(ctx context.Context, req *v1.CreatePrefixRequest) (*v1.CreatePrefixResponse, error) {
+	response, err := c.createPrefix.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // DeletePrefix calls api.v1.IpamService.DeletePrefix.
-func (c *ipamServiceClient) DeletePrefix(ctx context.Context, req *connect.Request[v1.DeletePrefixRequest]) (*connect.Response[v1.DeletePrefixResponse], error) {
-	return c.deletePrefix.CallUnary(ctx, req)
+func (c *ipamServiceClient) DeletePrefix(ctx context.Context, req *v1.DeletePrefixRequest) (*v1.DeletePrefixResponse, error) {
+	response, err := c.deletePrefix.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // GetPrefix calls api.v1.IpamService.GetPrefix.
-func (c *ipamServiceClient) GetPrefix(ctx context.Context, req *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error) {
-	return c.getPrefix.CallUnary(ctx, req)
+func (c *ipamServiceClient) GetPrefix(ctx context.Context, req *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error) {
+	response, err := c.getPrefix.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // ListPrefixes calls api.v1.IpamService.ListPrefixes.
-func (c *ipamServiceClient) ListPrefixes(ctx context.Context, req *connect.Request[v1.ListPrefixesRequest]) (*connect.Response[v1.ListPrefixesResponse], error) {
-	return c.listPrefixes.CallUnary(ctx, req)
+func (c *ipamServiceClient) ListPrefixes(ctx context.Context, req *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error) {
+	response, err := c.listPrefixes.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // PrefixUsage calls api.v1.IpamService.PrefixUsage.
-func (c *ipamServiceClient) PrefixUsage(ctx context.Context, req *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error) {
-	return c.prefixUsage.CallUnary(ctx, req)
+func (c *ipamServiceClient) PrefixUsage(ctx context.Context, req *v1.PrefixUsageRequest) (*v1.PrefixUsageResponse, error) {
+	response, err := c.prefixUsage.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // AcquireChildPrefix calls api.v1.IpamService.AcquireChildPrefix.
-func (c *ipamServiceClient) AcquireChildPrefix(ctx context.Context, req *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error) {
-	return c.acquireChildPrefix.CallUnary(ctx, req)
+func (c *ipamServiceClient) AcquireChildPrefix(ctx context.Context, req *v1.AcquireChildPrefixRequest) (*v1.AcquireChildPrefixResponse, error) {
+	response, err := c.acquireChildPrefix.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // ReleaseChildPrefix calls api.v1.IpamService.ReleaseChildPrefix.
-func (c *ipamServiceClient) ReleaseChildPrefix(ctx context.Context, req *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error) {
-	return c.releaseChildPrefix.CallUnary(ctx, req)
+func (c *ipamServiceClient) ReleaseChildPrefix(ctx context.Context, req *v1.ReleaseChildPrefixRequest) (*v1.ReleaseChildPrefixResponse, error) {
+	response, err := c.releaseChildPrefix.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // AcquireIP calls api.v1.IpamService.AcquireIP.
-func (c *ipamServiceClient) AcquireIP(ctx context.Context, req *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error) {
-	return c.acquireIP.CallUnary(ctx, req)
+func (c *ipamServiceClient) AcquireIP(ctx context.Context, req *v1.AcquireIPRequest) (*v1.AcquireIPResponse, error) {
+	response, err := c.acquireIP.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // ReleaseIP calls api.v1.IpamService.ReleaseIP.
-func (c *ipamServiceClient) ReleaseIP(ctx context.Context, req *connect.Request[v1.ReleaseIPRequest]) (*connect.Response[v1.ReleaseIPResponse], error) {
-	return c.releaseIP.CallUnary(ctx, req)
+func (c *ipamServiceClient) ReleaseIP(ctx context.Context, req *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error) {
+	response, err := c.releaseIP.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // Dump calls api.v1.IpamService.Dump.
-func (c *ipamServiceClient) Dump(ctx context.Context, req *connect.Request[v1.DumpRequest]) (*connect.Response[v1.DumpResponse], error) {
-	return c.dump.CallUnary(ctx, req)
+func (c *ipamServiceClient) Dump(ctx context.Context, req *v1.DumpRequest) (*v1.DumpResponse, error) {
+	response, err := c.dump.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // Load calls api.v1.IpamService.Load.
-func (c *ipamServiceClient) Load(ctx context.Context, req *connect.Request[v1.LoadRequest]) (*connect.Response[v1.LoadResponse], error) {
-	return c.load.CallUnary(ctx, req)
+func (c *ipamServiceClient) Load(ctx context.Context, req *v1.LoadRequest) (*v1.LoadResponse, error) {
+	response, err := c.load.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // CreateNamespace calls api.v1.IpamService.CreateNamespace.
-func (c *ipamServiceClient) CreateNamespace(ctx context.Context, req *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error) {
-	return c.createNamespace.CallUnary(ctx, req)
+func (c *ipamServiceClient) CreateNamespace(ctx context.Context, req *v1.CreateNamespaceRequest) (*v1.CreateNamespaceResponse, error) {
+	response, err := c.createNamespace.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // ListNamespaces calls api.v1.IpamService.ListNamespaces.
-func (c *ipamServiceClient) ListNamespaces(ctx context.Context, req *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error) {
-	return c.listNamespaces.CallUnary(ctx, req)
+func (c *ipamServiceClient) ListNamespaces(ctx context.Context, req *v1.ListNamespacesRequest) (*v1.ListNamespacesResponse, error) {
+	response, err := c.listNamespaces.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // DeleteNamespace calls api.v1.IpamService.DeleteNamespace.
-func (c *ipamServiceClient) DeleteNamespace(ctx context.Context, req *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error) {
-	return c.deleteNamespace.CallUnary(ctx, req)
+func (c *ipamServiceClient) DeleteNamespace(ctx context.Context, req *v1.DeleteNamespaceRequest) (*v1.DeleteNamespaceResponse, error) {
+	response, err := c.deleteNamespace.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // Version calls api.v1.IpamService.Version.
-func (c *ipamServiceClient) Version(ctx context.Context, req *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error) {
-	return c.version.CallUnary(ctx, req)
+func (c *ipamServiceClient) Version(ctx context.Context, req *v1.VersionRequest) (*v1.VersionResponse, error) {
+	response, err := c.version.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // IpamServiceHandler is an implementation of the api.v1.IpamService service.
 type IpamServiceHandler interface {
-	CreatePrefix(context.Context, *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error)
-	DeletePrefix(context.Context, *connect.Request[v1.DeletePrefixRequest]) (*connect.Response[v1.DeletePrefixResponse], error)
-	GetPrefix(context.Context, *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error)
-	ListPrefixes(context.Context, *connect.Request[v1.ListPrefixesRequest]) (*connect.Response[v1.ListPrefixesResponse], error)
-	PrefixUsage(context.Context, *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error)
-	AcquireChildPrefix(context.Context, *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error)
-	ReleaseChildPrefix(context.Context, *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error)
-	AcquireIP(context.Context, *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error)
-	ReleaseIP(context.Context, *connect.Request[v1.ReleaseIPRequest]) (*connect.Response[v1.ReleaseIPResponse], error)
-	Dump(context.Context, *connect.Request[v1.DumpRequest]) (*connect.Response[v1.DumpResponse], error)
-	Load(context.Context, *connect.Request[v1.LoadRequest]) (*connect.Response[v1.LoadResponse], error)
-	CreateNamespace(context.Context, *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error)
-	ListNamespaces(context.Context, *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error)
-	DeleteNamespace(context.Context, *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error)
-	Version(context.Context, *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error)
+	CreatePrefix(context.Context, *v1.CreatePrefixRequest) (*v1.CreatePrefixResponse, error)
+	DeletePrefix(context.Context, *v1.DeletePrefixRequest) (*v1.DeletePrefixResponse, error)
+	GetPrefix(context.Context, *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error)
+	ListPrefixes(context.Context, *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error)
+	PrefixUsage(context.Context, *v1.PrefixUsageRequest) (*v1.PrefixUsageResponse, error)
+	AcquireChildPrefix(context.Context, *v1.AcquireChildPrefixRequest) (*v1.AcquireChildPrefixResponse, error)
+	ReleaseChildPrefix(context.Context, *v1.ReleaseChildPrefixRequest) (*v1.ReleaseChildPrefixResponse, error)
+	AcquireIP(context.Context, *v1.AcquireIPRequest) (*v1.AcquireIPResponse, error)
+	ReleaseIP(context.Context, *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error)
+	Dump(context.Context, *v1.DumpRequest) (*v1.DumpResponse, error)
+	Load(context.Context, *v1.LoadRequest) (*v1.LoadResponse, error)
+	CreateNamespace(context.Context, *v1.CreateNamespaceRequest) (*v1.CreateNamespaceResponse, error)
+	ListNamespaces(context.Context, *v1.ListNamespacesRequest) (*v1.ListNamespacesResponse, error)
+	DeleteNamespace(context.Context, *v1.DeleteNamespaceRequest) (*v1.DeleteNamespaceResponse, error)
+	Version(context.Context, *v1.VersionRequest) (*v1.VersionResponse, error)
 }
 
 // NewIpamServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -316,91 +376,91 @@ type IpamServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	ipamServiceMethods := v1.File_api_v1_ipam_proto.Services().ByName("IpamService").Methods()
-	ipamServiceCreatePrefixHandler := connect.NewUnaryHandler(
+	ipamServiceCreatePrefixHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceCreatePrefixProcedure,
 		svc.CreatePrefix,
 		connect.WithSchema(ipamServiceMethods.ByName("CreatePrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceDeletePrefixHandler := connect.NewUnaryHandler(
+	ipamServiceDeletePrefixHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceDeletePrefixProcedure,
 		svc.DeletePrefix,
 		connect.WithSchema(ipamServiceMethods.ByName("DeletePrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceGetPrefixHandler := connect.NewUnaryHandler(
+	ipamServiceGetPrefixHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceGetPrefixProcedure,
 		svc.GetPrefix,
 		connect.WithSchema(ipamServiceMethods.ByName("GetPrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceListPrefixesHandler := connect.NewUnaryHandler(
+	ipamServiceListPrefixesHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceListPrefixesProcedure,
 		svc.ListPrefixes,
 		connect.WithSchema(ipamServiceMethods.ByName("ListPrefixes")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServicePrefixUsageHandler := connect.NewUnaryHandler(
+	ipamServicePrefixUsageHandler := connect.NewUnaryHandlerSimple(
 		IpamServicePrefixUsageProcedure,
 		svc.PrefixUsage,
 		connect.WithSchema(ipamServiceMethods.ByName("PrefixUsage")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceAcquireChildPrefixHandler := connect.NewUnaryHandler(
+	ipamServiceAcquireChildPrefixHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceAcquireChildPrefixProcedure,
 		svc.AcquireChildPrefix,
 		connect.WithSchema(ipamServiceMethods.ByName("AcquireChildPrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceReleaseChildPrefixHandler := connect.NewUnaryHandler(
+	ipamServiceReleaseChildPrefixHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceReleaseChildPrefixProcedure,
 		svc.ReleaseChildPrefix,
 		connect.WithSchema(ipamServiceMethods.ByName("ReleaseChildPrefix")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceAcquireIPHandler := connect.NewUnaryHandler(
+	ipamServiceAcquireIPHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceAcquireIPProcedure,
 		svc.AcquireIP,
 		connect.WithSchema(ipamServiceMethods.ByName("AcquireIP")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceReleaseIPHandler := connect.NewUnaryHandler(
+	ipamServiceReleaseIPHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceReleaseIPProcedure,
 		svc.ReleaseIP,
 		connect.WithSchema(ipamServiceMethods.ByName("ReleaseIP")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceDumpHandler := connect.NewUnaryHandler(
+	ipamServiceDumpHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceDumpProcedure,
 		svc.Dump,
 		connect.WithSchema(ipamServiceMethods.ByName("Dump")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceLoadHandler := connect.NewUnaryHandler(
+	ipamServiceLoadHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceLoadProcedure,
 		svc.Load,
 		connect.WithSchema(ipamServiceMethods.ByName("Load")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceCreateNamespaceHandler := connect.NewUnaryHandler(
+	ipamServiceCreateNamespaceHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceCreateNamespaceProcedure,
 		svc.CreateNamespace,
 		connect.WithSchema(ipamServiceMethods.ByName("CreateNamespace")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceListNamespacesHandler := connect.NewUnaryHandler(
+	ipamServiceListNamespacesHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceListNamespacesProcedure,
 		svc.ListNamespaces,
 		connect.WithSchema(ipamServiceMethods.ByName("ListNamespaces")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceDeleteNamespaceHandler := connect.NewUnaryHandler(
+	ipamServiceDeleteNamespaceHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceDeleteNamespaceProcedure,
 		svc.DeleteNamespace,
 		connect.WithSchema(ipamServiceMethods.ByName("DeleteNamespace")),
 		connect.WithHandlerOptions(opts...),
 	)
-	ipamServiceVersionHandler := connect.NewUnaryHandler(
+	ipamServiceVersionHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceVersionProcedure,
 		svc.Version,
 		connect.WithSchema(ipamServiceMethods.ByName("Version")),
@@ -447,62 +507,62 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 // UnimplementedIpamServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedIpamServiceHandler struct{}
 
-func (UnimplementedIpamServiceHandler) CreatePrefix(context.Context, *connect.Request[v1.CreatePrefixRequest]) (*connect.Response[v1.CreatePrefixResponse], error) {
+func (UnimplementedIpamServiceHandler) CreatePrefix(context.Context, *v1.CreatePrefixRequest) (*v1.CreatePrefixResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.CreatePrefix is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) DeletePrefix(context.Context, *connect.Request[v1.DeletePrefixRequest]) (*connect.Response[v1.DeletePrefixResponse], error) {
+func (UnimplementedIpamServiceHandler) DeletePrefix(context.Context, *v1.DeletePrefixRequest) (*v1.DeletePrefixResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.DeletePrefix is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) GetPrefix(context.Context, *connect.Request[v1.GetPrefixRequest]) (*connect.Response[v1.GetPrefixResponse], error) {
+func (UnimplementedIpamServiceHandler) GetPrefix(context.Context, *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.GetPrefix is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) ListPrefixes(context.Context, *connect.Request[v1.ListPrefixesRequest]) (*connect.Response[v1.ListPrefixesResponse], error) {
+func (UnimplementedIpamServiceHandler) ListPrefixes(context.Context, *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.ListPrefixes is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) PrefixUsage(context.Context, *connect.Request[v1.PrefixUsageRequest]) (*connect.Response[v1.PrefixUsageResponse], error) {
+func (UnimplementedIpamServiceHandler) PrefixUsage(context.Context, *v1.PrefixUsageRequest) (*v1.PrefixUsageResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.PrefixUsage is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) AcquireChildPrefix(context.Context, *connect.Request[v1.AcquireChildPrefixRequest]) (*connect.Response[v1.AcquireChildPrefixResponse], error) {
+func (UnimplementedIpamServiceHandler) AcquireChildPrefix(context.Context, *v1.AcquireChildPrefixRequest) (*v1.AcquireChildPrefixResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.AcquireChildPrefix is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) ReleaseChildPrefix(context.Context, *connect.Request[v1.ReleaseChildPrefixRequest]) (*connect.Response[v1.ReleaseChildPrefixResponse], error) {
+func (UnimplementedIpamServiceHandler) ReleaseChildPrefix(context.Context, *v1.ReleaseChildPrefixRequest) (*v1.ReleaseChildPrefixResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.ReleaseChildPrefix is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) AcquireIP(context.Context, *connect.Request[v1.AcquireIPRequest]) (*connect.Response[v1.AcquireIPResponse], error) {
+func (UnimplementedIpamServiceHandler) AcquireIP(context.Context, *v1.AcquireIPRequest) (*v1.AcquireIPResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.AcquireIP is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) ReleaseIP(context.Context, *connect.Request[v1.ReleaseIPRequest]) (*connect.Response[v1.ReleaseIPResponse], error) {
+func (UnimplementedIpamServiceHandler) ReleaseIP(context.Context, *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.ReleaseIP is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) Dump(context.Context, *connect.Request[v1.DumpRequest]) (*connect.Response[v1.DumpResponse], error) {
+func (UnimplementedIpamServiceHandler) Dump(context.Context, *v1.DumpRequest) (*v1.DumpResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.Dump is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) Load(context.Context, *connect.Request[v1.LoadRequest]) (*connect.Response[v1.LoadResponse], error) {
+func (UnimplementedIpamServiceHandler) Load(context.Context, *v1.LoadRequest) (*v1.LoadResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.Load is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) CreateNamespace(context.Context, *connect.Request[v1.CreateNamespaceRequest]) (*connect.Response[v1.CreateNamespaceResponse], error) {
+func (UnimplementedIpamServiceHandler) CreateNamespace(context.Context, *v1.CreateNamespaceRequest) (*v1.CreateNamespaceResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.CreateNamespace is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) ListNamespaces(context.Context, *connect.Request[v1.ListNamespacesRequest]) (*connect.Response[v1.ListNamespacesResponse], error) {
+func (UnimplementedIpamServiceHandler) ListNamespaces(context.Context, *v1.ListNamespacesRequest) (*v1.ListNamespacesResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.ListNamespaces is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) DeleteNamespace(context.Context, *connect.Request[v1.DeleteNamespaceRequest]) (*connect.Response[v1.DeleteNamespaceResponse], error) {
+func (UnimplementedIpamServiceHandler) DeleteNamespace(context.Context, *v1.DeleteNamespaceRequest) (*v1.DeleteNamespaceResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.DeleteNamespace is not implemented"))
 }
 
-func (UnimplementedIpamServiceHandler) Version(context.Context, *connect.Request[v1.VersionRequest]) (*connect.Response[v1.VersionResponse], error) {
+func (UnimplementedIpamServiceHandler) Version(context.Context, *v1.VersionRequest) (*v1.VersionResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.Version is not implemented"))
 }
