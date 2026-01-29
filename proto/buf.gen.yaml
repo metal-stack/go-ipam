@@ -5,9 +5,9 @@ managed:
     - file_option: go_package_prefix
       value: github.com/metal-stack/go-ipam
 plugins:
-  - remote: buf.build/connectrpc/go:v1.18.1
+  - remote: buf.build/connectrpc/go:v1.19.1
     out: ../
     opt: paths=source_relative
-  - remote: buf.build/protocolbuffers/go:v1.36.6
+  - remote: buf.build/protocolbuffers/go:v1.36.11
     out: ../
     opt: paths=source_relative
