@@ -74,7 +74,6 @@ func TestDatasource(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := dataSource(tc.host, tc.port, tc.user, tc.password, tc.dbname, tc.sslmode)
 			if tc.wantErr {
