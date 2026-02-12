@@ -21,15 +21,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.25
+    - name: Set up Go 1.26
       uses: actions/setup-go@v6
       with:
-        go-version: "1.25"
+        go-version: "1.26"
         cache: false
       id: go
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Lint Go
       uses: golangci/golangci-lint-action@v9
@@ -63,7 +63,7 @@ jobs:
     steps:
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Log in to the Container registry
       uses: docker/login-action@v3
@@ -94,15 +94,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.25
+    - name: Set up Go 1.26
       uses: actions/setup-go@v6
       with:
-        go-version: "1.25"
+        go-version: "1.26"
         cache: false
       id: go
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: run benchmark
       run: |
