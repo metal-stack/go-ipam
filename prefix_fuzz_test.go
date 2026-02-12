@@ -34,7 +34,6 @@ func FuzzIpamer_AcquireIP(f *testing.F) {
 		},
 	}
 	for _, tc := range tests {
-		tc := tc
 		f.Add(tc.prefixCIDR, tc.want)
 	}
 
