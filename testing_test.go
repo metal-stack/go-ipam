@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 	}
 	redisVersion = os.Getenv("REDIS_VERSION")
 	if redisVersion == "" {
-		redisVersion = "8.4-alpine"
+		redisVersion = "8.6-alpine"
 	}
 	keyDBVersion = os.Getenv("KEYDB_VERSION")
 	if keyDBVersion == "" {
@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 	}
 	etcdVersion = os.Getenv("ETCD_VERSION")
 	if etcdVersion == "" {
-		etcdVersion = "v3.6.6"
+		etcdVersion = "v3.6.9"
 	}
 	mdbVersion = os.Getenv("MONGODB_VERSION")
 	if mdbVersion == "" {
