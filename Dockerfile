@@ -1,5 +1,5 @@
 FROM alpine:3.23 AS health-downloader
-ENV GRPC_HEALTH_PROBE_VERSION=v0.4.42 \
+ENV GRPC_HEALTH_PROBE_VERSION=v0.4.47 \
     GRPC_HEALTH_PROBE_URL=https://github.com/grpc-ecosystem/grpc-health-probe/releases/download
 RUN apk add curl \
  && curl -fLso /bin/grpc_health_probe \
