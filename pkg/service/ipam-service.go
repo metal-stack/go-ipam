@@ -91,7 +91,7 @@ func (i *IPAMService) GetPrefix(ctx context.Context, req *v1.GetPrefixRequest) (
 	}, nil
 }
 func (i *IPAMService) ListPrefixes(ctx context.Context, req *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error) {
-	if req.GetNamespace() != "" {
+	if req.Namespace != nil {
 		ctx = goipam.NewContextWithNamespace(ctx, req.GetNamespace())
 	}
 	resp, err := i.ipamer.ReadAllPrefixCidrs(ctx)
