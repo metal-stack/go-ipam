@@ -21,9 +21,6 @@ import (
 
 	"connectrpc.com/grpchealth"
 	"connectrpc.com/grpcreflect"
-
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 type config struct {
@@ -125,12 +122,13 @@ func (s *server) Run() error {
 	))
 
 	server := http.Server{
-		Addr: s.c.GrpcServerEndpoint,
-		// For gRPC clients, it's convenient to support HTTP/2 without TLS. You can
-		// avoid x/net/http2 by using http.ListenAndServeTLS.
-		Handler:           h2c.NewHandler(mux, &http2.Server{}),
+		Addr:              s.c.GrpcServerEndpoint,
 		ReadHeaderTimeout: 1 * time.Minute,
 	}
+	server.Protocols = new(http.Protocols)
+	server.Protocols.SetHTTP1(true)
+	// For gRPC clients, it's convenient to support HTTP/2 without TLS
+	server.Protocols.SetUnencryptedHTTP2(true)
 
 	s.log.Info("started grpc server", "at", server.Addr)
 	err = server.ListenAndServe()
