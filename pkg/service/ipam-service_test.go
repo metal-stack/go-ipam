@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -22,7 +21,7 @@ func TestIpamService(t *testing.T) {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	mux := http.NewServeMux()
 	mux.Handle(apiv1connect.NewIpamServiceHandler(
-		New(log, goipam.New(context.Background())),
+		New(log, goipam.New(t.Context())),
 	))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true

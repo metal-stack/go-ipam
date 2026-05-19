@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -44,7 +43,7 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.CreatePrefix(context.Background(), &v1.CreatePrefixRequest{
+							result, err := c.CreatePrefix(ctx.Context, &v1.CreatePrefixRequest{
 								Cidr: ctx.String("cidr"),
 							})
 
@@ -68,7 +67,7 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.AcquireChildPrefix(context.Background(), &v1.AcquireChildPrefixRequest{
+							result, err := c.AcquireChildPrefix(ctx.Context, &v1.AcquireChildPrefixRequest{
 								Cidr:   ctx.String("parent"),
 								Length: uint32(ctx.Uint("length")), // nolint:gosec
 							})
@@ -90,7 +89,7 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.ReleaseChildPrefix(context.Background(), &v1.ReleaseChildPrefixRequest{
+							result, err := c.ReleaseChildPrefix(ctx.Context, &v1.ReleaseChildPrefixRequest{
 								Cidr: ctx.String("cidr"),
 							})
 
@@ -109,7 +108,7 @@ func main() {
 						Usage: "list all prefixes",
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.ListPrefixes(context.Background(), &v1.ListPrefixesRequest{})
+							result, err := c.ListPrefixes(ctx.Context, &v1.ListPrefixesRequest{})
 
 							if err != nil {
 								return err
@@ -130,7 +129,7 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.DeletePrefix(context.Background(), &v1.DeletePrefixRequest{
+							result, err := c.DeletePrefix(ctx.Context, &v1.DeletePrefixRequest{
 								Cidr: ctx.String("cidr"),
 							})
 
@@ -158,7 +157,7 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.AcquireIP(context.Background(), &v1.AcquireIPRequest{
+							result, err := c.AcquireIP(ctx.Context, &v1.AcquireIPRequest{
 								PrefixCidr: ctx.String("prefix"),
 							})
 
@@ -182,7 +181,7 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.ReleaseIP(context.Background(), &v1.ReleaseIPRequest{
+							result, err := c.ReleaseIP(ctx.Context, &v1.ReleaseIPRequest{
 								Ip:         ctx.String("ip"),
 								PrefixCidr: ctx.String("prefix"),
 							})
@@ -205,7 +204,7 @@ func main() {
 						Usage: "create a json file of the whole ipam db for backup purpose",
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.Dump(context.Background(), &v1.DumpRequest{})
+							result, err := c.Dump(ctx.Context, &v1.DumpRequest{})
 							if err != nil {
 								return err
 							}
@@ -227,7 +226,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							_, err = c.Load(context.Background(), &v1.LoadRequest{
+							_, err = c.Load(ctx.Context, &v1.LoadRequest{
 								Dump: string(json),
 							})
 
