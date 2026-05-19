@@ -317,12 +317,12 @@ func startKeyDB(ctx context.Context) (container testcontainers.Container, s *red
 
 // cleanable interface for impls that support cleaning before each testrun
 type cleanable interface {
-	cleanup() error
+	cleanup(context.Context) error
 }
 
 // postCleanable interface for impls that support cleaning after each testrun
 type postCleanable interface {
-	postCleanup() error
+	postCleanup(context.Context) error
 }
 
 // extendedSQL extended sql interface
@@ -346,8 +346,7 @@ type docStorage struct {
 	c testcontainers.Container
 }
 
-func newLocalFileWithCleanup() (*file, error) {
-	ctx := context.Background()
+func newLocalFileWithCleanup(ctx context.Context) (*file, error) {
 	fp, err := os.CreateTemp("", "go-ipam-*.json")
 
 	if err != nil {
@@ -448,8 +447,8 @@ func newMongodbWithCleanup(ctx context.Context) (*docStorage, error) {
 	return x, nil
 }
 
-func (f *file) cleanup() error {
-	if err := f.clearParent(context.Background()); err != nil {
+func (f *file) cleanup(ctx context.Context) error {
+	if err := f.clearParent(ctx); err != nil {
 		return err
 	}
 	if _, err := os.Stat(f.path); errors.Is(err, fs.ErrNotExist) {
@@ -458,12 +457,12 @@ func (f *file) cleanup() error {
 	return os.Remove(f.path)
 }
 
-func (f *file) postCleanup() error {
-	return f.cleanup()
+func (f *file) postCleanup(ctx context.Context) error {
+	return f.cleanup(ctx)
 }
 
 // cleanup database before test
-func (e *extendedSQL) cleanup() error {
+func (e *extendedSQL) cleanup(ctx context.Context) error {
 	tx := e.db.MustBegin()
 	_, err := e.db.Exec("TRUNCATE TABLE prefixes")
 	if err != nil {
@@ -473,13 +472,13 @@ func (e *extendedSQL) cleanup() error {
 }
 
 // cleanup database before test
-func (kv *kvStorage) cleanup() error {
-	return kv.DeleteAllPrefixes(context.Background(), defaultNamespace)
+func (kv *kvStorage) cleanup(ctx context.Context) error {
+	return kv.DeleteAllPrefixes(ctx, defaultNamespace)
 }
 
 // cleanup database before test
-func (kv *kvEtcdStorage) cleanup() error {
-	return kv.DeleteAllPrefixes(context.Background(), defaultNamespace)
+func (kv *kvEtcdStorage) cleanup(ctx context.Context) error {
+	return kv.DeleteAllPrefixes(ctx, defaultNamespace)
 }
 
 // cleanup database before test
@@ -492,8 +491,8 @@ func (sql *sql) cleanup() error {
 	return tx.Commit()
 }
 
-func (ds *docStorage) cleanup() error {
-	return ds.DeleteAllPrefixes(context.Background(), defaultNamespace)
+func (ds *docStorage) cleanup(ctx context.Context) error {
+	return ds.DeleteAllPrefixes(ctx, defaultNamespace)
 }
 
 type benchMethod func(b *testing.B, ipam *ipamer)
@@ -506,7 +505,7 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 		storage := storageProvider.provide()
 
 		if tp, ok := storage.(cleanable); ok {
-			err := tp.cleanup()
+			err := tp.cleanup(b.Context())
 			if err != nil {
 				b.Errorf("error cleaning up before the test: %v", err)
 			}
@@ -520,7 +519,7 @@ func benchWithBackends(b *testing.B, fn benchMethod) {
 		})
 
 		if tp, ok := storage.(postCleanable); ok {
-			err := tp.postCleanup()
+			err := tp.postCleanup(b.Context())
 			if err != nil {
 				b.Errorf("error cleaning up after the test: %v", err)
 			}
@@ -540,7 +539,7 @@ func testWithBackends(t *testing.T, fn testMethod) {
 		storage := storageProvider.provide()
 
 		if tp, ok := storage.(cleanable); ok {
-			err := tp.cleanup()
+			err := tp.cleanup(t.Context())
 			if err != nil {
 				t.Errorf("error cleaning up, %v", err)
 			}
@@ -554,7 +553,7 @@ func testWithBackends(t *testing.T, fn testMethod) {
 		})
 
 		if tp, ok := storage.(postCleanable); ok {
-			err := tp.postCleanup()
+			err := tp.postCleanup(t.Context())
 			if err != nil {
 				t.Errorf("error cleaning up after the test: %v", err)
 			}
@@ -613,7 +612,7 @@ func storageProviders(ctx context.Context) []storageProvider {
 		{
 			name: "File",
 			provide: func() Storage {
-				storage, err := newLocalFileWithCleanup()
+				storage, err := newLocalFileWithCleanup(ctx)
 				if err != nil {
 					panic("error getting local file storage")
 				}

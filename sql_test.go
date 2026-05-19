@@ -10,7 +10,7 @@ import (
 )
 
 func Test_sql_prefixExists(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 
@@ -40,7 +40,7 @@ func Test_sql_prefixExists(t *testing.T) {
 }
 
 func Test_sql_CreatePrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 
@@ -71,7 +71,7 @@ func Test_sql_CreatePrefix(t *testing.T) {
 }
 
 func Test_sql_ReadPrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 
@@ -99,7 +99,7 @@ func Test_sql_ReadPrefix(t *testing.T) {
 }
 
 func Test_sql_ReadAllPrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 
@@ -130,7 +130,7 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 }
 
 func Test_sql_CreateNamespace(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 		{
@@ -162,7 +162,7 @@ func Test_sql_CreateNamespace(t *testing.T) {
 }
 
 func Test_ConcurrentAcquirePrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 
@@ -208,7 +208,7 @@ func acquirePrefix(t *testing.T, ctx context.Context, db *sql, cidr string, pref
 }
 
 func Test_ConcurrentAcquireIP(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 

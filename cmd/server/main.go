@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"log/slog"
@@ -281,7 +280,7 @@ func main() {
 						DatabaseName:       dbname,
 						MongoClientOptions: opts,
 					}
-					db, err := goipam.NewMongo(context.Background(), mongocfg)
+					db, err := goipam.NewMongo(ctx.Context, mongocfg)
 					if err != nil {
 						return err
 					}

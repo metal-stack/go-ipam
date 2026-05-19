@@ -1655,12 +1655,12 @@ func TestNamespaceFromContext(t *testing.T) {
 		},
 		{
 			name: "namespaced context",
-			ctx:  NewContextWithNamespace(context.Background(), "a"),
+			ctx:  NewContextWithNamespace(t.Context(), "a"),
 			want: "a",
 		},
 		{
 			name: "invalid context value",
-			ctx:  context.WithValue(context.Background(), namespaceContextKey{}, true),
+			ctx:  context.WithValue(t.Context(), namespaceContextKey{}, true),
 			want: defaultNamespace,
 		},
 	}

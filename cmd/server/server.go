@@ -124,6 +124,7 @@ func (s *server) Run() error {
 	server := http.Server{
 		Addr:              s.c.GrpcServerEndpoint,
 		ReadHeaderTimeout: 1 * time.Minute,
+		Handler:           mux,
 	}
 	server.Protocols = new(http.Protocols)
 	server.Protocols.SetHTTP1(true)
