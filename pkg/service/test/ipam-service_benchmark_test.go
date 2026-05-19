@@ -80,18 +80,18 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		{
 			name: "grpc",
 			f: func() error {
-				p, err := grpc.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
+				p, err := grpc.CreatePrefix(ctx, &v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
-				}))
+				})
 				if err != nil {
 					return err
 				}
 				if p == nil {
 					return fmt.Errorf("Prefix nil:%w", err)
 				}
-				_, err = grpc.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
+				_, err = grpc.DeletePrefix(ctx, &v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
-				}))
+				})
 				if err != nil {
 					return err
 				}
@@ -101,18 +101,18 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		{
 			name: "grpc-no-compression",
 			f: func() error {
-				p, err := grpcUncompressed.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
+				p, err := grpcUncompressed.CreatePrefix(ctx, &v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
-				}))
+				})
 				if err != nil {
 					return err
 				}
 				if p == nil {
 					return fmt.Errorf("Prefix nil:%w", err)
 				}
-				_, err = grpcUncompressed.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
+				_, err = grpcUncompressed.DeletePrefix(ctx, &v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
-				}))
+				})
 				if err != nil {
 					return err
 				}
@@ -122,18 +122,18 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		{
 			name: "http",
 			f: func() error {
-				p, err := httpclient.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
+				p, err := httpclient.CreatePrefix(ctx, &v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
-				}))
+				})
 				if err != nil {
 					return err
 				}
 				if p == nil {
 					return fmt.Errorf("Prefix nil:%w", err)
 				}
-				_, err = httpclient.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
+				_, err = httpclient.DeletePrefix(ctx, &v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
-				}))
+				})
 				if err != nil {
 					return err
 				}
@@ -143,18 +143,18 @@ func BenchmarkGrpcImpact(b *testing.B) {
 		{
 			name: "http-no-compression",
 			f: func() error {
-				p, err := httpclientUncompressed.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{
+				p, err := httpclientUncompressed.CreatePrefix(ctx, &v1.CreatePrefixRequest{
 					Cidr: "192.169.0.0/24",
-				}))
+				})
 				if err != nil {
 					return err
 				}
 				if p == nil {
 					return fmt.Errorf("Prefix nil:%w", err)
 				}
-				_, err = httpclientUncompressed.DeletePrefix(ctx, connect.NewRequest(&v1.DeletePrefixRequest{
+				_, err = httpclientUncompressed.DeletePrefix(ctx, &v1.DeletePrefixRequest{
 					Cidr: "192.169.0.0/24",
-				}))
+				})
 				if err != nil {
 					return err
 				}

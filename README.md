@@ -110,9 +110,9 @@ GRPC Example usage:
 package main
 
 import (
+    "context"
     "http"
 
-    "github.com/bufbuild/connect-go"
     v1 "github.com/metal-stack/go-ipam/api/v1"
     "github.com/metal-stack/go-ipam/api/v1/apiv1connect"
 )
@@ -129,11 +129,11 @@ func main() {
     // Optional with Namespace
     ctx := goipam.NewContextWithNamespace(bgCtx, "tenant-a")
 
-    result, err := c.CreatePrefix(ctx, connect.NewRequest(&v1.CreatePrefixRequest{Cidr: "192.168.0.0/16",}))
+    result, err := c.CreatePrefix(ctx, &v1.CreatePrefixRequest{Cidr: "192.168.0.0/16"})
     if err != nil {
         panic(err)
     }
-    fmt.Println("Prefix:%q created", result.Msg.GetPrefix().GetCidr())
+    fmt.Println("Prefix:%q created", result.GetPrefix().GetCidr())
 }
 ```
 

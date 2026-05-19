@@ -44,14 +44,14 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.CreatePrefix(context.Background(), connect.NewRequest(&v1.CreatePrefixRequest{
+							result, err := c.CreatePrefix(context.Background(), &v1.CreatePrefixRequest{
 								Cidr: ctx.String("cidr"),
-							}))
+							})
 
 							if err != nil {
 								return err
 							}
-							fmt.Printf("prefix:%q created\n", result.Msg.GetPrefix().GetCidr())
+							fmt.Printf("prefix:%q created\n", result.GetPrefix().GetCidr())
 							return nil
 						},
 					},
@@ -68,15 +68,15 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.AcquireChildPrefix(context.Background(), connect.NewRequest(&v1.AcquireChildPrefixRequest{
+							result, err := c.AcquireChildPrefix(context.Background(), &v1.AcquireChildPrefixRequest{
 								Cidr:   ctx.String("parent"),
 								Length: uint32(ctx.Uint("length")), // nolint:gosec
-							}))
+							})
 
 							if err != nil {
 								return err
 							}
-							fmt.Printf("child prefix:%q from %q created\n", result.Msg.GetPrefix().GetCidr(), result.Msg.GetPrefix().GetParentCidr())
+							fmt.Printf("child prefix:%q from %q created\n", result.GetPrefix().GetCidr(), result.GetPrefix().GetParentCidr())
 							return nil
 						},
 					},
@@ -90,17 +90,17 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.ReleaseChildPrefix(context.Background(), connect.NewRequest(&v1.ReleaseChildPrefixRequest{
+							result, err := c.ReleaseChildPrefix(context.Background(), &v1.ReleaseChildPrefixRequest{
 								Cidr: ctx.String("cidr"),
-							}))
+							})
 
 							if err != nil {
 								return err
 							}
-							if result.Msg == nil || result.Msg.GetPrefix() == nil {
+							if result == nil || result.GetPrefix() == nil {
 								return fmt.Errorf("result contains no prefix")
 							}
-							fmt.Printf("child prefix:%q from %q released\n", result.Msg.GetPrefix().GetCidr(), result.Msg.GetPrefix().GetParentCidr())
+							fmt.Printf("child prefix:%q from %q released\n", result.GetPrefix().GetCidr(), result.GetPrefix().GetParentCidr())
 							return nil
 						},
 					},
@@ -109,12 +109,12 @@ func main() {
 						Usage: "list all prefixes",
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.ListPrefixes(context.Background(), connect.NewRequest(&v1.ListPrefixesRequest{}))
+							result, err := c.ListPrefixes(context.Background(), &v1.ListPrefixesRequest{})
 
 							if err != nil {
 								return err
 							}
-							for _, p := range result.Msg.GetPrefixes() {
+							for _, p := range result.GetPrefixes() {
 								fmt.Printf("Prefix:%q parent:%q\n", p.GetCidr(), p.GetParentCidr())
 							}
 							return nil
@@ -130,14 +130,14 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.DeletePrefix(context.Background(), connect.NewRequest(&v1.DeletePrefixRequest{
+							result, err := c.DeletePrefix(context.Background(), &v1.DeletePrefixRequest{
 								Cidr: ctx.String("cidr"),
-							}))
+							})
 
 							if err != nil {
 								return err
 							}
-							fmt.Printf("prefix:%q deleted\n", result.Msg.GetPrefix().GetCidr())
+							fmt.Printf("prefix:%q deleted\n", result.GetPrefix().GetCidr())
 							return nil
 						},
 					},
@@ -158,14 +158,14 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.AcquireIP(context.Background(), connect.NewRequest(&v1.AcquireIPRequest{
+							result, err := c.AcquireIP(context.Background(), &v1.AcquireIPRequest{
 								PrefixCidr: ctx.String("prefix"),
-							}))
+							})
 
 							if err != nil {
 								return err
 							}
-							fmt.Printf("ip:%q acquired\n", result.Msg.GetIp().GetIp())
+							fmt.Printf("ip:%q acquired\n", result.GetIp().GetIp())
 							return nil
 						},
 					},
@@ -182,15 +182,15 @@ func main() {
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.ReleaseIP(context.Background(), connect.NewRequest(&v1.ReleaseIPRequest{
+							result, err := c.ReleaseIP(context.Background(), &v1.ReleaseIPRequest{
 								Ip:         ctx.String("ip"),
 								PrefixCidr: ctx.String("prefix"),
-							}))
+							})
 
 							if err != nil {
 								return err
 							}
-							fmt.Printf("ip:%q released\n", result.Msg.GetIp().GetIp())
+							fmt.Printf("ip:%q released\n", result.GetIp().GetIp())
 							return nil
 						},
 					},
@@ -205,11 +205,11 @@ func main() {
 						Usage: "create a json file of the whole ipam db for backup purpose",
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
-							result, err := c.Dump(context.Background(), connect.NewRequest(&v1.DumpRequest{}))
+							result, err := c.Dump(context.Background(), &v1.DumpRequest{})
 							if err != nil {
 								return err
 							}
-							fmt.Println(result.Msg.GetDump())
+							fmt.Println(result.GetDump())
 							return nil
 						},
 					},
@@ -227,9 +227,9 @@ func main() {
 							if err != nil {
 								return err
 							}
-							_, err = c.Load(context.Background(), connect.NewRequest(&v1.LoadRequest{
+							_, err = c.Load(context.Background(), &v1.LoadRequest{
 								Dump: string(json),
-							}))
+							})
 
 							if err != nil {
 								return err
