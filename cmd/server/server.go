@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/exemplar"
 
 	"connectrpc.com/grpchealth"
 	"connectrpc.com/grpcreflect"
@@ -54,7 +55,10 @@ func (s *server) Run() error {
 	if err != nil {
 		return err
 	}
-	provider := metric.NewMeterProvider(metric.WithReader(exporter))
+	provider := metric.NewMeterProvider(
+		metric.WithReader(exporter),
+		metric.WithExemplarFilter(exemplar.AlwaysOffFilter), // see https://github.com/open-telemetry/opentelemetry-go/issues/8337
+	)
 
 	// Start the prometheus HTTP server and pass the exporter Collector to it
 	go func() {
