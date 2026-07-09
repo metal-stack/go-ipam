@@ -102,14 +102,14 @@ jobs:
       id: go
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: run benchmark
       run: |
         make bench | tee output.txt
 
     - name: Download previous benchmark data
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ./cache
         key: ${{ runner.os }}-benchmark
