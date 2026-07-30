@@ -14,6 +14,8 @@ type prefixJSON struct {
 	IsParent          bool            `json:"IsParent"`          // set to true if there are child prefixes
 	IPs               map[string]bool `json:"IPs"`               // The ips contained in this prefix
 	Version           int64           `json:"Version"`           // Version is used for optimistic locking
+	// NetworkAndBroadcastAllocatable is true if the network and (IPv4) broadcast address are allocatable
+	NetworkAndBroadcastAllocatable bool `json:"NetworkAndBroadcastAllocatable,omitempty"`
 }
 
 func (p prefixJSON) toPrefix() Prefix {
@@ -23,13 +25,14 @@ func (p prefixJSON) toPrefix() Prefix {
 		p.IsParent = true
 	}
 	return Prefix{
-		Cidr:                   p.Cidr,
-		ParentCidr:             p.ParentCidr,
-		availableChildPrefixes: p.AvailableChildPrefixes,
-		childPrefixLength:      p.ChildPrefixLength,
-		isParent:               p.IsParent,
-		ips:                    p.IPs,
-		version:                p.Version,
+		Cidr:                           p.Cidr,
+		ParentCidr:                     p.ParentCidr,
+		availableChildPrefixes:         p.AvailableChildPrefixes,
+		childPrefixLength:              p.ChildPrefixLength,
+		isParent:                       p.IsParent,
+		ips:                            p.IPs,
+		version:                        p.Version,
+		networkAndBroadcastAllocatable: p.NetworkAndBroadcastAllocatable,
 	}
 }
 
@@ -42,9 +45,10 @@ func (p *Prefix) toPrefixJSON() prefixJSON {
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		IsParent:               p.isParent,
 		// TODO remove this in the next release
-		ChildPrefixLength: p.childPrefixLength,
-		IPs:               p.ips,
-		Version:           p.version,
+		ChildPrefixLength:              p.childPrefixLength,
+		IPs:                            p.ips,
+		Version:                        p.version,
+		NetworkAndBroadcastAllocatable: p.networkAndBroadcastAllocatable,
 	}
 }
 
