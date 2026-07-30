@@ -164,21 +164,23 @@ func (i *ipamer) DeletePrefix(ctx context.Context, cidr string) (*Prefix, error)
 func (i *ipamer) AcquireChildPrefix(ctx context.Context, parentCidr string, length uint8) (*Prefix, error) {
 	namespace := namespaceFromContext(ctx)
 	var prefix *Prefix
-	return prefix, retryOnOptimisticLock(func() error {
+	err := retryOnOptimisticLock(func() error {
 		var err error
 		prefix, err = i.acquireChildPrefixInternal(ctx, namespace, parentCidr, "", int(length))
 		return err
 	})
+	return prefix, err
 }
 
 func (i *ipamer) AcquireSpecificChildPrefix(ctx context.Context, parentCidr, childCidr string) (*Prefix, error) {
 	namespace := namespaceFromContext(ctx)
 	var prefix *Prefix
-	return prefix, retryOnOptimisticLock(func() error {
+	err := retryOnOptimisticLock(func() error {
 		var err error
 		prefix, err = i.acquireChildPrefixInternal(ctx, namespace, parentCidr, childCidr, 0)
 		return err
 	})
+	return prefix, err
 }
 
 // acquireChildPrefixInternal will return a Prefix with a smaller length from the given Prefix.
@@ -336,11 +338,12 @@ func (i *ipamer) PrefixFrom(ctx context.Context, cidr string) (*Prefix, error) {
 func (i *ipamer) AcquireSpecificIP(ctx context.Context, prefixCidr, specificIP string) (*IP, error) {
 	namespace := namespaceFromContext(ctx)
 	var ip *IP
-	return ip, retryOnOptimisticLock(func() error {
+	err := retryOnOptimisticLock(func() error {
 		var err error
 		ip, err = i.acquireSpecificIPInternal(ctx, namespace, prefixCidr, specificIP)
 		return err
 	})
+	return ip, err
 }
 
 // acquireSpecificIPInternal will acquire given IP and mark this IP as used, if already in use, return nil.
