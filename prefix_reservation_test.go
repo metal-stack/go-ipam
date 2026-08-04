@@ -161,3 +161,39 @@ func TestNetworkAndBroadcastAllocatableJSONRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, restored.NetworkAndBroadcastAllocatable())
 }
+
+func TestUsageNetworkAndBroadcastAllocatable(t *testing.T) {
+	ctx := t.Context()
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		// reserved prefix: the network and broadcast address reduce the
+		// available count and do not count as acquired
+		reserved, err := ipam.NewPrefix(ctx, "10.96.0.0/29")
+		require.NoError(t, err)
+		require.Equal(t, uint64(6), reserved.availableips())
+		require.Equal(t, uint64(0), reserved.acquiredips())
+		_, err = ipam.AcquireIP(ctx, reserved.Cidr)
+		require.NoError(t, err)
+		reserved, err = ipam.PrefixFrom(ctx, reserved.Cidr)
+		require.NoError(t, err)
+		require.Equal(t, uint64(6), reserved.availableips())
+		require.Equal(t, uint64(1), reserved.acquiredips())
+
+		// allocatable prefix: all addresses count as available
+		allocatable, err := ipam.NewPrefix(ctx, "10.96.1.0/29", WithNetworkAndBroadcastAllocatable())
+		require.NoError(t, err)
+		require.Equal(t, uint64(8), allocatable.availableips())
+		require.Equal(t, uint64(0), allocatable.acquiredips())
+		_, err = ipam.AcquireSpecificIP(ctx, allocatable.Cidr, "10.96.1.0")
+		require.NoError(t, err)
+		allocatable, err = ipam.PrefixFrom(ctx, allocatable.Cidr)
+		require.NoError(t, err)
+		require.Equal(t, uint64(8), allocatable.availableips())
+		require.Equal(t, uint64(1), allocatable.acquiredips())
+
+		// toggling changes the available count
+		reserved, err = ipam.SetPrefixNetworkAndBroadcastAllocatable(ctx, reserved.Cidr, true)
+		require.NoError(t, err)
+		require.Equal(t, uint64(8), reserved.availableips())
+		require.Equal(t, uint64(1), reserved.acquiredips())
+	})
+}

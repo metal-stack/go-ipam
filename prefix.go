@@ -136,7 +136,9 @@ func copyMap(m map[string]bool) map[string]bool {
 
 // Usage of ips and child Prefixes of a Prefix
 type Usage struct {
-	// AvailableIPs the number of available IPs if this is not a parent prefix
+	// AvailableIPs the number of available IPs if this is not a parent prefix.
+	// The reserved network and (IPv4) broadcast address are not counted
+	// unless the prefix has them allocatable.
 	// No more than 2^31 available IPs are reported
 	AvailableIPs uint64
 	// AcquiredIPs the number of acquired IPs if this is not a parent prefix
@@ -747,7 +749,9 @@ func (p *Prefix) hasIPs() bool {
 	return len(p.ips) > reserved
 }
 
-// availableips return the number of ips available in this Prefix
+// availableips return the number of ips available in this Prefix.
+// The reserved network and (IPv4) broadcast address are not counted
+// unless the prefix has them allocatable.
 func (p *Prefix) availableips() uint64 {
 	ipprefix, err := netip.ParsePrefix(p.Cidr)
 	if err != nil {
@@ -757,12 +761,38 @@ func (p *Prefix) availableips() uint64 {
 	if (ipprefix.Addr().BitLen() - ipprefix.Bits()) > 31 {
 		return math.MaxInt32
 	}
-	return 1 << (ipprefix.Addr().BitLen() - ipprefix.Bits())
+	return 1<<(ipprefix.Addr().BitLen()-ipprefix.Bits()) - p.reservedips()
 }
 
-// acquiredips return the number of ips acquired in this Prefix
+// acquiredips return the number of ips acquired in this Prefix.
+// The reserved network and (IPv4) broadcast address do not count as
+// acquired; they are excluded from availableips instead.
 func (p *Prefix) acquiredips() uint64 {
-	return uint64(len(p.ips))
+	return uint64(len(p.ips)) - p.reservedips()
+}
+
+// reservedips returns the number of reserved addresses present in this
+// Prefix: the network and (IPv4) broadcast address, unless the prefix has
+// them allocatable.
+func (p *Prefix) reservedips() uint64 {
+	if p.networkAndBroadcastAllocatable {
+		return 0
+	}
+	ipprefix, err := netip.ParsePrefix(p.Cidr)
+	if err != nil {
+		return 0
+	}
+	iprange := netipx.RangeOfPrefix(ipprefix)
+	var count uint64
+	if _, ok := p.ips[iprange.From().String()]; ok {
+		count++
+	}
+	if ipprefix.Addr().Is4() && iprange.To() != iprange.From() {
+		if _, ok := p.ips[iprange.To().String()]; ok {
+			count++
+		}
+	}
+	return count
 }
 
 // availablePrefixes will return the amount of prefixes allocatable and the amount of smallest 2 bit prefixes
