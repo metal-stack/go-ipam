@@ -159,4 +159,63 @@ func TestIpamService(t *testing.T) {
 			counter++
 		}
 	})
+	t.Run("NetworkAndBroadcastAllocatable", func(t *testing.T) {
+		counter := 0
+		for _, client := range clients {
+			cidr := fmt.Sprintf("10.77.%d.0/29", counter)
+			network := fmt.Sprintf("10.77.%d.0", counter)
+			broadcast := fmt.Sprintf("10.77.%d.7", counter)
+
+			// created without reservation, network and broadcast are allocatable
+			result, err := client.CreatePrefix(t.Context(), &v1.CreatePrefixRequest{
+				Cidr:                           cidr,
+				NetworkAndBroadcastAllocatable: true,
+			})
+			require.NoError(t, err)
+			assert.True(t, result.GetPrefix().GetNetworkAndBroadcastAllocatable())
+
+			ipresult, err := client.AcquireIP(t.Context(), &v1.AcquireIPRequest{
+				PrefixCidr: cidr,
+				Ip:         &network,
+			})
+			require.NoError(t, err)
+			assert.Equal(t, network, ipresult.GetIp().GetIp())
+
+			// re-reserving fails while the network address is allocated
+			_, err = client.SetPrefixNetworkAndBroadcastAllocatable(t.Context(), &v1.SetPrefixNetworkAndBroadcastAllocatableRequest{
+				Cidr: cidr,
+			})
+			require.Error(t, err)
+			var connectErr *connect.Error
+			require.ErrorAs(t, err, &connectErr)
+			assert.Equal(t, connect.CodeAlreadyExists, connectErr.Code())
+
+			// after releasing it, re-reserving works and both addresses are blocked
+			_, err = client.ReleaseIP(t.Context(), &v1.ReleaseIPRequest{
+				PrefixCidr: cidr,
+				Ip:         network,
+			})
+			require.NoError(t, err)
+			setresult, err := client.SetPrefixNetworkAndBroadcastAllocatable(t.Context(), &v1.SetPrefixNetworkAndBroadcastAllocatableRequest{
+				Cidr: cidr,
+			})
+			require.NoError(t, err)
+			assert.False(t, setresult.GetPrefix().GetNetworkAndBroadcastAllocatable())
+
+			_, err = client.AcquireIP(t.Context(), &v1.AcquireIPRequest{
+				PrefixCidr: cidr,
+				Ip:         &broadcast,
+			})
+			require.Error(t, err)
+
+			// unreserving is always possible
+			setresult, err = client.SetPrefixNetworkAndBroadcastAllocatable(t.Context(), &v1.SetPrefixNetworkAndBroadcastAllocatableRequest{
+				Cidr:                           cidr,
+				NetworkAndBroadcastAllocatable: true,
+			})
+			require.NoError(t, err)
+			assert.True(t, setresult.GetPrefix().GetNetworkAndBroadcastAllocatable())
+			counter++
+		}
+	})
 }

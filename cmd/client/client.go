@@ -40,11 +40,16 @@ func main() {
 							&cli.StringFlag{
 								Name: "cidr",
 							},
+							&cli.BoolFlag{
+								Name:  "network-and-broadcast-allocatable",
+								Usage: "make the network and (IPv4) broadcast address allocatable",
+							},
 						},
 						Action: func(ctx *cli.Context) error {
 							c := client(ctx)
 							result, err := c.CreatePrefix(ctx.Context, &v1.CreatePrefixRequest{
-								Cidr: ctx.String("cidr"),
+								Cidr:                           ctx.String("cidr"),
+								NetworkAndBroadcastAllocatable: ctx.Bool("network-and-broadcast-allocatable"),
 							})
 
 							if err != nil {

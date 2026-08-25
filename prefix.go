@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"io"
 	"maps"
 	"math"
 	"net/netip"
@@ -25,6 +26,23 @@ type Prefix struct {
 	childPrefixLength int             // the length of the child prefixes
 	ips               map[string]bool // The ips contained in this prefix
 	version           int64           // version is used for optimistic locking
+	// networkAndBroadcastAllocatable is true if the network and the (IPv4)
+	// broadcast address of this prefix are allocatable like any other address,
+	// e.g. for prefixes used as routed pools without L2 semantics.
+	// The default false keeps the previous behavior: both are reserved.
+	networkAndBroadcastAllocatable bool
+}
+
+// PrefixOption modifies a Prefix at creation.
+type PrefixOption func(*Prefix)
+
+// WithNetworkAndBroadcastAllocatable makes the network and the (IPv4)
+// broadcast address of the new prefix allocatable like any other address.
+// Useful for prefixes used as routed pools where no L2 semantics apply.
+func WithNetworkAndBroadcastAllocatable() PrefixOption {
+	return func(p *Prefix) {
+		p.unreserveAddresses()
+	}
 }
 
 type Prefixes []Prefix
@@ -32,13 +50,14 @@ type Prefixes []Prefix
 // deepCopy to a new Prefix
 func (p *Prefix) deepCopy() *Prefix {
 	return &Prefix{
-		Cidr:                   p.Cidr,
-		ParentCidr:             p.ParentCidr,
-		isParent:               p.isParent,
-		childPrefixLength:      p.childPrefixLength,
-		availableChildPrefixes: copyMap(p.availableChildPrefixes),
-		ips:                    copyMap(p.ips),
-		version:                p.version,
+		Cidr:                           p.Cidr,
+		ParentCidr:                     p.ParentCidr,
+		isParent:                       p.isParent,
+		childPrefixLength:              p.childPrefixLength,
+		availableChildPrefixes:         copyMap(p.availableChildPrefixes),
+		ips:                            copyMap(p.ips),
+		version:                        p.version,
+		networkAndBroadcastAllocatable: p.networkAndBroadcastAllocatable,
 	}
 }
 
@@ -67,6 +86,9 @@ func (p *Prefix) GobEncode() ([]byte, error) {
 	if err := encoder.Encode(p.ParentCidr); err != nil {
 		return nil, err
 	}
+	if err := encoder.Encode(p.networkAndBroadcastAllocatable); err != nil {
+		return nil, err
+	}
 	return w.Bytes(), nil
 }
 
@@ -92,7 +114,18 @@ func (p *Prefix) GobDecode(buf []byte) error {
 	if err := decoder.Decode(&p.Cidr); err != nil {
 		return err
 	}
-	return decoder.Decode(&p.ParentCidr)
+	if err := decoder.Decode(&p.ParentCidr); err != nil {
+		return err
+	}
+	// encodings from before this field existed end here
+	if err := decoder.Decode(&p.networkAndBroadcastAllocatable); err != nil {
+		if errors.Is(err, io.EOF) {
+			p.networkAndBroadcastAllocatable = false
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 func copyMap(m map[string]bool) map[string]bool {
@@ -103,7 +136,9 @@ func copyMap(m map[string]bool) map[string]bool {
 
 // Usage of ips and child Prefixes of a Prefix
 type Usage struct {
-	// AvailableIPs the number of available IPs if this is not a parent prefix
+	// AvailableIPs the number of available IPs if this is not a parent prefix.
+	// The reserved network and (IPv4) broadcast address are not counted
+	// unless the prefix has them allocatable.
 	// No more than 2^31 available IPs are reported
 	AvailableIPs uint64
 	// AcquiredIPs the number of acquired IPs if this is not a parent prefix
@@ -117,7 +152,7 @@ type Usage struct {
 	AcquiredPrefixes uint64
 }
 
-func (i *ipamer) NewPrefix(ctx context.Context, cidr string) (*Prefix, error) {
+func (i *ipamer) NewPrefix(ctx context.Context, cidr string, opts ...PrefixOption) (*Prefix, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	namespace := namespaceFromContext(ctx)
@@ -128,6 +163,9 @@ func (i *ipamer) NewPrefix(ctx context.Context, cidr string) (*Prefix, error) {
 	p, err := i.newPrefix(cidr, "")
 	if err != nil {
 		return nil, err
+	}
+	for _, opt := range opts {
+		opt(p)
 	}
 	err = PrefixesOverlapping(existingPrefixes, []string{p.Cidr})
 	if err != nil {
@@ -304,7 +342,7 @@ func (i *ipamer) releaseChildPrefixInternal(ctx context.Context, namespace strin
 	if parent == nil || !parent.isParent {
 		return fmt.Errorf("prefix:%q is no child prefix", child.Cidr)
 	}
-	if len(child.ips) > 2 {
+	if child.hasIPs() {
 		return fmt.Errorf("prefix %s has ips, deletion not possible", child.Cidr)
 	}
 
@@ -446,6 +484,44 @@ func (i *ipamer) releaseIPFromPrefixInternal(ctx context.Context, namespace, pre
 		return fmt.Errorf("unable to release ip %v:%w", ip, err)
 	}
 	return nil
+}
+
+func (i *ipamer) SetPrefixNetworkAndBroadcastAllocatable(ctx context.Context, prefixCidr string, allocatable bool) (*Prefix, error) {
+	namespace := namespaceFromContext(ctx)
+	var prefix *Prefix
+	err := retryOnOptimisticLock(func() error {
+		var err error
+		prefix, err = i.setPrefixNetworkAndBroadcastAllocatableInternal(ctx, namespace, prefixCidr, allocatable)
+		return err
+	})
+	return prefix, err
+}
+
+// setPrefixNetworkAndBroadcastAllocatableInternal makes the network and
+// (IPv4) broadcast address of a prefix allocatable or reserved.
+func (i *ipamer) setPrefixNetworkAndBroadcastAllocatableInternal(ctx context.Context, namespace, prefixCidr string, allocatable bool) (*Prefix, error) {
+	prefix, err := i.PrefixFrom(ctx, prefixCidr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s error:%s", ErrNotFound, prefixCidr, err.Error())
+	}
+	if prefix == nil {
+		return nil, fmt.Errorf("%w: unable to find prefix for cidr:%s", ErrNotFound, prefixCidr)
+	}
+	if prefix.NetworkAndBroadcastAllocatable() == allocatable {
+		return prefix, nil
+	}
+	if allocatable {
+		prefix.unreserveAddresses()
+	} else {
+		if err := prefix.reserveAddresses(); err != nil {
+			return nil, err
+		}
+	}
+	updated, err := i.storage.UpdatePrefix(ctx, *prefix, namespace)
+	if err != nil {
+		return nil, fmt.Errorf("unable to persist prefix:%s error:%w", prefix.Cidr, err)
+	}
+	return &updated, nil
 }
 
 // PrefixesOverlapping will check if one ore more prefix of newPrefixes is overlapping
@@ -602,22 +678,80 @@ func (p *Prefix) Network() (netip.Addr, error) {
 	return ipprefix.Addr(), nil
 }
 
+// NetworkAndBroadcastAllocatable returns true if the network and the (IPv4)
+// broadcast address of this prefix are allocatable like any other address.
+func (p *Prefix) NetworkAndBroadcastAllocatable() bool {
+	return p.networkAndBroadcastAllocatable
+}
+
+// unreserveAddresses frees the reserved network and (IPv4)
+// broadcast address for allocation. The reserved entries are the only
+// possible owners of these addresses while the reservation is in place,
+// so removing them never releases an address held by a user.
+func (p *Prefix) unreserveAddresses() {
+	if p.networkAndBroadcastAllocatable {
+		return
+	}
+	ipprefix, err := netip.ParsePrefix(p.Cidr)
+	if err != nil {
+		return
+	}
+	iprange := netipx.RangeOfPrefix(ipprefix)
+	delete(p.ips, iprange.From().String())
+	if ipprefix.Addr().Is4() {
+		delete(p.ips, iprange.To().String())
+	}
+	p.networkAndBroadcastAllocatable = true
+}
+
+// reserveAddresses re-establishes the reservation of the network
+// and (IPv4) broadcast address. It fails if either address is currently
+// allocated.
+func (p *Prefix) reserveAddresses() error {
+	if !p.networkAndBroadcastAllocatable {
+		return nil
+	}
+	ipprefix, err := netip.ParsePrefix(p.Cidr)
+	if err != nil {
+		return err
+	}
+	iprange := netipx.RangeOfPrefix(ipprefix)
+	boundaries := []netip.Addr{iprange.From()}
+	if ipprefix.Addr().Is4() {
+		boundaries = append(boundaries, iprange.To())
+	}
+	for _, addr := range boundaries {
+		if _, ok := p.ips[addr.String()]; ok {
+			return fmt.Errorf("%w: cannot reserve %s in prefix %s, it is allocated", ErrAlreadyAllocated, addr, p.Cidr)
+		}
+	}
+	for _, addr := range boundaries {
+		p.ips[addr.String()] = true
+	}
+	p.networkAndBroadcastAllocatable = false
+	return nil
+}
+
 // hasIPs will return true if there are allocated IPs
 func (p *Prefix) hasIPs() bool {
 	ipprefix, err := netip.ParsePrefix(p.Cidr)
 	if err != nil {
 		return false
 	}
-	if ipprefix.Addr().Is4() && len(p.ips) > 2 {
-		return true
+	reserved := 0
+	if !p.networkAndBroadcastAllocatable {
+		if ipprefix.Addr().Is4() {
+			reserved = 2
+		} else {
+			reserved = 1
+		}
 	}
-	if ipprefix.Addr().Is6() && len(p.ips) > 1 {
-		return true
-	}
-	return false
+	return len(p.ips) > reserved
 }
 
-// availableips return the number of ips available in this Prefix
+// availableips return the number of ips available in this Prefix.
+// The reserved network and (IPv4) broadcast address are not counted
+// unless the prefix has them allocatable.
 func (p *Prefix) availableips() uint64 {
 	ipprefix, err := netip.ParsePrefix(p.Cidr)
 	if err != nil {
@@ -627,12 +761,38 @@ func (p *Prefix) availableips() uint64 {
 	if (ipprefix.Addr().BitLen() - ipprefix.Bits()) > 31 {
 		return math.MaxInt32
 	}
-	return 1 << (ipprefix.Addr().BitLen() - ipprefix.Bits())
+	return 1<<(ipprefix.Addr().BitLen()-ipprefix.Bits()) - p.reservedips()
 }
 
-// acquiredips return the number of ips acquired in this Prefix
+// acquiredips return the number of ips acquired in this Prefix.
+// The reserved network and (IPv4) broadcast address do not count as
+// acquired; they are excluded from availableips instead.
 func (p *Prefix) acquiredips() uint64 {
-	return uint64(len(p.ips))
+	return uint64(len(p.ips)) - p.reservedips()
+}
+
+// reservedips returns the number of reserved addresses present in this
+// Prefix: the network and (IPv4) broadcast address, unless the prefix has
+// them allocatable.
+func (p *Prefix) reservedips() uint64 {
+	if p.networkAndBroadcastAllocatable {
+		return 0
+	}
+	ipprefix, err := netip.ParsePrefix(p.Cidr)
+	if err != nil {
+		return 0
+	}
+	iprange := netipx.RangeOfPrefix(ipprefix)
+	var count uint64
+	if _, ok := p.ips[iprange.From().String()]; ok {
+		count++
+	}
+	if ipprefix.Addr().Is4() && iprange.To() != iprange.From() {
+		if _, ok := p.ips[iprange.To().String()]; ok {
+			count++
+		}
+	}
+	return count
 }
 
 // availablePrefixes will return the amount of prefixes allocatable and the amount of smallest 2 bit prefixes
