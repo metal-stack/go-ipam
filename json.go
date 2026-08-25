@@ -38,10 +38,8 @@ func (p prefixJSON) toPrefix() Prefix {
 
 func (p *Prefix) toPrefixJSON() prefixJSON {
 	return prefixJSON{
-		Prefix: Prefix{
-			Cidr:       p.Cidr,
-			ParentCidr: p.ParentCidr,
-		},
+		Cidr:                   p.Cidr,
+		ParentCidr:             p.ParentCidr,
 		AvailableChildPrefixes: p.availableChildPrefixes,
 		IsParent:               p.isParent,
 		// TODO remove this in the next release

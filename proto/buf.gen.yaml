@@ -8,6 +8,6 @@ plugins:
   - remote: buf.build/connectrpc/go:v1.20.0
     out: ../
     opt: paths=source_relative,simple
-  - remote: buf.build/protocolbuffers/go:v1.36.11
+  - remote: buf.build/protocolbuffers/go:v1.36.12
     out: ../
     opt: paths=source_relative
