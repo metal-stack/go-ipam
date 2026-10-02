@@ -160,3 +160,33 @@ func TestIpamService(t *testing.T) {
 		}
 	})
 }
+
+func TestIpamService_ListPrefixesNamespaced(t *testing.T) {
+	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	mux := http.NewServeMux()
+	mux.Handle(apiv1connect.NewIpamServiceHandler(
+		New(log, goipam.New(t.Context())),
+	))
+	server := httptest.NewUnstartedServer(mux)
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	defer server.Close()
+
+	client := apiv1connect.NewIpamServiceClient(server.Client(), server.URL)
+
+	ctx := t.Context()
+
+	_, err := client.CreatePrefix(ctx, &v1.CreatePrefixRequest{Cidr: "10.100.0.0/14"})
+	require.NoError(t, err)
+
+	namespace := "p1"
+	_, err = client.CreateNamespace(ctx, &v1.CreateNamespaceRequest{Namespace: namespace})
+	require.NoError(t, err)
+	_, err = client.CreatePrefix(ctx, &v1.CreatePrefixRequest{Cidr: "10.100.0.0/22", Namespace: &namespace})
+	require.NoError(t, err)
+
+	resp, err := client.ListPrefixes(ctx, &v1.ListPrefixesRequest{Namespace: &namespace})
+	require.NoError(t, err)
+	require.Len(t, resp.GetPrefixes(), 1)
+	assert.Equal(t, "10.100.0.0/22", resp.GetPrefixes()[0].GetCidr())
+}
