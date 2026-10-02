@@ -1557,12 +1557,6 @@ func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
 }
 
 func TestIpamer_ReadAllPrefixCidrsNamespaced(t *testing.T) {
-	// Regression test for the flaky metal-apiserver network tests: the service's
-	// ListPrefixes reads all cidrs from the root namespace and then resolves them in
-	// the requested namespace, which fails with "NotFound prefix <cidr> not found"
-	// as soon as the root namespace contains a prefix that the requested namespace
-	// does not have.
-
 	ctx := t.Context()
 
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
