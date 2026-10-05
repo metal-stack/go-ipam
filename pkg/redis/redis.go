@@ -21,12 +21,7 @@ type redis struct {
 	lock       sync.RWMutex
 }
 
-// NewRedis create a redis storage for ipam
-func NewRedis(ctx context.Context, ip, port string) (ipam.Storage, error) {
-	return newRedis(ctx, ip, port)
-}
-
-// New is an alias for NewRedis.
+// New create a redis storage for ipam
 func New(ctx context.Context, ip, port string) (ipam.Storage, error) {
 	return newRedis(ctx, ip, port)
 }

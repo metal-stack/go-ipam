@@ -23,12 +23,7 @@ type etcd struct {
 	lock       sync.RWMutex
 }
 
-// NewEtcd create a etcd storage for ipam
-func NewEtcd(ctx context.Context, ip, port string, cert, key []byte, insecureskip bool) (ipam.Storage, error) {
-	return newEtcd(ctx, ip, port, cert, key, insecureskip)
-}
-
-// New is an alias for NewEtcd.
+// New create a etcd storage for ipam
 func New(ctx context.Context, ip, port string, cert, key []byte, insecureskip bool) (ipam.Storage, error) {
 	return newEtcd(ctx, ip, port, cert, key, insecureskip)
 }

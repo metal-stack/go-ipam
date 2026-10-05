@@ -70,7 +70,7 @@ func main() {
 				},
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
-					c.Storage = file.NewLocalFile(ctx.Context, ctx.String("path"))
+					c.Storage = file.New(ctx.Context, ctx.String("path"))
 					s := newServer(c)
 					return s.Run()
 				},
@@ -156,7 +156,7 @@ func main() {
 					host := ctx.String("host")
 					port := ctx.String("port")
 					var err error
-					c.Storage, err = redis.NewRedis(ctx.Context, host, port)
+					c.Storage, err = redis.New(ctx.Context, host, port)
 					if err != nil {
 						return err
 					}
@@ -216,7 +216,7 @@ func main() {
 					}
 					insecureSkip := ctx.Bool("insecure-skip-verify")
 
-					c.Storage, err = etcd.NewEtcd(ctx.Context, host, port, cert, key, insecureSkip)
+					c.Storage, err = etcd.New(ctx.Context, host, port, cert, key, insecureSkip)
 					if err != nil {
 						return err
 					}
@@ -285,7 +285,7 @@ func main() {
 						DatabaseName:       dbname,
 						MongoClientOptions: opts,
 					}
-					db, err := mongodb.NewMongo(ctx.Context, mongocfg)
+					db, err := mongodb.New(ctx.Context, mongocfg)
 					if err != nil {
 						return err
 					}

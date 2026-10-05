@@ -62,12 +62,7 @@ func getXDGDataHome() string {
 	return val
 }
 
-// NewLocalFile creates a JSON file storage for ipam
-func NewLocalFile(ctx context.Context, path string) ipam.Storage {
-	return newFile(ctx, path)
-}
-
-// New is an alias for NewLocalFile.
+// New creates a JSON file storage for ipam
 func New(ctx context.Context, path string) ipam.Storage {
 	return newFile(ctx, path)
 }

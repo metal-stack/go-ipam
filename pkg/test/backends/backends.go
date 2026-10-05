@@ -75,7 +75,7 @@ func init() {
 			if err := fp.Close(); err != nil {
 				return nil, err
 			}
-			return &fileStorage{Storage: file.NewLocalFile(ctx, fp.Name()), path: fp.Name()}, nil
+			return &fileStorage{Storage: file.New(ctx, fp.Name()), path: fp.Name()}, nil
 		},
 		PostCleanup: func(_ context.Context, storage any) error {
 			fs, ok := storage.(*fileStorage)
@@ -262,7 +262,7 @@ func startRedis(ctx context.Context) (ipam.Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return redis.NewRedis(ctx, ip, port.Port())
+	return redis.New(ctx, ip, port.Port())
 }
 
 func startKeyDB(ctx context.Context) (ipam.Storage, error) {
@@ -292,7 +292,7 @@ func startKeyDB(ctx context.Context) (ipam.Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return redis.NewRedis(ctx, ip, port.Port())
+	return redis.New(ctx, ip, port.Port())
 }
 
 func startEtcd(ctx context.Context) (ipam.Storage, error) {
@@ -330,7 +330,7 @@ func startEtcd(ctx context.Context) (ipam.Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return etcd.NewEtcd(ctx, ip, port.Port(), nil, nil, true)
+	return etcd.New(ctx, ip, port.Port(), nil, nil, true)
 }
 
 func startMongodb(ctx context.Context) (ipam.Storage, error) {
@@ -378,5 +378,5 @@ func startMongodb(ctx context.Context) (ipam.Storage, error) {
 		DatabaseName:       `go-ipam`,
 		MongoClientOptions: opts,
 	}
-	return mongodb.NewMongo(ctx, c)
+	return mongodb.New(ctx, c)
 }

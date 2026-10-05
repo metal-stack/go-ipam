@@ -29,12 +29,7 @@ type mongodb struct {
 	lock       sync.RWMutex
 }
 
-// NewMongo creates a mongodb storage for ipam.
-func NewMongo(ctx context.Context, config MongoConfig) (ipam.Storage, error) {
-	return newMongo(ctx, config)
-}
-
-// New is an alias for NewMongo.
+// New creates a mongodb storage for ipam.
 func New(ctx context.Context, config MongoConfig) (ipam.Storage, error) {
 	return newMongo(ctx, config)
 }
