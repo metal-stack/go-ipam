@@ -1556,6 +1556,37 @@ func TestIpamer_ReadAllPrefixCidrs(t *testing.T) {
 	})
 }
 
+func TestIpamer_ReadAllPrefixCidrsNamespaced(t *testing.T) {
+	ctx := t.Context()
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		_, err := ipam.NewPrefix(ctx, "10.100.0.0/14")
+		require.NoError(t, err)
+
+		require.NoError(t, ipam.CreateNamespace(ctx, "p1"))
+
+		nsCtx := NewContextWithNamespace(ctx, "p1")
+		_, err = ipam.NewPrefix(nsCtx, "10.100.0.0/22")
+		require.NoError(t, err)
+
+		t.Cleanup(func() {
+			_, err := ipam.DeletePrefix(nsCtx, "10.100.0.0/22")
+			require.NoError(t, err)
+			require.NoError(t, ipam.DeleteNamespace(ctx, "p1"))
+			_, err = ipam.DeletePrefix(ctx, "10.100.0.0/14")
+			require.NoError(t, err)
+		})
+
+		cidrs, err := ipam.ReadAllPrefixCidrs(nsCtx)
+		require.NoError(t, err)
+		require.Equal(t, []string{"10.100.0.0/22"}, cidrs)
+
+		cidrs, err = ipam.ReadAllPrefixCidrs(ctx)
+		require.NoError(t, err)
+		require.Equal(t, []string{"10.100.0.0/14"}, cidrs)
+	})
+}
+
 func TestIpamer_NamespacedOps(t *testing.T) {
 	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {

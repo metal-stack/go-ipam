@@ -552,12 +552,7 @@ func (i *ipamer) NamespacedLoad(ctx context.Context, namespace, dump string) err
 
 // ReadAllPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
 func (i *ipamer) ReadAllPrefixCidrs(ctx context.Context) ([]string, error) {
-	return i.ReadAllNamespacedPrefixCidrs(ctx, defaultNamespace)
-}
-
-// ReadAllNamespacedPrefixCidrs retrieves all existing Prefix CIDRs from the underlying storage
-func (i *ipamer) ReadAllNamespacedPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
-	return i.storage.ReadAllPrefixCidrs(ctx, namespace)
+	return i.storage.ReadAllPrefixCidrs(ctx, namespaceFromContext(ctx))
 }
 
 // CreateNamespaces creates a namespace with the given name.
