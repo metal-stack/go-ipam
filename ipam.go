@@ -14,8 +14,10 @@ const (
 // Ipamer can be used to do IPAM stuff.
 type Ipamer interface {
 	// NewPrefix creates a new Prefix from a string notation.
+	// By default the network and the (IPv4) broadcast address are reserved;
+	// pass WithNetworkAndBroadcastAllocatable to keep them allocatable.
 	// This operation is scoped to the root namespace unless a different namespace is provided in the context.
-	NewPrefix(ctx context.Context, cidr string) (*Prefix, error)
+	NewPrefix(ctx context.Context, cidr string, opts ...PrefixOption) (*Prefix, error)
 	// DeletePrefix delete a Prefix from a string notation.
 	// If the Prefix is not found an NotFoundError is returned.
 	// This operation is scoped to the root namespace unless a different namespace is provided in the context.
@@ -49,6 +51,13 @@ type Ipamer interface {
 	// If the Prefix or the IP is not found an NotFoundError is returned.
 	// This operation is scoped to the root namespace unless a different namespace is provided in the context.
 	ReleaseIPFromPrefix(ctx context.Context, prefixCidr, ip string) error
+	// SetPrefixNetworkAndBroadcastAllocatable makes the network and the (IPv4)
+	// broadcast address of an existing prefix allocatable (true) or reserved (false).
+	// Making them allocatable is always possible and frees both addresses for allocation.
+	// Reserving them again fails with an AlreadyAllocatedError while either address is allocated.
+	// If the Prefix is not found an NotFoundError is returned.
+	// This operation is scoped to the root namespace unless a different namespace is provided in the context.
+	SetPrefixNetworkAndBroadcastAllocatable(ctx context.Context, prefixCidr string, allocatable bool) (*Prefix, error)
 	// Dump all stored prefixes as json formatted string
 	// This operation is scoped to the root namespace unless a different namespace is provided in the context.
 	Dump(ctx context.Context) (string, error)
