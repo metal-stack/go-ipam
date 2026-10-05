@@ -29,6 +29,32 @@ type Prefix struct {
 
 type Prefixes []Prefix
 
+// DeepCopy returns a deep copy of this Prefix.
+// It is exported so that external Storage implementations can safely copy
+// prefixes before persisting or returning them.
+func (p *Prefix) DeepCopy() *Prefix {
+	return p.deepCopy()
+}
+
+// Version returns the version of the Prefix used for optimistic locking.
+func (p *Prefix) Version() int64 {
+	return p.version
+}
+
+// SetVersion sets the version of the Prefix used for optimistic locking.
+func (p *Prefix) SetVersion(version int64) {
+	p.version = version
+}
+
+// IncrVersion increments the version of the Prefix by one and returns the
+// version the Prefix had before the increment. This is a helper for Storage
+// implementations which apply optimistic locking.
+func (p *Prefix) IncrVersion() int64 {
+	oldVersion := p.version
+	p.version = oldVersion + 1
+	return oldVersion
+}
+
 // deepCopy to a new Prefix
 func (p *Prefix) deepCopy() *Prefix {
 	return &Prefix{

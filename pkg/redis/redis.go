@@ -1,4 +1,6 @@
-package ipam
+// Package redis provides a Storage implementation backed by Redis (or
+// Redis-compatible databases such as KeyDB).
+package redis
 
 import (
 	"context"
@@ -7,6 +9,8 @@ import (
 	"sync"
 
 	redigo "github.com/redis/go-redis/v9"
+
+	ipam "github.com/metal-stack/go-ipam"
 )
 
 const namespaceKey = "namespaces"
@@ -18,9 +22,15 @@ type redis struct {
 }
 
 // NewRedis create a redis storage for ipam
-func NewRedis(ctx context.Context, ip, port string) (Storage, error) {
+func NewRedis(ctx context.Context, ip, port string) (ipam.Storage, error) {
 	return newRedis(ctx, ip, port)
 }
+
+// New is an alias for NewRedis.
+func New(ctx context.Context, ip, port string) (ipam.Storage, error) {
+	return newRedis(ctx, ip, port)
+}
+
 func (r *redis) Name() string {
 	return "redis"
 }
@@ -37,7 +47,7 @@ func newRedis(ctx context.Context, ip, port string) (*redis, error) {
 		namespaces: make(map[string]struct{}),
 		lock:       sync.RWMutex{},
 	}
-	if err := r.CreateNamespace(ctx, defaultNamespace); err != nil {
+	if err := r.CreateNamespace(ctx, ipam.DefaultNamespace); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -52,49 +62,50 @@ func (r *redis) checkNamespaceExists(ctx context.Context, namespace string) erro
 		return fmt.Errorf("error checking namespace: %w", err)
 	}
 	if !found {
-		return ErrNamespaceDoesNotExist
+		return ipam.ErrNamespaceDoesNotExist
 	}
 	r.namespaces[namespace] = struct{}{}
 	return nil
 }
 
-func (r *redis) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+func (r *redis) CreatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	if err := r.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	existing, err := r.rdb.HExists(ctx, namespace, prefix.Cidr).Result()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+		return ipam.Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
 	}
 	if existing {
-		return Prefix{}, fmt.Errorf("prefix:%v already exists", prefix)
+		return ipam.Prefix{}, fmt.Errorf("prefix:%v already exists", prefix)
 	}
-	pfx, err := prefix.toJSON()
+	pfx, err := prefix.ToJSON()
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	if err = r.rdb.HSet(ctx, namespace, prefix.Cidr, pfx).Err(); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	return prefix, err
 }
-func (r *redis) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefix, error) {
+
+func (r *redis) ReadPrefix(ctx context.Context, prefix, namespace string) (ipam.Prefix, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
 	if err := r.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	result, err := r.rdb.HGet(ctx, namespace, prefix).Result()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("%w unable to read existing prefix:%v, error:%w", ErrNotFound, prefix, err)
+		return ipam.Prefix{}, fmt.Errorf("%w unable to read existing prefix:%v, error:%w", ipam.ErrNotFound, prefix, err)
 	}
-	return fromJSON([]byte(result))
+	return ipam.FromJSON([]byte(result))
 }
 
 func (r *redis) DeleteAllPrefixes(ctx context.Context, namespace string) error {
@@ -106,7 +117,7 @@ func (r *redis) DeleteAllPrefixes(ctx context.Context, namespace string) error {
 	return r.rdb.Del(ctx, namespace).Err()
 }
 
-func (r *redis) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
+func (r *redis) ReadAllPrefixes(ctx context.Context, namespace string) (ipam.Prefixes, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -118,9 +129,9 @@ func (r *redis) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes
 	if err != nil {
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
-	result := Prefixes{}
+	result := ipam.Prefixes{}
 	for _, pfx := range pfxs {
-		pfx, err := fromJSON([]byte(pfx))
+		pfx, err := ipam.FromJSON([]byte(pfx))
 		if err != nil {
 			return nil, err
 		}
@@ -128,6 +139,7 @@ func (r *redis) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes
 	}
 	return result, nil
 }
+
 func (r *redis) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]string, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
@@ -146,19 +158,19 @@ func (r *redis) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]str
 	}
 	return ps, nil
 }
-func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+
+func (r *redis) UpdatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	if err := r.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
-	oldVersion := prefix.version
-	prefix.version = oldVersion + 1
-	pn, err := prefix.toJSON()
+	oldVersion := prefix.IncrVersion()
+	pn, err := prefix.ToJSON()
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	txf := func(tx *redigo.Tx) error {
@@ -167,13 +179,13 @@ func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix, namespace strin
 		if err != nil && !errors.Is(err, redigo.Nil) {
 			return err
 		}
-		oldPrefix, err := fromJSON([]byte(p))
+		oldPrefix, err := ipam.FromJSON([]byte(p))
 		if err != nil {
 			return err
 		}
 		// Actual operation (local in optimistic lock).
-		if oldPrefix.version != oldVersion {
-			return fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+		if oldPrefix.Version() != oldVersion {
+			return fmt.Errorf("%w: unable to update prefix:%s", ipam.ErrOptimisticLockError, prefix.Cidr)
 		}
 
 		// Operation is committed only if the watched keys remain unchanged.
@@ -185,23 +197,24 @@ func (r *redis) UpdatePrefix(ctx context.Context, prefix Prefix, namespace strin
 	}
 	err = r.rdb.Watch(ctx, txf, namespace)
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	return prefix, nil
 }
-func (r *redis) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+
+func (r *redis) DeletePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	if err := r.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	if err := r.rdb.HDel(ctx, namespace, prefix.Cidr).Err(); err != nil {
-		return *prefix.deepCopy(), err
+		return *prefix.DeepCopy(), err
 	}
-	return *prefix.deepCopy(), nil
+	return *prefix.DeepCopy(), nil
 }
 
 func (r *redis) CreateNamespace(ctx context.Context, namespace string) error {

@@ -1,4 +1,4 @@
-package ipam
+package postgres
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"github.com/jmoiron/sqlx"
+
+	ipam "github.com/metal-stack/go-ipam"
 )
 
 type sql struct {
@@ -28,13 +30,13 @@ CREATE INDEX IF NOT EXISTS prefix_idx ON %s USING GIN(prefix);
 }
 
 func getTableName(namespace string) string {
-	if namespace == defaultNamespace {
+	if namespace == ipam.DefaultNamespace {
 		return "prefixes"
 	}
 	return fmt.Sprintf("\"prefixes_%s\"", namespace)
 }
 
-func (s *sql) prefixExists(ctx context.Context, prefix Prefix, namespace string) (*Prefix, bool) {
+func (s *sql) prefixExists(ctx context.Context, prefix ipam.Prefix, namespace string) (*ipam.Prefix, bool) {
 	p, err := s.ReadPrefix(ctx, prefix.Cidr, namespace)
 	if err != nil {
 		return nil, false
@@ -51,27 +53,27 @@ func (s *sql) checkNamespaceExists(ctx context.Context, namespace string) error 
 		return err
 	}
 	if _, ok := s.tables.Load(namespace); !ok {
-		return ErrNamespaceDoesNotExist
+		return ipam.ErrNamespaceDoesNotExist
 	}
 	return nil
 }
 
-func (s *sql) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+func (s *sql) CreatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	if err := s.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	existingPrefix, exists := s.prefixExists(ctx, prefix, namespace)
 	if exists {
 		return *existingPrefix, nil
 	}
-	prefix.version = int64(0)
-	pj, err := prefix.toJSON()
+	prefix.SetVersion(int64(0))
+	pj, err := prefix.ToJSON()
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
 	// Defer a rollback in case anything fails.
 	defer func() {
@@ -80,27 +82,27 @@ func (s *sql) CreatePrefix(ctx context.Context, prefix Prefix, namespace string)
 
 	_, err = tx.ExecContext(ctx, "INSERT INTO "+getTableName(namespace)+"(cidr, prefix) VALUES ($1, $2)", prefix.Cidr, pj)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to insert prefix:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to insert prefix:%w", err)
 	}
 	if err := tx.Commit(); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	return prefix, nil
 }
 
-func (s *sql) ReadPrefix(ctx context.Context, prefix, namespace string) (Prefix, error) {
+func (s *sql) ReadPrefix(ctx context.Context, prefix, namespace string) (ipam.Prefix, error) {
 	if err := s.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	var result []byte
 	err := s.db.GetContext(ctx, &result, "SELECT prefix FROM "+getTableName(namespace)+" WHERE cidr=$1", prefix)
 	if err != nil {
 		if errors.Is(err, dbsql.ErrNoRows) {
-			return Prefix{}, fmt.Errorf("%w prefix:%s not found:%s", ErrNotFound, prefix, err.Error())
+			return ipam.Prefix{}, fmt.Errorf("%w prefix:%s not found:%s", ipam.ErrNotFound, prefix, err.Error())
 		}
-		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
-	return fromJSON(result)
+	return ipam.FromJSON(result)
 }
 
 func (s *sql) DeleteAllPrefixes(ctx context.Context, namespace string) error {
@@ -112,7 +114,7 @@ func (s *sql) DeleteAllPrefixes(ctx context.Context, namespace string) error {
 }
 
 // ReadAllPrefixes returns all known prefixes.
-func (s *sql) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
+func (s *sql) ReadAllPrefixes(ctx context.Context, namespace string) (ipam.Prefixes, error) {
 	if err := s.checkNamespaceExists(ctx, namespace); err != nil {
 		return nil, err
 	}
@@ -124,10 +126,10 @@ func (s *sql) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, 
 	return toPrefixes(prefixes)
 }
 
-func toPrefixes(prefixes [][]byte) ([]Prefix, error) {
-	result := Prefixes{}
+func toPrefixes(prefixes [][]byte) ([]ipam.Prefix, error) {
+	result := ipam.Prefixes{}
 	for _, v := range prefixes {
-		pfx, err := fromJSON(v)
+		pfx, err := ipam.FromJSON(v)
 		if err != nil {
 			return nil, err
 		}
@@ -151,19 +153,18 @@ func (s *sql) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]strin
 
 // UpdatePrefix tries to update the prefix.
 // Returns OptimisticLockError if it does not succeed due to a concurrent update.
-func (s *sql) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+func (s *sql) UpdatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	if err := s.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
-	oldVersion := prefix.version
-	prefix.version = oldVersion + 1
-	pn, err := prefix.toJSON()
+	oldVersion := prefix.IncrVersion()
+	pn, err := prefix.ToJSON()
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to start transaction:%w", err)
 	}
 	// Defer a rollback in case anything fails.
 	defer func() {
@@ -172,43 +173,43 @@ func (s *sql) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string)
 
 	result, err := tx.ExecContext(ctx, "SELECT prefix FROM "+getTableName(namespace)+" WHERE cidr=$1 AND prefix->>'Version'=$2 FOR UPDATE", prefix.Cidr, oldVersion)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("%w: unable to select for update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+		return ipam.Prefix{}, fmt.Errorf("%w: unable to select for update prefix:%s", ipam.ErrOptimisticLockError, prefix.Cidr)
 	}
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	if rows == 0 {
 		// Rollback, but ignore error, if rollback is omitted, the row lock created by SELECT FOR UPDATE will not get released.
 		_ = tx.Rollback()
-		return Prefix{}, fmt.Errorf("%w: select for update did not effect any row", ErrOptimisticLockError)
+		return ipam.Prefix{}, fmt.Errorf("%w: select for update did not effect any row", ipam.ErrOptimisticLockError)
 	}
 	result, err = tx.ExecContext(ctx, "UPDATE "+getTableName(namespace)+" SET prefix=$1 WHERE cidr=$2 AND prefix->>'Version'=$3", pn, prefix.Cidr, oldVersion)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+		return ipam.Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ipam.ErrOptimisticLockError, prefix.Cidr)
 	}
 	rows, err = result.RowsAffected()
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	if rows == 0 {
 		// Rollback, but ignore error, if rollback is omitted, the row lock created by SELECT FOR UPDATE will not get released.
 		_ = tx.Rollback()
-		return Prefix{}, fmt.Errorf("%w: updatePrefix did not effect any row", ErrOptimisticLockError)
+		return ipam.Prefix{}, fmt.Errorf("%w: updatePrefix did not effect any row", ipam.ErrOptimisticLockError)
 	}
 	if err := tx.Commit(); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	return prefix, nil
 }
 
-func (s *sql) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+func (s *sql) DeletePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	if err := s.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to start transaction: %w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to start transaction: %w", err)
 	}
 	// Defer a rollback in case anything fails.
 	defer func() {
@@ -217,20 +218,21 @@ func (s *sql) DeletePrefix(ctx context.Context, prefix Prefix, namespace string)
 
 	_, err = tx.ExecContext(ctx, "DELETE from "+getTableName(namespace)+" WHERE cidr=$1", prefix.Cidr)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable delete prefix: %w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable delete prefix: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	return prefix, nil
 }
+
 func (s *sql) Name() string {
 	return "postgres"
 }
 
 func (s *sql) CreateNamespace(ctx context.Context, namespace string) error {
 	if len(namespace) > s.maxIdLength {
-		return ErrNameTooLong
+		return ipam.ErrNameTooLong
 	}
 	if _, ok := s.tables.Load(namespace); !ok {
 		if _, err := s.db.ExecContext(ctx, createTableSQL(namespace)); err != nil {
@@ -248,7 +250,7 @@ func (s *sql) ListNamespaces(ctx context.Context) ([]string, error) {
 	}
 	for i := range result {
 		if result[i] == "prefixes" {
-			result[i] = defaultNamespace
+			result[i] = ipam.DefaultNamespace
 		} else {
 			result[i] = strings.TrimPrefix(result[i], "prefixes_")
 		}

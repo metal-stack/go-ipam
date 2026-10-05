@@ -8,7 +8,11 @@ import (
 type namespaceContextKey struct{}
 
 const (
-	defaultNamespace = "root"
+	// DefaultNamespace is the namespace which is used if no other namespace is
+	// provided in the context. It always exists.
+	DefaultNamespace = "root"
+	// defaultNamespace is kept as an internal alias for convenience.
+	defaultNamespace = DefaultNamespace
 )
 
 // Ipamer can be used to do IPAM stuff.
