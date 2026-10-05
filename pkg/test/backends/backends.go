@@ -1,7 +1,7 @@
-// Package backends wires all supported Storage backends into the shared
-// testregistry. It is intended to be imported (blank) by tests only, so that
-// the core ipam package and its consumers never transitively depend on any
-// database driver.
+// Package backends wires every supported Storage backend into the shared
+// benchmark suite providers. It is intended for tests/benchmarks only so the
+// core ipam package and its consumers never transitively depend on a database
+// driver.
 package backends
 
 import (
@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"testing"
+	"time"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -20,7 +22,7 @@ import (
 	"github.com/metal-stack/go-ipam/pkg/mongodb"
 	"github.com/metal-stack/go-ipam/pkg/postgres"
 	"github.com/metal-stack/go-ipam/pkg/redis"
-	"github.com/metal-stack/go-ipam/pkg/testregistry"
+	"github.com/metal-stack/go-ipam/pkg/test/suite"
 )
 
 var (
@@ -58,119 +60,69 @@ func init() {
 	keyDBVersion = envOr("KEYDB_VERSION", "latest")
 	etcdVersion = envOr("ETCD_VERSION", "v3.7.0")
 	mdbVersion = envOr("MONGODB_VERSION", "7")
+}
 
-	testregistry.Register(testregistry.Provider{
-		Name: "Memory",
-		Provide: func(ctx context.Context) (any, error) {
-			return ipam.NewMemory(ctx), nil
-		},
-	})
-	testregistry.Register(testregistry.Provider{
-		Name: "File",
-		Provide: func(ctx context.Context) (any, error) {
+// Providers returns all supported storage backends as benchmark providers.
+func Providers() []suite.BenchProvider {
+	return []suite.BenchProvider{
+		{Name: "Memory", Provide: func(tb testing.TB) ipam.Storage {
+			return ipam.NewMemory(tb.Context())
+		}},
+		{Name: "File", Provide: func(tb testing.TB) ipam.Storage {
 			fp, err := os.CreateTemp("", "go-ipam-*.json")
 			if err != nil {
-				return nil, err
+				tb.Fatal(err)
 			}
 			if err := fp.Close(); err != nil {
-				return nil, err
+				tb.Fatal(err)
 			}
-			return &fileStorage{Storage: file.New(ctx, fp.Name()), path: fp.Name()}, nil
-		},
-		PostCleanup: func(_ context.Context, storage any) error {
-			fs, ok := storage.(*fileStorage)
-			if !ok {
-				return nil
-			}
-			if _, err := os.Stat(fs.path); err != nil {
-				return nil
-			}
-			return os.Remove(fs.path)
-		},
-	})
-	testregistry.Register(testregistry.Provider{
-		Name: "Postgres",
-		Provide: func(ctx context.Context) (any, error) {
-			return startPostgres(ctx)
-		},
-		Cleanup:     cleanupNamespaces,
-		PostCleanup: cleanupNamespaces,
-	})
-	testregistry.Register(testregistry.Provider{
-		Name: "Cockroach",
-		Provide: func(ctx context.Context) (any, error) {
-			return startCockroach(ctx)
-		},
-		Cleanup:     cleanupNamespaces,
-		PostCleanup: cleanupNamespaces,
-	})
-	testregistry.Register(testregistry.Provider{
-		Name: "Redis",
-		Provide: func(ctx context.Context) (any, error) {
-			return startRedis(ctx)
-		},
-		Cleanup:     cleanupNamespaces,
-		PostCleanup: cleanupNamespaces,
-	})
-	testregistry.Register(testregistry.Provider{
-		Name: "KeyDB",
-		Provide: func(ctx context.Context) (any, error) {
-			return startKeyDB(ctx)
-		},
-		Cleanup:     cleanupNamespaces,
-		PostCleanup: cleanupNamespaces,
-	})
-	testregistry.Register(testregistry.Provider{
-		Name: "Etcd",
-		Provide: func(ctx context.Context) (any, error) {
-			return startEtcd(ctx)
-		},
-		Cleanup:     cleanupNamespaces,
-		PostCleanup: cleanupNamespaces,
-	})
-	testregistry.Register(testregistry.Provider{
-		Name: "MongoDB",
-		Provide: func(ctx context.Context) (any, error) {
-			return startMongodb(ctx)
-		},
-		Cleanup:     cleanupNamespaces,
-		PostCleanup: cleanupNamespaces,
-	})
+			tb.Cleanup(func() {
+				_ = os.Remove(fp.Name())
+			})
+			return file.New(tb.Context(), fp.Name())
+		}},
+		{Name: "Postgres", Provide: cleaning(func(tb testing.TB) (ipam.Storage, error) {
+			return startPostgres(tb)
+		})},
+		{Name: "Cockroach", Provide: cleaning(func(tb testing.TB) (ipam.Storage, error) {
+			return startCockroach(tb)
+		})},
+		{Name: "Redis", Provide: cleaning(func(tb testing.TB) (ipam.Storage, error) {
+			return startRedis(tb)
+		})},
+		{Name: "KeyDB", Provide: cleaning(func(tb testing.TB) (ipam.Storage, error) {
+			return startKeyDB(tb)
+		})},
+		{Name: "Etcd", Provide: cleaning(func(tb testing.TB) (ipam.Storage, error) {
+			return startEtcd(tb)
+		})},
+		{Name: "MongoDB", Provide: cleaning(func(tb testing.TB) (ipam.Storage, error) {
+			return startMongodb(tb)
+		})},
+	}
 }
 
-type fileStorage struct {
-	ipam.Storage
-	path string
+// cleaning wraps a backend constructor so that each benchmark starts from a
+// clean storage and cleans up afterwards.
+func cleaning(create func(tb testing.TB) (ipam.Storage, error)) suite.Provider {
+	return func(tb testing.TB) ipam.Storage {
+		s, err := create(tb)
+		if err != nil {
+			tb.Fatal(err)
+		}
+		ctx := tb.Context()
+		if err := suite.Cleanup(ctx, s); err != nil {
+			tb.Fatal(err)
+		}
+		tb.Cleanup(func() {
+			_ = suite.Cleanup(context.Background(), s)
+		})
+		return s
+	}
 }
 
-// cleanupNamespaces removes all prefixes and non-default namespaces so that
-// every test/benchmark starts from a clean state.
-func cleanupNamespaces(ctx context.Context, storage any) error {
-	s, ok := storage.(ipam.Storage)
-	if !ok {
-		return fmt.Errorf("storage is not a ipam.Storage: %T", storage)
-	}
-	namespaces, err := s.ListNamespaces(ctx)
-	if err != nil {
-		return err
-	}
-	for _, namespace := range namespaces {
-		if err := s.DeleteAllPrefixes(ctx, namespace); err != nil {
-			return err
-		}
-		if namespace == ipam.DefaultNamespace {
-			continue
-		}
-		if err := s.DeleteNamespace(ctx, namespace); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func startPostgres(ctx context.Context) (ipam.Storage, error) {
+func startPostgres(tb testing.TB) (ipam.Storage, error) {
 	pgOnce.Do(func() {
-		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        "postgres:" + pgVersion,
 			ExposedPorts: []string{"5432/tcp"},
@@ -182,7 +134,8 @@ func startPostgres(ctx context.Context) (ipam.Storage, error) {
 			),
 			Cmd: []string{"postgres", "-c", "max_connections=200"},
 		}
-		pgContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		var err error
+		pgContainer, err = testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
 		})
@@ -190,6 +143,7 @@ func startPostgres(ctx context.Context) (ipam.Storage, error) {
 			panic(err.Error())
 		}
 	})
+	ctx := tb.Context()
 	ip, err := pgContainer.Host(ctx)
 	if err != nil {
 		return nil, err
@@ -201,9 +155,8 @@ func startPostgres(ctx context.Context) (ipam.Storage, error) {
 	return postgres.New(ip, port.Port(), "postgres", "password", "postgres", postgres.SSLModeDisable)
 }
 
-func startCockroach(ctx context.Context) (ipam.Storage, error) {
+func startCockroach(tb testing.TB) (ipam.Storage, error) {
 	crOnce.Do(func() {
-		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        "cockroachdb/cockroach:" + cockroachVersion,
 			ExposedPorts: []string{"26257/tcp", "8080/tcp"},
@@ -215,7 +168,8 @@ func startCockroach(ctx context.Context) (ipam.Storage, error) {
 			),
 			Cmd: []string{"start-single-node", "--insecure", "--store=type=mem,size=70%"},
 		}
-		crContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		var err error
+		crContainer, err = testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
 		})
@@ -223,6 +177,7 @@ func startCockroach(ctx context.Context) (ipam.Storage, error) {
 			panic(err.Error())
 		}
 	})
+	ctx := tb.Context()
 	ip, err := crContainer.Host(ctx)
 	if err != nil {
 		return nil, err
@@ -234,9 +189,8 @@ func startCockroach(ctx context.Context) (ipam.Storage, error) {
 	return postgres.New(ip, port.Port(), "root", "password", "defaultdb", postgres.SSLModeDisable)
 }
 
-func startRedis(ctx context.Context) (ipam.Storage, error) {
+func startRedis(tb testing.TB) (ipam.Storage, error) {
 	redisOnce.Do(func() {
-		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        "redis:" + redisVersion,
 			ExposedPorts: []string{"6379/tcp"},
@@ -246,7 +200,8 @@ func startRedis(ctx context.Context) (ipam.Storage, error) {
 				wait.ForListeningPort("6379/tcp"),
 			),
 		}
-		redisContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		var err error
+		redisContainer, err = testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
 		})
@@ -254,6 +209,7 @@ func startRedis(ctx context.Context) (ipam.Storage, error) {
 			panic(err.Error())
 		}
 	})
+	ctx := tb.Context()
 	ip, err := redisContainer.Host(ctx)
 	if err != nil {
 		return nil, err
@@ -265,9 +221,8 @@ func startRedis(ctx context.Context) (ipam.Storage, error) {
 	return redis.New(ctx, ip, port.Port())
 }
 
-func startKeyDB(ctx context.Context) (ipam.Storage, error) {
+func startKeyDB(tb testing.TB) (ipam.Storage, error) {
 	keyDBOnce.Do(func() {
-		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        "eqalpha/keydb:" + keyDBVersion,
 			ExposedPorts: []string{"6379/tcp"},
@@ -276,7 +231,8 @@ func startKeyDB(ctx context.Context) (ipam.Storage, error) {
 				wait.ForListeningPort("6379/tcp"),
 			),
 		}
-		keyDBContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		var err error
+		keyDBContainer, err = testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
 		})
@@ -284,6 +240,7 @@ func startKeyDB(ctx context.Context) (ipam.Storage, error) {
 			panic(err.Error())
 		}
 	})
+	ctx := tb.Context()
 	ip, err := keyDBContainer.Host(ctx)
 	if err != nil {
 		return nil, err
@@ -295,9 +252,8 @@ func startKeyDB(ctx context.Context) (ipam.Storage, error) {
 	return redis.New(ctx, ip, port.Port())
 }
 
-func startEtcd(ctx context.Context) (ipam.Storage, error) {
+func startEtcd(tb testing.TB) (ipam.Storage, error) {
 	etcdOnce.Do(func() {
-		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        "quay.io/coreos/etcd:" + etcdVersion,
 			ExposedPorts: []string{"2379/tcp", "2380/tcp"},
@@ -314,7 +270,8 @@ func startEtcd(ctx context.Context) (ipam.Storage, error) {
 				wait.ForListeningPort("2380/tcp"),
 			),
 		}
-		etcdContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		var err error
+		etcdContainer, err = testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
 		})
@@ -322,6 +279,7 @@ func startEtcd(ctx context.Context) (ipam.Storage, error) {
 			panic(err.Error())
 		}
 	})
+	ctx := tb.Context()
 	ip, err := etcdContainer.Host(ctx)
 	if err != nil {
 		return nil, err
@@ -333,9 +291,8 @@ func startEtcd(ctx context.Context) (ipam.Storage, error) {
 	return etcd.New(ctx, ip, port.Port(), nil, nil, true)
 }
 
-func startMongodb(ctx context.Context) (ipam.Storage, error) {
+func startMongodb(tb testing.TB) (ipam.Storage, error) {
 	mdbOnce.Do(func() {
-		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        `mongo:` + mdbVersion,
 			ExposedPorts: []string{`27017/tcp`},
@@ -349,7 +306,8 @@ func startMongodb(ctx context.Context) (ipam.Storage, error) {
 			),
 			Cmd: []string{`mongod`},
 		}
-		mdbContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		var err error
+		mdbContainer, err = testcontainers.GenericContainer(context.Background(), testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
 		})
@@ -357,6 +315,7 @@ func startMongodb(ctx context.Context) (ipam.Storage, error) {
 			panic(err.Error())
 		}
 	})
+	ctx := tb.Context()
 	ip, err := mdbContainer.Host(ctx)
 	if err != nil {
 		return nil, err
@@ -374,9 +333,17 @@ func startMongodb(ctx context.Context) (ipam.Storage, error) {
 		Password:      `testuser`,
 	}
 
-	c := mongodb.MongoConfig{
-		DatabaseName:       `go-ipam`,
-		MongoClientOptions: opts,
+	var lastErr error
+	for range 30 {
+		m, err := mongodb.New(ctx, mongodb.MongoConfig{
+			DatabaseName:       `go-ipam`,
+			MongoClientOptions: opts,
+		})
+		if err == nil {
+			return m, nil
+		}
+		lastErr = err
+		time.Sleep(500 * time.Millisecond)
 	}
-	return mongodb.New(ctx, c)
+	return nil, lastErr
 }

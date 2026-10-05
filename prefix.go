@@ -638,8 +638,8 @@ func (p *Prefix) hasIPs() bool {
 	return false
 }
 
-// availableips return the number of ips available in this Prefix
-func (p *Prefix) availableips() uint64 {
+// AvailableIPs returns the number of ips available in this Prefix
+func (p *Prefix) AvailableIPs() uint64 {
 	ipprefix, err := netip.ParsePrefix(p.Cidr)
 	if err != nil {
 		return 0
@@ -651,13 +651,13 @@ func (p *Prefix) availableips() uint64 {
 	return 1 << (ipprefix.Addr().BitLen() - ipprefix.Bits())
 }
 
-// acquiredips return the number of ips acquired in this Prefix
-func (p *Prefix) acquiredips() uint64 {
+// AcquiredIPs returns the number of ips acquired in this Prefix
+func (p *Prefix) AcquiredIPs() uint64 {
 	return uint64(len(p.ips))
 }
 
-// availablePrefixes will return the amount of prefixes allocatable and the amount of smallest 2 bit prefixes
-func (p *Prefix) availablePrefixes() (uint64, []string) {
+// AvailablePrefixes will return the amount of prefixes allocatable and the amount of smallest 2 bit prefixes
+func (p *Prefix) AvailablePrefixes() (uint64, []string) {
 	prefix, err := netip.ParsePrefix(p.Cidr)
 	if err != nil {
 		return 0, nil
@@ -701,8 +701,8 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	return totalAvailable, availablePrefixes
 }
 
-// acquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
-func (p *Prefix) acquiredPrefixes() uint64 {
+// AcquiredPrefixes returns the amount of acquired prefixes of this prefix if this is a parent prefix
+func (p *Prefix) AcquiredPrefixes() uint64 {
 	var count uint64
 	for _, available := range p.availableChildPrefixes {
 		if !available {
@@ -714,11 +714,11 @@ func (p *Prefix) acquiredPrefixes() uint64 {
 
 // Usage report Prefix usage.
 func (p *Prefix) Usage() Usage {
-	sp, ap := p.availablePrefixes()
+	sp, ap := p.AvailablePrefixes()
 	return Usage{
-		AvailableIPs:              p.availableips(),
-		AcquiredIPs:               p.acquiredips(),
-		AcquiredPrefixes:          p.acquiredPrefixes(),
+		AvailableIPs:              p.AvailableIPs(),
+		AcquiredIPs:               p.AcquiredIPs(),
+		AcquiredPrefixes:          p.AcquiredPrefixes(),
 		AvailableSmallestPrefixes: sp,
 		AvailablePrefixes:         ap,
 	}
