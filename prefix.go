@@ -531,7 +531,7 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 
 func (i *ipamer) Dump(ctx context.Context) (string, error) {
 	// FIXME must dump all namespaces
-	return i.NamespacedDump(ctx, defaultNamespace)
+	return i.NamespacedDump(ctx, DefaultNamespace)
 }
 
 func (i *ipamer) NamespacedDump(ctx context.Context, namespace string) (string, error) {
@@ -539,7 +539,7 @@ func (i *ipamer) NamespacedDump(ctx context.Context, namespace string) (string, 
 	if err != nil {
 		return "", err
 	}
-	js, err := pfxs.toJSON()
+	js, err := pfxs.ToJSON()
 	if err != nil {
 		return "", err
 	}
@@ -548,7 +548,7 @@ func (i *ipamer) NamespacedDump(ctx context.Context, namespace string) (string, 
 
 func (i *ipamer) Load(ctx context.Context, dump string) error {
 	// FIXME must load all namespaces
-	return i.NamespacedLoad(ctx, defaultNamespace, dump)
+	return i.NamespacedLoad(ctx, DefaultNamespace, dump)
 }
 
 func (i *ipamer) NamespacedLoad(ctx context.Context, namespace, dump string) error {
@@ -559,7 +559,7 @@ func (i *ipamer) NamespacedLoad(ctx context.Context, namespace, dump string) err
 	if len(existingpfxs) > 0 {
 		return fmt.Errorf("prefixes exist, please drop existing data before loading")
 	}
-	pfxs, err := fromJSONs([]byte(dump))
+	pfxs, err := FromJSONs([]byte(dump))
 	if err != nil {
 		return err
 	}
@@ -742,10 +742,10 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 func namespaceFromContext(ctx context.Context) string {
 	raw := ctx.Value(namespaceContextKey{})
 	if raw == nil {
-		return defaultNamespace
+		return DefaultNamespace
 	}
 	if ns, ok := raw.(string); ok {
 		return ns
 	}
-	return defaultNamespace
+	return DefaultNamespace
 }

@@ -54,10 +54,6 @@ func (p *Prefix) ToPrefixJSON() PrefixJSON {
 
 // ToJSON marshals this Prefix into its JSON representation.
 func (p *Prefix) ToJSON() ([]byte, error) {
-	return p.toJSON()
-}
-
-func (p *Prefix) toJSON() ([]byte, error) {
 	pj, err := json.Marshal(p.ToPrefixJSON()) // nolint:musttag
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal prefix:%w", err)
@@ -67,10 +63,6 @@ func (p *Prefix) toJSON() ([]byte, error) {
 
 // ToJSON marshals these Prefixes into their JSON representation.
 func (ps Prefixes) ToJSON() ([]byte, error) {
-	return ps.toJSON()
-}
-
-func (ps Prefixes) toJSON() ([]byte, error) {
 	var pfxjs []PrefixJSON
 	for _, p := range ps {
 		pfxjs = append(pfxjs, p.ToPrefixJSON())
@@ -92,10 +84,6 @@ func FromJSON(js []byte) (Prefix, error) {
 	return pre.ToPrefix(), nil
 }
 
-func fromJSON(js []byte) (Prefix, error) {
-	return FromJSON(js)
-}
-
 // FromJSONs unmarshals a list of Prefixes from their JSON representation.
 func FromJSONs(js []byte) (Prefixes, error) {
 	var pres []PrefixJSON
@@ -108,8 +96,4 @@ func FromJSONs(js []byte) (Prefixes, error) {
 		pfxs = append(pfxs, pj.ToPrefix())
 	}
 	return pfxs, nil
-}
-
-func fromJSONs(js []byte) (Prefixes, error) {
-	return FromJSONs(js)
 }

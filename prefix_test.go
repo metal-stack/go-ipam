@@ -202,7 +202,7 @@ func TestNamespaceFromContext(t *testing.T) {
 		{
 			name: "empty context",
 			ctx:  context.Background(),
-			want: defaultNamespace,
+			want: DefaultNamespace,
 		},
 		{
 			name: "namespaced context",
@@ -212,7 +212,7 @@ func TestNamespaceFromContext(t *testing.T) {
 		{
 			name: "invalid context value",
 			ctx:  context.WithValue(t.Context(), namespaceContextKey{}, true),
-			want: defaultNamespace,
+			want: DefaultNamespace,
 		},
 	}
 	for _, tt := range tests {
