@@ -7,6 +7,11 @@ import (
 	"os"
 
 	goipam "github.com/metal-stack/go-ipam"
+	"github.com/metal-stack/go-ipam/pkg/etcd"
+	"github.com/metal-stack/go-ipam/pkg/file"
+	"github.com/metal-stack/go-ipam/pkg/mongodb"
+	"github.com/metal-stack/go-ipam/pkg/postgres"
+	"github.com/metal-stack/go-ipam/pkg/redis"
 	"github.com/metal-stack/v"
 	"github.com/urfave/cli/v2"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -57,7 +62,7 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:        "path",
-						Value:       goipam.DefaultLocalFilePath,
+						Value:       file.DefaultLocalFilePath,
 						DefaultText: "~/.local/share/go-ipam/ipam-db.json",
 						Usage:       "path to the file",
 						EnvVars:     []string{"GOIPAM_FILE_PATH"},
@@ -65,7 +70,7 @@ func main() {
 				},
 				Action: func(ctx *cli.Context) error {
 					c := getConfig(ctx)
-					c.Storage = goipam.NewLocalFile(ctx.Context, ctx.String("path"))
+					c.Storage = file.New(ctx.Context, ctx.String("path"))
 					s := newServer(c)
 					return s.Run()
 				},
@@ -120,7 +125,7 @@ func main() {
 					password := ctx.String("password")
 					dbname := ctx.String("dbname")
 					sslmode := ctx.String("sslmode")
-					pgStorage, err := goipam.NewPostgresStorage(host, port, user, password, dbname, goipam.SSLMode(sslmode))
+					pgStorage, err := postgres.New(host, port, user, password, dbname, postgres.SSLMode(sslmode))
 					if err != nil {
 						return err
 					}
@@ -151,7 +156,7 @@ func main() {
 					host := ctx.String("host")
 					port := ctx.String("port")
 					var err error
-					c.Storage, err = goipam.NewRedis(ctx.Context, host, port)
+					c.Storage, err = redis.New(ctx.Context, host, port)
 					if err != nil {
 						return err
 					}
@@ -211,7 +216,7 @@ func main() {
 					}
 					insecureSkip := ctx.Bool("insecure-skip-verify")
 
-					c.Storage, err = goipam.NewEtcd(ctx.Context, host, port, cert, key, insecureSkip)
+					c.Storage, err = etcd.New(ctx.Context, host, port, cert, key, insecureSkip)
 					if err != nil {
 						return err
 					}
@@ -276,11 +281,11 @@ func main() {
 						Password:      password,
 					}
 
-					mongocfg := goipam.MongoConfig{
+					mongocfg := mongodb.MongoConfig{
 						DatabaseName:       dbname,
 						MongoClientOptions: opts,
 					}
-					db, err := goipam.NewMongo(ctx.Context, mongocfg)
+					db, err := mongodb.New(ctx.Context, mongocfg)
 					if err != nil {
 						return err
 					}

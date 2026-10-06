@@ -1,4 +1,7 @@
-package ipam
+// Package file provides a Storage implementation which persists the state to a
+// local JSON file. It is backed by an in-memory storage and reloads/persists on
+// every operation.
+package file
 
 import (
 	"context"
@@ -10,6 +13,8 @@ import (
 	"path"
 	"sync"
 	"time"
+
+	ipam "github.com/metal-stack/go-ipam"
 )
 
 type file struct {
@@ -20,8 +25,8 @@ type file struct {
 	// modTime helps with tracking external file changes
 	// usages of modTime will be deprecated after implementing filesystem-level locking
 	modTime time.Time
-	// parent implements internal state management, currently it is always NewMemory()
-	parent Storage
+	// parent implements internal state management, currently it is always ipam.NewMemory()
+	parent ipam.Storage
 	// lock at some point should be replaced with filesystem lock
 	lock sync.RWMutex
 }
@@ -32,7 +37,7 @@ var (
 )
 
 // fileJSONData is a representation of JSON file's structure
-type fileJSONData map[string]map[string]prefixJSON
+type fileJSONData map[string]map[string]ipam.PrefixJSON
 
 func init() {
 	nullModTime = time.Unix(0, 0)
@@ -57,12 +62,16 @@ func getXDGDataHome() string {
 	return val
 }
 
-// NewLocalFile creates a JSON file storage for ipam
-func NewLocalFile(ctx context.Context, path string) Storage {
+// New creates a JSON file storage for ipam
+func New(ctx context.Context, path string) ipam.Storage {
+	return newFile(ctx, path)
+}
+
+func newFile(ctx context.Context, path string) *file {
 	return &file{
 		path:       path,
 		prettyJSON: true,
-		parent:     NewMemory(ctx),
+		parent:     ipam.NewMemory(ctx),
 		modTime:    nullModTime,
 		lock:       sync.RWMutex{},
 	}
@@ -78,7 +87,7 @@ func (f *file) clearParent(ctx context.Context) (err error) {
 		if err = f.parent.DeleteAllPrefixes(ctx, namespace); err != nil {
 			return fmt.Errorf("failed to delete prefixes for %s namespace: %w", namespace, err)
 		}
-		if namespace == defaultNamespace {
+		if namespace == ipam.DefaultNamespace {
 			// skip deletion instead of replicating NewMemory behavior
 			continue
 		}
@@ -133,7 +142,7 @@ func (f *file) reload(ctx context.Context) (err error) {
 			return fmt.Errorf("failed to reload a %s namespace: %w", namespace, err)
 		}
 		for _, prefix := range prefixes {
-			if _, err = f.parent.CreatePrefix(ctx, prefix.toPrefix(), namespace); err != nil {
+			if _, err = f.parent.CreatePrefix(ctx, prefix.ToPrefix(), namespace); err != nil {
 				return fmt.Errorf("failed to reload a %s prefix in %s namespace: %w", prefix.Cidr, namespace, err)
 			}
 		}
@@ -148,7 +157,7 @@ func (f *file) reload(ctx context.Context) (err error) {
 func (f *file) persist(ctx context.Context) (err error) {
 	storage := make(fileJSONData)
 	var (
-		prefixes map[string]prefixJSON
+		prefixes map[string]ipam.PrefixJSON
 		ok       bool
 		data     []byte
 	)
@@ -159,7 +168,7 @@ func (f *file) persist(ctx context.Context) (err error) {
 	}
 	for _, namespace := range namespaces {
 		if prefixes, ok = storage[namespace]; !ok {
-			prefixes = make(map[string]prefixJSON)
+			prefixes = make(map[string]ipam.PrefixJSON)
 			storage[namespace] = prefixes
 		}
 		ps, err := f.parent.ReadAllPrefixes(ctx, namespace)
@@ -167,7 +176,7 @@ func (f *file) persist(ctx context.Context) (err error) {
 			return fmt.Errorf("failed to read prefixes of %s namespace while building external state representation: %w", namespace, err)
 		}
 		for _, prefix := range ps {
-			prefixes[prefix.Cidr] = prefix.toPrefixJSON()
+			prefixes[prefix.Cidr] = prefix.ToPrefixJSON()
 		}
 	}
 	if f.prettyJSON {
@@ -185,11 +194,12 @@ func (f *file) persist(ctx context.Context) (err error) {
 	f.modTime = f.getModTime()
 	return err
 }
+
 func (f *file) Name() string {
 	return "file"
 }
 
-func (f *file) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (p Prefix, err error) {
+func (f *file) CreatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (p ipam.Prefix, err error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
@@ -204,7 +214,7 @@ func (f *file) CreatePrefix(ctx context.Context, prefix Prefix, namespace string
 	return p, f.persist(ctx)
 }
 
-func (f *file) ReadPrefix(ctx context.Context, prefix, namespace string) (p Prefix, err error) {
+func (f *file) ReadPrefix(ctx context.Context, prefix, namespace string) (p ipam.Prefix, err error) {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 	if err = f.reload(ctx); err != nil {
@@ -226,7 +236,7 @@ func (f *file) DeleteAllPrefixes(ctx context.Context, namespace string) (err err
 	return f.persist(ctx)
 }
 
-func (f *file) ReadAllPrefixes(ctx context.Context, namespace string) (ps Prefixes, err error) {
+func (f *file) ReadAllPrefixes(ctx context.Context, namespace string) (ps ipam.Prefixes, err error) {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 
@@ -246,7 +256,7 @@ func (f *file) ReadAllPrefixCidrs(ctx context.Context, namespace string) (cidrs 
 	return f.parent.ReadAllPrefixCidrs(ctx, namespace)
 }
 
-func (f *file) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (p Prefix, err error) {
+func (f *file) UpdatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (p ipam.Prefix, err error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
@@ -258,7 +268,8 @@ func (f *file) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string
 	}
 	return p, f.persist(ctx)
 }
-func (f *file) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (p Prefix, err error) {
+
+func (f *file) DeletePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (p ipam.Prefix, err error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 

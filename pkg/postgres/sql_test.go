@@ -1,4 +1,4 @@
-package ipam
+package postgres
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	ipam "github.com/metal-stack/go-ipam"
 )
 
 func Test_sql_prefixExists(t *testing.T) {
@@ -15,25 +17,25 @@ func Test_sql_prefixExists(t *testing.T) {
 		require.NotNil(t, db)
 
 		// Existing Prefix
-		prefix := Prefix{Cidr: "10.0.0.0/16"}
-		p, err := db.CreatePrefix(ctx, prefix, defaultNamespace)
+		prefix := ipam.Prefix{Cidr: "10.0.0.0/16"}
+		p, err := db.CreatePrefix(ctx, prefix, ipam.DefaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, prefix.Cidr, p.Cidr)
-		got, exists := db.prefixExists(ctx, prefix, defaultNamespace)
+		got, exists := db.prefixExists(ctx, prefix, ipam.DefaultNamespace)
 		require.True(t, exists)
 		require.Equal(t, got.Cidr, prefix.Cidr)
 
 		// NonExisting Prefix
-		notExistingPrefix := Prefix{Cidr: "10.0.0.0/8"}
-		got, exists = db.prefixExists(ctx, notExistingPrefix, defaultNamespace)
+		notExistingPrefix := ipam.Prefix{Cidr: "10.0.0.0/8"}
+		got, exists = db.prefixExists(ctx, notExistingPrefix, ipam.DefaultNamespace)
 		require.False(t, exists)
 		require.Nil(t, got)
 
 		// Delete Existing Prefix
-		_, err = db.DeletePrefix(ctx, prefix, defaultNamespace)
+		_, err = db.DeletePrefix(ctx, prefix, ipam.DefaultNamespace)
 		require.NoError(t, err)
-		got, exists = db.prefixExists(ctx, prefix, defaultNamespace)
+		got, exists = db.prefixExists(ctx, prefix, ipam.DefaultNamespace)
 		require.False(t, exists)
 		require.Nil(t, got)
 	})
@@ -45,25 +47,25 @@ func Test_sql_CreatePrefix(t *testing.T) {
 		require.NotNil(t, db)
 
 		// Existing Prefix
-		prefix := Prefix{Cidr: "11.0.0.0/16"}
-		got, exists := db.prefixExists(ctx, prefix, defaultNamespace)
+		prefix := ipam.Prefix{Cidr: "11.0.0.0/16"}
+		got, exists := db.prefixExists(ctx, prefix, ipam.DefaultNamespace)
 		require.False(t, exists)
 		require.Nil(t, got)
-		p, err := db.CreatePrefix(ctx, prefix, defaultNamespace)
+		p, err := db.CreatePrefix(ctx, prefix, ipam.DefaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, prefix.Cidr, p.Cidr)
-		got, exists = db.prefixExists(ctx, prefix, defaultNamespace)
+		got, exists = db.prefixExists(ctx, prefix, ipam.DefaultNamespace)
 		require.True(t, exists)
 		require.Equal(t, got.Cidr, prefix.Cidr)
 
 		// Duplicate Prefix
-		p, err = db.CreatePrefix(ctx, prefix, defaultNamespace)
+		p, err = db.CreatePrefix(ctx, prefix, ipam.DefaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, p)
 		require.Equal(t, prefix.Cidr, p.Cidr)
 
-		ps, err := db.ReadAllPrefixCidrs(ctx, defaultNamespace)
+		ps, err := db.ReadAllPrefixCidrs(ctx, ipam.DefaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
 		require.Len(t, ps, 1)
@@ -78,10 +80,10 @@ func Test_sql_ReadPrefix(t *testing.T) {
 		// Prefix
 		p, err := db.ReadPrefix(ctx, "12.0.0.0/8", "a")
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNamespaceDoesNotExist)
+		require.ErrorIs(t, err, ipam.ErrNamespaceDoesNotExist)
 		require.Empty(t, p)
 
-		prefix := Prefix{Cidr: "12.0.0.0/16"}
+		prefix := ipam.Prefix{Cidr: "12.0.0.0/16"}
 
 		// Create Namespace
 		err = db.CreateNamespace(ctx, "a")
@@ -104,25 +106,25 @@ func Test_sql_ReadAllPrefix(t *testing.T) {
 		require.NotNil(t, db)
 
 		// no Prefixes
-		ps, err := db.ReadAllPrefixCidrs(ctx, defaultNamespace)
+		ps, err := db.ReadAllPrefixCidrs(ctx, ipam.DefaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
 		require.Empty(t, ps)
 
 		// One Prefix
-		prefix := Prefix{Cidr: "12.0.0.0/16"}
-		p, err := db.CreatePrefix(ctx, prefix, defaultNamespace)
+		prefix := ipam.Prefix{Cidr: "12.0.0.0/16"}
+		p, err := db.CreatePrefix(ctx, prefix, ipam.DefaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, p)
-		ps, err = db.ReadAllPrefixCidrs(ctx, defaultNamespace)
+		ps, err = db.ReadAllPrefixCidrs(ctx, ipam.DefaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
 		require.Len(t, ps, 1)
 
 		// no Prefixes again
-		_, err = db.DeletePrefix(ctx, prefix, defaultNamespace)
+		_, err = db.DeletePrefix(ctx, prefix, ipam.DefaultNamespace)
 		require.NoError(t, err)
-		ps, err = db.ReadAllPrefixCidrs(ctx, defaultNamespace)
+		ps, err = db.ReadAllPrefixCidrs(ctx, ipam.DefaultNamespace)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
 		require.Empty(t, ps)
@@ -156,7 +158,7 @@ func Test_sql_CreateNamespace(t *testing.T) {
 			namespace := "d4546731-6056-4b48-80e9-ef924ca7f651d4546731-6056-4b48-80e9-ef924ca7f651d4546731-6056-4b48-80e9-ef924ca7f651d4546731-6056-4b48-80e9-ef924ca7f651"
 			err := db.CreateNamespace(ctx, namespace)
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrNameTooLong)
+			require.ErrorIs(t, err, ipam.ErrNameTooLong)
 		}
 	})
 }
@@ -166,7 +168,7 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 
-		ipamer := NewWithStorage(db)
+		ipamer := ipam.NewWithStorage(db)
 
 		const parentCidr = "1.0.0.0/16"
 		_, err := ipamer.NewPrefix(ctx, parentCidr)
@@ -193,9 +195,9 @@ func Test_ConcurrentAcquirePrefix(t *testing.T) {
 
 func acquirePrefix(t *testing.T, ctx context.Context, db *sql, cidr string, prefixes chan string) {
 	require.NotNil(t, db)
-	ipamer := NewWithStorage(db)
+	ipamer := ipam.NewWithStorage(db)
 
-	var cp *Prefix
+	var cp *ipam.Prefix
 	var err error
 	for cp == nil {
 		cp, err = ipamer.AcquireChildPrefix(ctx, cidr, 26)
@@ -212,7 +214,7 @@ func Test_ConcurrentAcquireIP(t *testing.T) {
 	testWithSQLBackends(t, func(t *testing.T, db *sql) {
 		require.NotNil(t, db)
 
-		ipamer := NewWithStorage(db)
+		ipamer := ipam.NewWithStorage(db)
 
 		const parentCidr = "2.7.0.0/16"
 		_, err := ipamer.NewPrefix(ctx, parentCidr)
@@ -239,9 +241,9 @@ func Test_ConcurrentAcquireIP(t *testing.T) {
 
 func acquireIP(t *testing.T, ctx context.Context, db *sql, prefix string, ips chan string) {
 	require.NotNil(t, db)
-	ipamer := NewWithStorage(db)
+	ipamer := ipam.NewWithStorage(db)
 
-	var ip *IP
+	var ip *ipam.IP
 	var err error
 	for ip == nil {
 		ip, err = ipamer.AcquireIP(ctx, prefix)

@@ -27,9 +27,14 @@ benchstat:
 	CGO_ENABLED=1 $(GO) test -bench . -run=- -count 5 -benchmem > new.txt
 	benchstat old.txt new.txt
 
+# Packages that are instrumented for coverage. Test-only helper packages
+# (pkg/test/suite, pkg/test/backends, ...) are excluded so that they are not
+# reported as production code with 0% coverage.
+COVERPKG := $(shell $(GO) list ./... 2>/dev/null | grep -v '/pkg/test' | paste -sd, -)
+
 .PHONY: test
 test:
-	CGO_ENABLED=1 $(GO) test -v ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
+	CGO_ENABLED=1 $(GO) test -v ./... -coverpkg=$(COVERPKG) -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
 
 .PHONY: fuzz
 fuzz:

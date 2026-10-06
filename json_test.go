@@ -28,30 +28,30 @@ func TestPrefixes_JSON(t *testing.T) {
 		version:                0,
 	}
 
-	p1j, err := p1.toJSON()
+	p1j, err := p1.ToJSON()
 	require.NoError(t, err)
 	require.NotNil(t, p1j)
-	p2j, err := p2.toJSON()
+	p2j, err := p2.ToJSON()
 	require.NoError(t, err)
 	require.NotNil(t, p1j)
 
-	p1reverse, err := fromJSON(p1j)
+	p1reverse, err := FromJSON(p1j)
 	require.NoError(t, err)
 	require.NotNil(t, p1reverse)
 	require.Equal(t, p1, p1reverse)
 
-	p2reverse, err := fromJSON(p2j)
+	p2reverse, err := FromJSON(p2j)
 	require.NoError(t, err)
 	require.NotNil(t, p2reverse)
 	require.Equal(t, p2, p2reverse)
 
 	ps1 := Prefixes{p1, p2}
 
-	ps1j, err := ps1.toJSON()
+	ps1j, err := ps1.ToJSON()
 	require.NoError(t, err)
 	require.NotNil(t, ps1j)
 
-	ps1reverse, err := fromJSONs(ps1j)
+	ps1reverse, err := FromJSONs(ps1j)
 	require.NoError(t, err)
 	require.NotNil(t, ps1reverse)
 	require.Equal(t, ps1, ps1reverse)

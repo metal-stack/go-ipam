@@ -1,4 +1,5 @@
-package ipam
+// Package etcd provides a Storage implementation backed by etcd.
+package etcd
 
 import (
 	"context"
@@ -10,7 +11,11 @@ import (
 	"time"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
+
+	ipam "github.com/metal-stack/go-ipam"
 )
+
+const namespaceKey = "namespaces"
 
 type etcd struct {
 	etcdDB     *clientv3.Client
@@ -18,8 +23,8 @@ type etcd struct {
 	lock       sync.RWMutex
 }
 
-// NewEtcd create a etcd storage for ipam
-func NewEtcd(ctx context.Context, ip, port string, cert, key []byte, insecureskip bool) (Storage, error) {
+// New create a etcd storage for ipam
+func New(ctx context.Context, ip, port string, cert, key []byte, insecureskip bool) (ipam.Storage, error) {
 	return newEtcd(ctx, ip, port, cert, key, insecureskip)
 }
 
@@ -59,7 +64,7 @@ func newEtcd(ctx context.Context, ip, port string, cert, key []byte, insecureski
 		lock:       sync.RWMutex{},
 	}
 
-	if err := e.CreateNamespace(ctx, defaultNamespace); err != nil {
+	if err := e.CreateNamespace(ctx, ipam.DefaultNamespace); err != nil {
 		return nil, err
 	}
 
@@ -82,18 +87,18 @@ func (e *etcd) checkNamespaceExists(ctx context.Context, namespace string) error
 		return fmt.Errorf("unable to read namespace key: %w", err)
 	}
 	if res.Count == 0 {
-		return ErrNamespaceDoesNotExist
+		return ipam.ErrNamespaceDoesNotExist
 	}
 	e.namespaces[namespace] = struct{}{}
 	return nil
 }
 
-func (e *etcd) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+func (e *etcd) CreatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	if err := e.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -101,33 +106,33 @@ func (e *etcd) CreatePrefix(ctx context.Context, prefix Prefix, namespace string
 	key := namespace + "@" + prefix.Cidr
 	get, err := e.etcdDB.Get(ctx, key)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
+		return ipam.Prefix{}, fmt.Errorf("unable to read existing prefix:%v, error:%w", prefix, err)
 	}
 
 	if get.Count != 0 {
-		return Prefix{}, fmt.Errorf("prefix already exists:%v", prefix)
+		return ipam.Prefix{}, fmt.Errorf("prefix already exists:%v", prefix)
 	}
 
-	pfx, err := prefix.toJSON()
+	pfx, err := prefix.ToJSON()
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 	ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	_, err = e.etcdDB.Put(ctx, key, string(pfx))
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to create prefix:%v, error:%w", prefix, err)
+		return ipam.Prefix{}, fmt.Errorf("unable to create prefix:%v, error:%w", prefix, err)
 	}
 
 	return prefix, nil
 }
 
-func (e *etcd) ReadPrefix(ctx context.Context, prefix string, namespace string) (Prefix, error) {
+func (e *etcd) ReadPrefix(ctx context.Context, prefix string, namespace string) (ipam.Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	if err := e.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -135,14 +140,14 @@ func (e *etcd) ReadPrefix(ctx context.Context, prefix string, namespace string) 
 	key := namespace + "@" + prefix
 	get, err := e.etcdDB.Get(ctx, key)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read data from ETCD error:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to read data from ETCD error:%w", err)
 	}
 
 	if get.Count == 0 {
-		return Prefix{}, fmt.Errorf("%w unable to read existing prefix:%v, error:%w", ErrNotFound, prefix, err)
+		return ipam.Prefix{}, fmt.Errorf("%w unable to read existing prefix:%v, error:%w", ipam.ErrNotFound, prefix, err)
 	}
 
-	return fromJSON(get.Kvs[0].Value)
+	return ipam.FromJSON(get.Kvs[0].Value)
 }
 
 func (e *etcd) DeleteAllPrefixes(ctx context.Context, namespace string) error {
@@ -170,7 +175,7 @@ func (e *etcd) DeleteAllPrefixes(ctx context.Context, namespace string) error {
 	return nil
 }
 
-func (e *etcd) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
+func (e *etcd) ReadAllPrefixes(ctx context.Context, namespace string) (ipam.Prefixes, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -186,13 +191,13 @@ func (e *etcd) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes,
 		return nil, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
-	result := Prefixes{}
+	result := ipam.Prefixes{}
 	for _, pfx := range pfxs.Kvs {
 		v, err := e.etcdDB.Get(ctx, string(pfx.Key))
 		if err != nil {
 			return nil, err
 		}
-		pfx, err := fromJSON(v.Kvs[0].Value)
+		pfx, err := ipam.FromJSON(v.Kvs[0].Value)
 		if err != nil {
 			return nil, err
 		}
@@ -223,7 +228,7 @@ func (e *etcd) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]stri
 		if err != nil {
 			return nil, err
 		}
-		pfx, err := fromJSON(v.Kvs[0].Value)
+		pfx, err := ipam.FromJSON(v.Kvs[0].Value)
 		if err != nil {
 			return nil, err
 		}
@@ -232,19 +237,19 @@ func (e *etcd) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]stri
 
 	return allPrefix, nil
 }
-func (e *etcd) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+
+func (e *etcd) UpdatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	if err := e.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
-	oldVersion := prefix.version
-	prefix.version = oldVersion + 1
-	pn, err := prefix.toJSON()
+	oldVersion := prefix.IncrVersion()
+	pn, err := prefix.ToJSON()
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -252,21 +257,21 @@ func (e *etcd) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string
 	key := namespace + "@" + prefix.Cidr
 	p, err := e.etcdDB.Get(ctx, key)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read cidrs from ETCD:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to read cidrs from ETCD:%w", err)
 	}
 
 	if p.Count == 0 {
-		return Prefix{}, fmt.Errorf("unable to get all prefix cidrs:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to get all prefix cidrs:%w", err)
 	}
 
-	oldPrefix, err := fromJSON([]byte(p.Kvs[0].Value))
+	oldPrefix, err := ipam.FromJSON([]byte(p.Kvs[0].Value))
 	if err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	// Actual operation (local in optimistic lock).
-	if oldPrefix.version != oldVersion {
-		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+	if oldPrefix.Version() != oldVersion {
+		return ipam.Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ipam.ErrOptimisticLockError, prefix.Cidr)
 	}
 
 	// Operation is committed only if the watched keys remain unchanged.
@@ -274,17 +279,18 @@ func (e *etcd) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string
 	defer cancel()
 	_, err = e.etcdDB.Put(ctx, key, string(pn))
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to update prefix:%s, error:%w", prefix.Cidr, err)
+		return ipam.Prefix{}, fmt.Errorf("unable to update prefix:%s, error:%w", prefix.Cidr, err)
 	}
 
 	return prefix, nil
 }
-func (e *etcd) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+
+func (e *etcd) DeletePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	if err := e.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -292,9 +298,9 @@ func (e *etcd) DeletePrefix(ctx context.Context, prefix Prefix, namespace string
 	key := namespace + "@" + prefix.Cidr
 	_, err := e.etcdDB.Delete(ctx, key)
 	if err != nil {
-		return *prefix.deepCopy(), err
+		return *prefix.DeepCopy(), err
 	}
-	return *prefix.deepCopy(), nil
+	return *prefix.DeepCopy(), nil
 }
 
 func (e *etcd) CreateNamespace(ctx context.Context, namespace string) error {
