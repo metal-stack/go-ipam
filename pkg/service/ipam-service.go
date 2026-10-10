@@ -25,6 +25,14 @@ func New(log *slog.Logger, ipamer goipam.Ipamer) *IPAMService {
 	}
 }
 
+func toV1Prefix(p *goipam.Prefix) *v1.Prefix {
+	return &v1.Prefix{
+		Cidr:                           p.Cidr,
+		ParentCidr:                     p.ParentCidr,
+		NetworkAndBroadcastAllocatable: p.NetworkAndBroadcastAllocatable(),
+	}
+}
+
 func (i *IPAMService) Version(context.Context, *v1.VersionRequest) (*v1.VersionResponse, error) {
 	return &v1.VersionResponse{
 		Version:   v.Version,
@@ -38,7 +46,11 @@ func (i *IPAMService) CreatePrefix(ctx context.Context, req *v1.CreatePrefixRequ
 	if req.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.GetNamespace())
 	}
-	resp, err := i.ipamer.NewPrefix(ctx, req.GetCidr())
+	var opts []goipam.PrefixOption
+	if req.GetNetworkAndBroadcastAllocatable() {
+		opts = append(opts, goipam.WithNetworkAndBroadcastAllocatable())
+	}
+	resp, err := i.ipamer.NewPrefix(ctx, req.GetCidr(), opts...)
 	if err != nil {
 		if errors.Is(err, goipam.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
@@ -46,10 +58,7 @@ func (i *IPAMService) CreatePrefix(ctx context.Context, req *v1.CreatePrefixRequ
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return &v1.CreatePrefixResponse{
-		Prefix: &v1.Prefix{
-			Cidr:       resp.Cidr,
-			ParentCidr: resp.ParentCidr,
-		},
+		Prefix: toV1Prefix(resp),
 	}, nil
 }
 func (i *IPAMService) DeletePrefix(ctx context.Context, req *v1.DeletePrefixRequest) (*v1.DeletePrefixResponse, error) {
@@ -65,10 +74,7 @@ func (i *IPAMService) DeletePrefix(ctx context.Context, req *v1.DeletePrefixRequ
 	}
 
 	return &v1.DeletePrefixResponse{
-		Prefix: &v1.Prefix{
-			Cidr:       resp.Cidr,
-			ParentCidr: resp.ParentCidr,
-		},
+		Prefix: toV1Prefix(resp),
 	}, nil
 }
 func (i *IPAMService) GetPrefix(ctx context.Context, req *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error) {
@@ -84,10 +90,7 @@ func (i *IPAMService) GetPrefix(ctx context.Context, req *v1.GetPrefixRequest) (
 	}
 
 	return &v1.GetPrefixResponse{
-		Prefix: &v1.Prefix{
-			Cidr:       resp.Cidr,
-			ParentCidr: resp.ParentCidr,
-		},
+		Prefix: toV1Prefix(resp),
 	}, nil
 }
 func (i *IPAMService) ListPrefixes(ctx context.Context, req *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error) {
@@ -105,10 +108,29 @@ func (i *IPAMService) ListPrefixes(ctx context.Context, req *v1.ListPrefixesRequ
 		if err != nil || p == nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		result = append(result, &v1.Prefix{Cidr: cidr, ParentCidr: p.ParentCidr})
+		result = append(result, toV1Prefix(p))
 	}
 	return &v1.ListPrefixesResponse{
 		Prefixes: result,
+	}, nil
+}
+
+func (i *IPAMService) SetPrefixNetworkAndBroadcastAllocatable(ctx context.Context, req *v1.SetPrefixNetworkAndBroadcastAllocatableRequest) (*v1.SetPrefixNetworkAndBroadcastAllocatableResponse, error) {
+	if req.GetNamespace() != "" {
+		ctx = goipam.NewContextWithNamespace(ctx, req.GetNamespace())
+	}
+	resp, err := i.ipamer.SetPrefixNetworkAndBroadcastAllocatable(ctx, req.GetCidr(), req.GetNetworkAndBroadcastAllocatable())
+	if err != nil {
+		if errors.Is(err, goipam.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		if errors.Is(err, goipam.ErrAlreadyAllocated) {
+			return nil, connect.NewError(connect.CodeAlreadyExists, err)
+		}
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	return &v1.SetPrefixNetworkAndBroadcastAllocatableResponse{
+		Prefix: toV1Prefix(resp),
 	}, nil
 }
 
@@ -138,10 +160,7 @@ func (i *IPAMService) AcquireChildPrefix(ctx context.Context, req *v1.AcquireChi
 		}
 	}
 	return &v1.AcquireChildPrefixResponse{
-		Prefix: &v1.Prefix{
-			Cidr:       resp.Cidr,
-			ParentCidr: resp.ParentCidr,
-		},
+		Prefix: toV1Prefix(resp),
 	}, nil
 }
 
@@ -162,10 +181,7 @@ func (i *IPAMService) ReleaseChildPrefix(ctx context.Context, req *v1.ReleaseChi
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return &v1.ReleaseChildPrefixResponse{
-		Prefix: &v1.Prefix{
-			Cidr:       prefix.Cidr,
-			ParentCidr: prefix.ParentCidr,
-		},
+		Prefix: toV1Prefix(prefix),
 	}, nil
 }
 

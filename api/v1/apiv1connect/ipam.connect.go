@@ -41,6 +41,9 @@ const (
 	IpamServiceDeletePrefixProcedure = "/api.v1.IpamService/DeletePrefix"
 	// IpamServiceGetPrefixProcedure is the fully-qualified name of the IpamService's GetPrefix RPC.
 	IpamServiceGetPrefixProcedure = "/api.v1.IpamService/GetPrefix"
+	// IpamServiceSetPrefixNetworkAndBroadcastAllocatableProcedure is the fully-qualified name of the
+	// IpamService's SetPrefixNetworkAndBroadcastAllocatable RPC.
+	IpamServiceSetPrefixNetworkAndBroadcastAllocatableProcedure = "/api.v1.IpamService/SetPrefixNetworkAndBroadcastAllocatable"
 	// IpamServiceListPrefixesProcedure is the fully-qualified name of the IpamService's ListPrefixes
 	// RPC.
 	IpamServiceListPrefixesProcedure = "/api.v1.IpamService/ListPrefixes"
@@ -78,6 +81,7 @@ type IpamServiceClient interface {
 	CreatePrefix(context.Context, *v1.CreatePrefixRequest) (*v1.CreatePrefixResponse, error)
 	DeletePrefix(context.Context, *v1.DeletePrefixRequest) (*v1.DeletePrefixResponse, error)
 	GetPrefix(context.Context, *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error)
+	SetPrefixNetworkAndBroadcastAllocatable(context.Context, *v1.SetPrefixNetworkAndBroadcastAllocatableRequest) (*v1.SetPrefixNetworkAndBroadcastAllocatableResponse, error)
 	ListPrefixes(context.Context, *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error)
 	PrefixUsage(context.Context, *v1.PrefixUsageRequest) (*v1.PrefixUsageResponse, error)
 	AcquireChildPrefix(context.Context, *v1.AcquireChildPrefixRequest) (*v1.AcquireChildPrefixResponse, error)
@@ -119,6 +123,12 @@ func NewIpamServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			httpClient,
 			baseURL+IpamServiceGetPrefixProcedure,
 			connect.WithSchema(ipamServiceMethods.ByName("GetPrefix")),
+			connect.WithClientOptions(opts...),
+		),
+		setPrefixNetworkAndBroadcastAllocatable: connect.NewClient[v1.SetPrefixNetworkAndBroadcastAllocatableRequest, v1.SetPrefixNetworkAndBroadcastAllocatableResponse](
+			httpClient,
+			baseURL+IpamServiceSetPrefixNetworkAndBroadcastAllocatableProcedure,
+			connect.WithSchema(ipamServiceMethods.ByName("SetPrefixNetworkAndBroadcastAllocatable")),
 			connect.WithClientOptions(opts...),
 		),
 		listPrefixes: connect.NewClient[v1.ListPrefixesRequest, v1.ListPrefixesResponse](
@@ -198,21 +208,22 @@ func NewIpamServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // ipamServiceClient implements IpamServiceClient.
 type ipamServiceClient struct {
-	createPrefix       *connect.Client[v1.CreatePrefixRequest, v1.CreatePrefixResponse]
-	deletePrefix       *connect.Client[v1.DeletePrefixRequest, v1.DeletePrefixResponse]
-	getPrefix          *connect.Client[v1.GetPrefixRequest, v1.GetPrefixResponse]
-	listPrefixes       *connect.Client[v1.ListPrefixesRequest, v1.ListPrefixesResponse]
-	prefixUsage        *connect.Client[v1.PrefixUsageRequest, v1.PrefixUsageResponse]
-	acquireChildPrefix *connect.Client[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse]
-	releaseChildPrefix *connect.Client[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse]
-	acquireIP          *connect.Client[v1.AcquireIPRequest, v1.AcquireIPResponse]
-	releaseIP          *connect.Client[v1.ReleaseIPRequest, v1.ReleaseIPResponse]
-	dump               *connect.Client[v1.DumpRequest, v1.DumpResponse]
-	load               *connect.Client[v1.LoadRequest, v1.LoadResponse]
-	createNamespace    *connect.Client[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse]
-	listNamespaces     *connect.Client[v1.ListNamespacesRequest, v1.ListNamespacesResponse]
-	deleteNamespace    *connect.Client[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse]
-	version            *connect.Client[v1.VersionRequest, v1.VersionResponse]
+	createPrefix                            *connect.Client[v1.CreatePrefixRequest, v1.CreatePrefixResponse]
+	deletePrefix                            *connect.Client[v1.DeletePrefixRequest, v1.DeletePrefixResponse]
+	getPrefix                               *connect.Client[v1.GetPrefixRequest, v1.GetPrefixResponse]
+	setPrefixNetworkAndBroadcastAllocatable *connect.Client[v1.SetPrefixNetworkAndBroadcastAllocatableRequest, v1.SetPrefixNetworkAndBroadcastAllocatableResponse]
+	listPrefixes                            *connect.Client[v1.ListPrefixesRequest, v1.ListPrefixesResponse]
+	prefixUsage                             *connect.Client[v1.PrefixUsageRequest, v1.PrefixUsageResponse]
+	acquireChildPrefix                      *connect.Client[v1.AcquireChildPrefixRequest, v1.AcquireChildPrefixResponse]
+	releaseChildPrefix                      *connect.Client[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse]
+	acquireIP                               *connect.Client[v1.AcquireIPRequest, v1.AcquireIPResponse]
+	releaseIP                               *connect.Client[v1.ReleaseIPRequest, v1.ReleaseIPResponse]
+	dump                                    *connect.Client[v1.DumpRequest, v1.DumpResponse]
+	load                                    *connect.Client[v1.LoadRequest, v1.LoadResponse]
+	createNamespace                         *connect.Client[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse]
+	listNamespaces                          *connect.Client[v1.ListNamespacesRequest, v1.ListNamespacesResponse]
+	deleteNamespace                         *connect.Client[v1.DeleteNamespaceRequest, v1.DeleteNamespaceResponse]
+	version                                 *connect.Client[v1.VersionRequest, v1.VersionResponse]
 }
 
 // CreatePrefix calls api.v1.IpamService.CreatePrefix.
@@ -236,6 +247,16 @@ func (c *ipamServiceClient) DeletePrefix(ctx context.Context, req *v1.DeletePref
 // GetPrefix calls api.v1.IpamService.GetPrefix.
 func (c *ipamServiceClient) GetPrefix(ctx context.Context, req *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error) {
 	response, err := c.getPrefix.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
+}
+
+// SetPrefixNetworkAndBroadcastAllocatable calls
+// api.v1.IpamService.SetPrefixNetworkAndBroadcastAllocatable.
+func (c *ipamServiceClient) SetPrefixNetworkAndBroadcastAllocatable(ctx context.Context, req *v1.SetPrefixNetworkAndBroadcastAllocatableRequest) (*v1.SetPrefixNetworkAndBroadcastAllocatableResponse, error) {
+	response, err := c.setPrefixNetworkAndBroadcastAllocatable.CallUnary(ctx, connect.NewRequest(req))
 	if response != nil {
 		return response.Msg, err
 	}
@@ -355,6 +376,7 @@ type IpamServiceHandler interface {
 	CreatePrefix(context.Context, *v1.CreatePrefixRequest) (*v1.CreatePrefixResponse, error)
 	DeletePrefix(context.Context, *v1.DeletePrefixRequest) (*v1.DeletePrefixResponse, error)
 	GetPrefix(context.Context, *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error)
+	SetPrefixNetworkAndBroadcastAllocatable(context.Context, *v1.SetPrefixNetworkAndBroadcastAllocatableRequest) (*v1.SetPrefixNetworkAndBroadcastAllocatableResponse, error)
 	ListPrefixes(context.Context, *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error)
 	PrefixUsage(context.Context, *v1.PrefixUsageRequest) (*v1.PrefixUsageResponse, error)
 	AcquireChildPrefix(context.Context, *v1.AcquireChildPrefixRequest) (*v1.AcquireChildPrefixResponse, error)
@@ -392,6 +414,12 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 		IpamServiceGetPrefixProcedure,
 		svc.GetPrefix,
 		connect.WithSchema(ipamServiceMethods.ByName("GetPrefix")),
+		connect.WithHandlerOptions(opts...),
+	)
+	ipamServiceSetPrefixNetworkAndBroadcastAllocatableHandler := connect.NewUnaryHandlerSimple(
+		IpamServiceSetPrefixNetworkAndBroadcastAllocatableProcedure,
+		svc.SetPrefixNetworkAndBroadcastAllocatable,
+		connect.WithSchema(ipamServiceMethods.ByName("SetPrefixNetworkAndBroadcastAllocatable")),
 		connect.WithHandlerOptions(opts...),
 	)
 	ipamServiceListPrefixesHandler := connect.NewUnaryHandlerSimple(
@@ -474,6 +502,8 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 			ipamServiceDeletePrefixHandler.ServeHTTP(w, r)
 		case IpamServiceGetPrefixProcedure:
 			ipamServiceGetPrefixHandler.ServeHTTP(w, r)
+		case IpamServiceSetPrefixNetworkAndBroadcastAllocatableProcedure:
+			ipamServiceSetPrefixNetworkAndBroadcastAllocatableHandler.ServeHTTP(w, r)
 		case IpamServiceListPrefixesProcedure:
 			ipamServiceListPrefixesHandler.ServeHTTP(w, r)
 		case IpamServicePrefixUsageProcedure:
@@ -517,6 +547,10 @@ func (UnimplementedIpamServiceHandler) DeletePrefix(context.Context, *v1.DeleteP
 
 func (UnimplementedIpamServiceHandler) GetPrefix(context.Context, *v1.GetPrefixRequest) (*v1.GetPrefixResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.GetPrefix is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) SetPrefixNetworkAndBroadcastAllocatable(context.Context, *v1.SetPrefixNetworkAndBroadcastAllocatableRequest) (*v1.SetPrefixNetworkAndBroadcastAllocatableResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.SetPrefixNetworkAndBroadcastAllocatable is not implemented"))
 }
 
 func (UnimplementedIpamServiceHandler) ListPrefixes(context.Context, *v1.ListPrefixesRequest) (*v1.ListPrefixesResponse, error) {
