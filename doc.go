@@ -1,8 +1,17 @@
 /*
 Package ipam is a ip address management library for ip's and prefixes (networks).
 
-It uses either memory or postgresql database to store the ip's and prefixes.
-You can also bring you own Storage implementation as you need.
+The core package only contains the pure-Go implementation and the in-memory
+Storage. Every database backed Storage lives in its own package so that
+consumers only pull in the dependencies of the backends they actually use:
+
+  - github.com/metal-stack/go-ipam/pkg/postgres
+  - github.com/metal-stack/go-ipam/pkg/redis
+  - github.com/metal-stack/go-ipam/pkg/etcd
+  - github.com/metal-stack/go-ipam/pkg/mongodb
+  - github.com/metal-stack/go-ipam/pkg/file
+
+You can also bring your own Storage implementation as you need.
 
 Example usage:
 
@@ -13,21 +22,22 @@ Example usage:
 
 
 	func main() {
+		ctx := context.Background()
 		// create a ipamer with in memory storage
-		ipam := goipam.New()
+		ipam := goipam.New(ctx)
 
-		prefix, err := ipam.NewPrefix("192.168.0.0/24")
+		prefix, err := ipam.NewPrefix(ctx, "192.168.0.0/24")
 		if err != nil {
 			panic(err)
 		}
 
-		ip, err := ipam.AcquireIP(prefix)
+		ip, err := ipam.AcquireIP(ctx, prefix.Cidr)
 		if err != nil {
 			panic(err)
 		}
 		fmt.Printf("got IP: %s", ip.IP)
 
-		err = ipam.ReleaseIP(ip)
+		err = ipam.ReleaseIP(ctx, ip)
 		if err != nil {
 			panic(err)
 		}

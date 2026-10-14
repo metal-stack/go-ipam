@@ -17,7 +17,7 @@ func NewMemory(ctx context.Context) Storage {
 		prefixes: make(map[string]map[string]Prefix),
 		lock:     sync.RWMutex{},
 	}
-	_ = m.CreateNamespace(ctx, defaultNamespace)
+	_ = m.CreateNamespace(ctx, DefaultNamespace)
 	return m
 }
 func (m *memory) Name() string {

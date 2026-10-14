@@ -1,4 +1,6 @@
-package ipam
+// Package postgres provides a Storage implementation backed by PostgreSQL or
+// PostgreSQL-compatible databases (e.g. CockroachDB).
+package postgres
 
 import (
 	"fmt"
@@ -9,6 +11,8 @@ import (
 
 	// import for sqlx to use postgres driver
 	_ "github.com/lib/pq"
+
+	ipam "github.com/metal-stack/go-ipam"
 )
 
 const postgresSchema = `
@@ -47,9 +51,14 @@ const (
 	SSLModeVerifyFull = SSLMode("verify-full")
 )
 
-// NewPostgresStorage creates a new Storage which uses postgres.
-func NewPostgresStorage(host, port, user, password, dbname string, sslmode SSLMode) (Storage, error) {
+// New creates a new Storage which uses postgres.
+func New(host, port, user, password, dbname string, sslmode SSLMode) (ipam.Storage, error) {
 	return newPostgres(host, port, user, password, dbname, sslmode)
+}
+
+// NewPostgresStorage is an alias for New, kept for backwards compatibility.
+func NewPostgresStorage(host, port, user, password, dbname string, sslmode SSLMode) (ipam.Storage, error) {
+	return New(host, port, user, password, dbname, sslmode)
 }
 
 func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*sql, error) {
@@ -78,7 +87,7 @@ func newPostgres(host, port, user, password, dbname string, sslmode SSLMode) (*s
 		maxIdLength: maxIdLength,
 		tables:      sync.Map{},
 	}
-	sql.tables.Store(defaultNamespace, struct{}{})
+	sql.tables.Store(ipam.DefaultNamespace, struct{}{})
 	return sql, nil
 }
 

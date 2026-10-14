@@ -29,6 +29,32 @@ type Prefix struct {
 
 type Prefixes []Prefix
 
+// DeepCopy returns a deep copy of this Prefix.
+// It is exported so that external Storage implementations can safely copy
+// prefixes before persisting or returning them.
+func (p *Prefix) DeepCopy() *Prefix {
+	return p.deepCopy()
+}
+
+// Version returns the version of the Prefix used for optimistic locking.
+func (p *Prefix) Version() int64 {
+	return p.version
+}
+
+// SetVersion sets the version of the Prefix used for optimistic locking.
+func (p *Prefix) SetVersion(version int64) {
+	p.version = version
+}
+
+// IncrVersion increments the version of the Prefix by one and returns the
+// version the Prefix had before the increment. This is a helper for Storage
+// implementations which apply optimistic locking.
+func (p *Prefix) IncrVersion() int64 {
+	oldVersion := p.version
+	p.version = oldVersion + 1
+	return oldVersion
+}
+
 // deepCopy to a new Prefix
 func (p *Prefix) deepCopy() *Prefix {
 	return &Prefix{
@@ -505,7 +531,7 @@ func (i *ipamer) newPrefix(cidr, parentCidr string) (*Prefix, error) {
 
 func (i *ipamer) Dump(ctx context.Context) (string, error) {
 	// FIXME must dump all namespaces
-	return i.NamespacedDump(ctx, defaultNamespace)
+	return i.NamespacedDump(ctx, DefaultNamespace)
 }
 
 func (i *ipamer) NamespacedDump(ctx context.Context, namespace string) (string, error) {
@@ -513,7 +539,7 @@ func (i *ipamer) NamespacedDump(ctx context.Context, namespace string) (string, 
 	if err != nil {
 		return "", err
 	}
-	js, err := pfxs.toJSON()
+	js, err := pfxs.ToJSON()
 	if err != nil {
 		return "", err
 	}
@@ -522,7 +548,7 @@ func (i *ipamer) NamespacedDump(ctx context.Context, namespace string) (string, 
 
 func (i *ipamer) Load(ctx context.Context, dump string) error {
 	// FIXME must load all namespaces
-	return i.NamespacedLoad(ctx, defaultNamespace, dump)
+	return i.NamespacedLoad(ctx, DefaultNamespace, dump)
 }
 
 func (i *ipamer) NamespacedLoad(ctx context.Context, namespace, dump string) error {
@@ -533,7 +559,7 @@ func (i *ipamer) NamespacedLoad(ctx context.Context, namespace, dump string) err
 	if len(existingpfxs) > 0 {
 		return fmt.Errorf("prefixes exist, please drop existing data before loading")
 	}
-	pfxs, err := fromJSONs([]byte(dump))
+	pfxs, err := FromJSONs([]byte(dump))
 	if err != nil {
 		return err
 	}
@@ -612,8 +638,8 @@ func (p *Prefix) hasIPs() bool {
 	return false
 }
 
-// availableips return the number of ips available in this Prefix
-func (p *Prefix) availableips() uint64 {
+// AvailableIPs returns the number of ips available in this Prefix
+func (p *Prefix) AvailableIPs() uint64 {
 	ipprefix, err := netip.ParsePrefix(p.Cidr)
 	if err != nil {
 		return 0
@@ -625,13 +651,13 @@ func (p *Prefix) availableips() uint64 {
 	return 1 << (ipprefix.Addr().BitLen() - ipprefix.Bits())
 }
 
-// acquiredips return the number of ips acquired in this Prefix
-func (p *Prefix) acquiredips() uint64 {
+// AcquiredIPs returns the number of ips acquired in this Prefix
+func (p *Prefix) AcquiredIPs() uint64 {
 	return uint64(len(p.ips))
 }
 
-// availablePrefixes will return the amount of prefixes allocatable and the amount of smallest 2 bit prefixes
-func (p *Prefix) availablePrefixes() (uint64, []string) {
+// AvailablePrefixes will return the amount of prefixes allocatable and the amount of smallest 2 bit prefixes
+func (p *Prefix) AvailablePrefixes() (uint64, []string) {
 	prefix, err := netip.ParsePrefix(p.Cidr)
 	if err != nil {
 		return 0, nil
@@ -675,8 +701,8 @@ func (p *Prefix) availablePrefixes() (uint64, []string) {
 	return totalAvailable, availablePrefixes
 }
 
-// acquiredPrefixes return the amount of acquired prefixes of this prefix if this is a parent prefix
-func (p *Prefix) acquiredPrefixes() uint64 {
+// AcquiredPrefixes returns the amount of acquired prefixes of this prefix if this is a parent prefix
+func (p *Prefix) AcquiredPrefixes() uint64 {
 	var count uint64
 	for _, available := range p.availableChildPrefixes {
 		if !available {
@@ -688,11 +714,11 @@ func (p *Prefix) acquiredPrefixes() uint64 {
 
 // Usage report Prefix usage.
 func (p *Prefix) Usage() Usage {
-	sp, ap := p.availablePrefixes()
+	sp, ap := p.AvailablePrefixes()
 	return Usage{
-		AvailableIPs:              p.availableips(),
-		AcquiredIPs:               p.acquiredips(),
-		AcquiredPrefixes:          p.acquiredPrefixes(),
+		AvailableIPs:              p.AvailableIPs(),
+		AcquiredIPs:               p.AcquiredIPs(),
+		AcquiredPrefixes:          p.AcquiredPrefixes(),
 		AvailableSmallestPrefixes: sp,
 		AvailablePrefixes:         ap,
 	}
@@ -716,10 +742,10 @@ func retryOnOptimisticLock(retryableFunc retry.RetryableFunc) error {
 func namespaceFromContext(ctx context.Context) string {
 	raw := ctx.Value(namespaceContextKey{})
 	if raw == nil {
-		return defaultNamespace
+		return DefaultNamespace
 	}
 	if ns, ok := raw.(string); ok {
 		return ns
 	}
-	return defaultNamespace
+	return DefaultNamespace
 }

@@ -1,4 +1,5 @@
-package ipam
+// Package mongodb provides a Storage implementation backed by MongoDB.
+package mongodb
 
 import (
 	"context"
@@ -9,11 +10,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	ipam "github.com/metal-stack/go-ipam"
 )
 
 const dbCidr = `prefix.cidr`
 const versionKey = `version`
 
+// MongoConfig configures the mongodb backed Storage.
 type MongoConfig struct {
 	DatabaseName       string
 	MongoClientOptions *options.ClientOptions
@@ -25,7 +29,8 @@ type mongodb struct {
 	lock       sync.RWMutex
 }
 
-func NewMongo(ctx context.Context, config MongoConfig) (Storage, error) {
+// New creates a mongodb storage for ipam.
+func New(ctx context.Context, config MongoConfig) (ipam.Storage, error) {
 	return newMongo(ctx, config)
 }
 
@@ -49,7 +54,7 @@ func newMongo(ctx context.Context, config MongoConfig) (*mongodb, error) {
 		namespaces: make(map[string]struct{}),
 		lock:       sync.RWMutex{},
 	}
-	if err := db.CreateNamespace(ctx, defaultNamespace); err != nil {
+	if err := db.CreateNamespace(ctx, ipam.DefaultNamespace); err != nil {
 		return nil, err
 	}
 	return db, nil
@@ -62,7 +67,7 @@ func (m *mongodb) checkNamespaceExists(ctx context.Context, namespace string) er
 
 	r, err := m.db.ListCollectionNames(ctx, bson.D{})
 	if err != nil {
-		return ErrNotFound
+		return ipam.ErrNotFound
 	}
 
 	for _, ns := range r {
@@ -70,18 +75,18 @@ func (m *mongodb) checkNamespaceExists(ctx context.Context, namespace string) er
 	}
 
 	if _, ok := m.namespaces[namespace]; !ok {
-		return ErrNamespaceDoesNotExist
+		return ipam.ErrNamespaceDoesNotExist
 	}
 
 	return nil
 }
 
-func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+func (m *mongodb) CreatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}}
@@ -89,25 +94,25 @@ func (m *mongodb) CreatePrefix(ctx context.Context, prefix Prefix, namespace str
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() == nil {
-		return Prefix{}, fmt.Errorf("prefix already exists:%s", prefix.Cidr)
+		return ipam.Prefix{}, fmt.Errorf("prefix already exists:%s", prefix.Cidr)
 	} else if r.Err() != nil && !errors.Is(r.Err(), mongo.ErrNoDocuments) { // unrelated to ErrNoDocuments.
-		return Prefix{}, fmt.Errorf("unable to insert prefix:%s, error:%w", prefix.Cidr, r.Err())
+		return ipam.Prefix{}, fmt.Errorf("unable to insert prefix:%s, error:%w", prefix.Cidr, r.Err())
 	} // ErrNoDocuments should pass through this block
 
-	_, err := m.db.Collection(namespace).InsertOne(ctx, prefix.toPrefixJSON())
+	_, err := m.db.Collection(namespace).InsertOne(ctx, prefix.ToPrefixJSON())
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to insert prefix:%s, error:%w", prefix.Cidr, err)
+		return ipam.Prefix{}, fmt.Errorf("unable to insert prefix:%s, error:%w", prefix.Cidr, err)
 	}
 
 	return prefix, nil
 }
 
-func (m *mongodb) ReadPrefix(ctx context.Context, prefix string, namespace string) (Prefix, error) {
+func (m *mongodb) ReadPrefix(ctx context.Context, prefix string, namespace string) (ipam.Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	f := bson.D{{Key: dbCidr, Value: prefix}}
@@ -115,17 +120,17 @@ func (m *mongodb) ReadPrefix(ctx context.Context, prefix string, namespace strin
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() != nil && errors.Is(r.Err(), mongo.ErrNoDocuments) {
-		return Prefix{}, fmt.Errorf(`%w prefix not found:%s, error:%w`, ErrNotFound, prefix, r.Err())
+		return ipam.Prefix{}, fmt.Errorf(`%w prefix not found:%s, error:%w`, ipam.ErrNotFound, prefix, r.Err())
 	} else if r.Err() != nil {
-		return Prefix{}, fmt.Errorf(`error while trying to find prefix:%s, error:%w`, prefix, r.Err())
+		return ipam.Prefix{}, fmt.Errorf(`error while trying to find prefix:%s, error:%w`, prefix, r.Err())
 	}
 
-	j := prefixJSON{}
+	j := ipam.PrefixJSON{}
 	err := r.Decode(&j)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
-	return j.toPrefix(), nil
+	return j.ToPrefix(), nil
 }
 
 func (m *mongodb) DeleteAllPrefixes(ctx context.Context, namespace string) error {
@@ -144,7 +149,7 @@ func (m *mongodb) DeleteAllPrefixes(ctx context.Context, namespace string) error
 	return nil
 }
 
-func (m *mongodb) ReadAllPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
+func (m *mongodb) ReadAllPrefixes(ctx context.Context, namespace string) (ipam.Prefixes, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -157,20 +162,20 @@ func (m *mongodb) ReadAllPrefixes(ctx context.Context, namespace string) (Prefix
 	if err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
 	}
-	var r []prefixJSON
+	var r []ipam.PrefixJSON
 	if err := c.All(ctx, &r); err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
 	}
 
-	var s = make([]Prefix, len(r))
+	var s = make(ipam.Prefixes, len(r))
 	for i, v := range r {
-		s[i] = v.toPrefix()
+		s[i] = v.ToPrefix()
 	}
 
 	return s, nil
 }
 
-func (m *mongodb) ReadPrefixes(ctx context.Context, namespace string) (Prefixes, error) {
+func (m *mongodb) ReadPrefixes(ctx context.Context, namespace string) (ipam.Prefixes, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -183,14 +188,14 @@ func (m *mongodb) ReadPrefixes(ctx context.Context, namespace string) (Prefixes,
 	if err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
 	}
-	var r []prefixJSON
+	var r []ipam.PrefixJSON
 	if err := c.All(ctx, &r); err != nil {
 		return nil, fmt.Errorf(`error reading all prefixes: %w`, err)
 	}
 
-	var s = make([]Prefix, len(r))
+	var s = make(ipam.Prefixes, len(r))
 	for i, v := range r {
-		s[i] = v.toPrefix()
+		s[i] = v.ToPrefix()
 	}
 
 	return s, nil
@@ -208,41 +213,40 @@ func (m *mongodb) ReadAllPrefixCidrs(ctx context.Context, namespace string) ([]s
 	return s, nil
 }
 
-func (m *mongodb) UpdatePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+func (m *mongodb) UpdatePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
-	oldVersion := prefix.version
-	prefix.version = oldVersion + 1
+	oldVersion := prefix.IncrVersion()
 
 	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}, {Key: versionKey, Value: oldVersion}}
 
 	o := options.Replace().SetUpsert(false)
-	r, err := m.db.Collection(namespace).ReplaceOne(ctx, f, prefix.toPrefixJSON(), o)
+	r, err := m.db.Collection(namespace).ReplaceOne(ctx, f, prefix.ToPrefixJSON(), o)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to update prefix:%s, error: %w", prefix.Cidr, err)
+		return ipam.Prefix{}, fmt.Errorf("unable to update prefix:%s, error: %w", prefix.Cidr, err)
 	}
 	if r.MatchedCount == 0 {
-		return Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ErrOptimisticLockError, prefix.Cidr)
+		return ipam.Prefix{}, fmt.Errorf("%w: unable to update prefix:%s", ipam.ErrOptimisticLockError, prefix.Cidr)
 	}
 	if r.ModifiedCount == 0 {
-		return Prefix{}, fmt.Errorf("%w: update did not effect any document:%s",
-			ErrOptimisticLockError, prefix.Cidr)
+		return ipam.Prefix{}, fmt.Errorf("%w: update did not effect any document:%s",
+			ipam.ErrOptimisticLockError, prefix.Cidr)
 	}
 
 	return prefix, nil
 }
 
-func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix, namespace string) (Prefix, error) {
+func (m *mongodb) DeletePrefix(ctx context.Context, prefix ipam.Prefix, namespace string) (ipam.Prefix, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	if err := m.checkNamespaceExists(ctx, namespace); err != nil {
-		return Prefix{}, err
+		return ipam.Prefix{}, err
 	}
 
 	f := bson.D{{Key: dbCidr, Value: prefix.Cidr}}
@@ -250,17 +254,17 @@ func (m *mongodb) DeletePrefix(ctx context.Context, prefix Prefix, namespace str
 
 	// ErrNoDocuments should be returned if the prefix does not exist
 	if r.Err() != nil && errors.Is(r.Err(), mongo.ErrNoDocuments) {
-		return Prefix{}, fmt.Errorf(`prefix not found:%s, error:%w`, prefix.Cidr, r.Err())
+		return ipam.Prefix{}, fmt.Errorf(`prefix not found:%s, error:%w`, prefix.Cidr, r.Err())
 	} else if r.Err() != nil {
-		return Prefix{}, fmt.Errorf(`error while trying to find prefix:%s, error:%w`, prefix.Cidr, r.Err())
+		return ipam.Prefix{}, fmt.Errorf(`error while trying to find prefix:%s, error:%w`, prefix.Cidr, r.Err())
 	}
 
-	j := prefixJSON{}
+	j := ipam.PrefixJSON{}
 	err := r.Decode(&j)
 	if err != nil {
-		return Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
+		return ipam.Prefix{}, fmt.Errorf("unable to read prefix:%w", err)
 	}
-	return j.toPrefix(), nil
+	return j.ToPrefix(), nil
 }
 
 func (m *mongodb) CreateNamespace(ctx context.Context, namespace string) error {

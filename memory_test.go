@@ -12,18 +12,18 @@ func Test_ReadPrefix(t *testing.T) {
 	m := NewMemory(ctx)
 
 	// Prefix
-	p, err := m.ReadPrefix(ctx, "12.0.0.0/8", defaultNamespace)
+	p, err := m.ReadPrefix(ctx, "12.0.0.0/8", DefaultNamespace)
 	require.Error(t, err)
 	require.ErrorIs(t, err, ErrNotFound)
 	require.Equal(t, "NotFound prefix 12.0.0.0/8 not found", err.Error())
 	require.Empty(t, p)
 
 	prefix := Prefix{Cidr: "12.0.0.0/16"}
-	p, err = m.CreatePrefix(ctx, prefix, defaultNamespace)
+	p, err = m.CreatePrefix(ctx, prefix, DefaultNamespace)
 	require.NoError(t, err)
 	require.NotNil(t, p)
 
-	p, err = m.ReadPrefix(ctx, "12.0.0.0/16", defaultNamespace)
+	p, err = m.ReadPrefix(ctx, "12.0.0.0/16", DefaultNamespace)
 	require.NoError(t, err)
 	require.NotNil(t, p)
 	require.Equal(t, "12.0.0.0/16", p.Cidr)
@@ -34,13 +34,13 @@ func Test_UpdatePrefix(t *testing.T) {
 	m := NewMemory(ctx)
 
 	prefix := Prefix{}
-	p, err := m.UpdatePrefix(ctx, prefix, defaultNamespace)
+	p, err := m.UpdatePrefix(ctx, prefix, DefaultNamespace)
 	require.Error(t, err)
 	require.Empty(t, p)
 	require.Equal(t, "prefix not present:{  false map[] 0 map[] 1}", err.Error())
 
 	prefix.Cidr = "1.2.3.4/24"
-	p, err = m.UpdatePrefix(ctx, prefix, defaultNamespace)
+	p, err = m.UpdatePrefix(ctx, prefix, DefaultNamespace)
 	require.Error(t, err)
 	require.Empty(t, p)
 	require.Equal(t, "prefix not found:1.2.3.4/24", err.Error())
@@ -58,27 +58,27 @@ func Test_UpdatePrefix_Concurrent(t *testing.T) {
 			cidr := calcPrefix24(run) + "/24"
 			prefix.Cidr = cidr
 
-			_, err := m.CreatePrefix(ctx, prefix, defaultNamespace)
+			_, err := m.CreatePrefix(ctx, prefix, DefaultNamespace)
 			if err != nil {
 				t.Error(t, err)
 			}
 
-			p, err := m.ReadPrefix(ctx, cidr, defaultNamespace)
+			p, err := m.ReadPrefix(ctx, cidr, DefaultNamespace)
 			if err != nil {
 				t.Error(t, err)
 			}
 
-			_, err = m.UpdatePrefix(ctx, p, defaultNamespace)
+			_, err = m.UpdatePrefix(ctx, p, DefaultNamespace)
 			if err != nil {
 				t.Error(t, err)
 			}
 
-			p, err = m.ReadPrefix(ctx, cidr, defaultNamespace)
+			p, err = m.ReadPrefix(ctx, cidr, DefaultNamespace)
 			if err != nil {
 				t.Error(t, err)
 			}
 
-			_, err = m.DeletePrefix(ctx, p, defaultNamespace)
+			_, err = m.DeletePrefix(ctx, p, DefaultNamespace)
 			if err != nil {
 				t.Error(t, err)
 			}
