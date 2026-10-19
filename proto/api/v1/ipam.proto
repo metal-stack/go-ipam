@@ -8,6 +8,7 @@ service IpamService {
   rpc CreatePrefix(CreatePrefixRequest) returns (CreatePrefixResponse);
   rpc DeletePrefix(DeletePrefixRequest) returns (DeletePrefixResponse);
   rpc GetPrefix(GetPrefixRequest) returns (GetPrefixResponse);
+  rpc SetPrefixNetworkAndBroadcastAllocatable(SetPrefixNetworkAndBroadcastAllocatableRequest) returns (SetPrefixNetworkAndBroadcastAllocatableResponse);
   rpc ListPrefixes(ListPrefixesRequest) returns (ListPrefixesResponse);
   rpc PrefixUsage(PrefixUsageRequest) returns (PrefixUsageResponse);
   rpc AcquireChildPrefix(AcquireChildPrefixRequest) returns (AcquireChildPrefixResponse);
@@ -25,6 +26,9 @@ service IpamService {
 message Prefix {
   string cidr = 1;
   string parent_cidr = 2;
+  // network_and_broadcast_allocatable is true if the network and the (IPv4)
+  // broadcast address of this prefix are allocatable like any other address
+  bool network_and_broadcast_allocatable = 3;
 }
 message CreatePrefixResponse {
   Prefix prefix = 1;
@@ -44,6 +48,21 @@ message ReleaseChildPrefixResponse {
 message CreatePrefixRequest {
   string cidr = 1;
   optional string namespace = 2;
+  // network_and_broadcast_allocatable creates the prefix with the network
+  // and the (IPv4) broadcast address allocatable, e.g. for routed pools
+  bool network_and_broadcast_allocatable = 3;
+}
+message SetPrefixNetworkAndBroadcastAllocatableRequest {
+  string cidr = 1;
+  optional string namespace = 2;
+  // network_and_broadcast_allocatable makes the network and the (IPv4)
+  // broadcast address allocatable (true) or reserved (false, the default).
+  // Making them allocatable is always possible; reserving them again fails
+  // as long as either address is allocated
+  bool network_and_broadcast_allocatable = 3;
+}
+message SetPrefixNetworkAndBroadcastAllocatableResponse {
+  Prefix prefix = 1;
 }
 message DeletePrefixRequest {
   string cidr = 1;

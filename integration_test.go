@@ -28,8 +28,8 @@ func TestIntegration(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, publicInternet)
 
-	require.Equal(t, uint64(25), publicInternet.Usage().AcquiredIPs)
-	require.Equal(t, uint64(32), publicInternet.Usage().AvailableIPs)
+	require.Equal(t, uint64(23), publicInternet.Usage().AcquiredIPs)
+	require.Equal(t, uint64(30), publicInternet.Usage().AvailableIPs)
 	require.Equal(t, "", publicInternet.ParentCidr)
 	_, err = ipam.AcquireChildPrefix(ctx, publicInternet.Cidr, 29)
 	require.EqualError(t, err, "prefix 1.2.3.0/27 has ips, acquire child prefix not possible")
@@ -43,20 +43,20 @@ func TestIntegration(t *testing.T) {
 	// reread prefix
 	publicInternet, err = ipam.PrefixFrom(ctx, "1.2.3.0/27")
 	require.NoError(t, err)
-	require.Equal(t, uint64(26), publicInternet.Usage().AcquiredIPs)
+	require.Equal(t, uint64(24), publicInternet.Usage().AcquiredIPs)
 	_, err = ipam.ReleaseIP(ctx, ip)
 	require.NoError(t, err)
 	// reread prefix
 	publicInternet, err = ipam.PrefixFrom(ctx, "1.2.3.0/27")
 	require.NoError(t, err)
-	require.Equal(t, uint64(25), publicInternet.Usage().AcquiredIPs)
+	require.Equal(t, uint64(23), publicInternet.Usage().AcquiredIPs)
 	// release acquired ip
 	err = ipam.ReleaseIPFromPrefix(ctx, "1.2.3.0/27", "1.2.3.1")
 	require.NoError(t, err)
 	// reread prefix
 	publicInternet, err = ipam.PrefixFrom(ctx, "1.2.3.0/27")
 	require.NoError(t, err)
-	require.Equal(t, uint64(24), publicInternet.Usage().AcquiredIPs)
+	require.Equal(t, uint64(22), publicInternet.Usage().AcquiredIPs)
 	// release unacquired ip
 	err = ipam.ReleaseIPFromPrefix(ctx, "1.2.3.0/27", "1.2.3.24")
 	require.EqualError(t, err, "NotFound: unable to release ip:1.2.3.24 because it is not allocated in prefix:1.2.3.0/27")
@@ -65,7 +65,7 @@ func TestIntegration(t *testing.T) {
 	tenantSuper, err := ipam.PrefixFrom(ctx, "10.128.0.0/14")
 	require.NoError(t, err)
 	require.NotNil(t, tenantSuper)
-	require.Equal(t, uint64(2), tenantSuper.Usage().AcquiredIPs)
+	require.Equal(t, uint64(0), tenantSuper.Usage().AcquiredIPs)
 	sum := 0
 	for _, pfx := range tenantSuper.Usage().AvailablePrefixes {
 		// Only logs if fails
@@ -169,7 +169,7 @@ func TestIntegrationP(t *testing.T) {
 	tenantSuper1, err := ipam.PrefixFrom(ctx, "10.64.0.0/14")
 	require.NoError(t, err)
 	require.NotNil(t, tenantSuper1)
-	require.Equal(t, uint64(2), tenantSuper1.Usage().AcquiredIPs)
+	require.Equal(t, uint64(0), tenantSuper1.Usage().AcquiredIPs)
 	require.Equal(t, uint64(56320), tenantSuper1.Usage().AvailableSmallestPrefixes)
 	require.Equal(t, uint64(36), tenantSuper1.Usage().AcquiredPrefixes)
 
@@ -235,7 +235,7 @@ func TestIntegrationP(t *testing.T) {
 	tenantSuper2, err := ipam.PrefixFrom(ctx, "10.76.0.0/14")
 	require.NoError(t, err)
 	require.NotNil(t, tenantSuper2)
-	require.Equal(t, uint64(2), tenantSuper2.Usage().AcquiredIPs)
+	require.Equal(t, uint64(0), tenantSuper2.Usage().AcquiredIPs)
 	require.Equal(t, uint64(58368), tenantSuper2.Usage().AvailableSmallestPrefixes)
 	require.Equal(t, uint64(28), tenantSuper2.Usage().AcquiredPrefixes)
 
@@ -301,8 +301,8 @@ func TestIntegrationP(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, publicInternet)
 
-	require.Equal(t, uint64(128), publicInternet.Usage().AcquiredIPs)
-	require.Equal(t, uint64(128), publicInternet.Usage().AvailableIPs)
+	require.Equal(t, uint64(126), publicInternet.Usage().AcquiredIPs)
+	require.Equal(t, uint64(126), publicInternet.Usage().AvailableIPs)
 	require.Equal(t, "", publicInternet.ParentCidr)
 	_, err = ipam.AcquireChildPrefix(ctx, publicInternet.Cidr, 29)
 	require.EqualError(t, err, "prefix 1.2.3.0/25 has ips, acquire child prefix not possible")
@@ -324,7 +324,7 @@ func TestIntegrationEtcd(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotNil(t, tenantSuper1)
-	require.Equal(t, uint64(2), tenantSuper1.Usage().AcquiredIPs)
+	require.Equal(t, uint64(0), tenantSuper1.Usage().AcquiredIPs)
 	require.Equal(t, uint64(65536), tenantSuper1.Usage().AvailableSmallestPrefixes)
 	require.Equal(t, uint64(0), tenantSuper1.Usage().AcquiredPrefixes)
 
@@ -361,7 +361,7 @@ func TestIntegrationEtcd(t *testing.T) {
 	tenantSuper2, err := ipam.NewPrefix(ctx, "10.76.0.0/14")
 	require.NoError(t, err)
 	require.NotNil(t, tenantSuper2)
-	require.Equal(t, uint64(2), tenantSuper2.Usage().AcquiredIPs)
+	require.Equal(t, uint64(0), tenantSuper2.Usage().AcquiredIPs)
 	require.Equal(t, uint64(65536), tenantSuper2.Usage().AvailableSmallestPrefixes)
 	require.Equal(t, uint64(0), tenantSuper2.Usage().AcquiredPrefixes)
 
@@ -427,8 +427,8 @@ func TestIntegrationEtcd(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, publicInternet)
 
-	require.Equal(t, uint64(2), publicInternet.Usage().AcquiredIPs)
-	require.Equal(t, uint64(128), publicInternet.Usage().AvailableIPs)
+	require.Equal(t, uint64(0), publicInternet.Usage().AcquiredIPs)
+	require.Equal(t, uint64(126), publicInternet.Usage().AvailableIPs)
 	require.Equal(t, "", publicInternet.ParentCidr)
 	_, err = ipam.AcquireChildPrefix(ctx, publicInternet.Cidr, 29)
 	require.NoError(t, err)
