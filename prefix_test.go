@@ -219,6 +219,129 @@ func TestIpamer_ReleaseIPFromPrefixIPv6(t *testing.T) {
 		require.Contains(t, err.Error(), "NotFound: unable to find prefix for cidr:1001:0db8:85a3::/120")
 	})
 }
+func TestIpamer_ListIPs(t *testing.T) {
+	ctx := t.Context()
+
+	ipStrings := func(ips []*IP) []string {
+		result := make([]string, 0, len(ips))
+		for _, ip := range ips {
+			result = append(result, ip.IP.String())
+		}
+		return result
+	}
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		// IPv4
+		const cidr = "192.168.0.0/24"
+		prefix, err := ipam.NewPrefix(ctx, cidr)
+		require.NoError(t, err)
+		require.NotNil(t, prefix)
+
+		// network and broadcast are blocked on creation and are listed as well
+		ips, err := ipam.ListIPs(ctx, cidr)
+		require.NoError(t, err)
+		require.ElementsMatch(t, []string{"192.168.0.0", "192.168.0.255"}, ipStrings(ips))
+		for _, ip := range ips {
+			require.Equal(t, cidr, ip.ParentPrefix)
+		}
+
+		_, err = ipam.AcquireSpecificIP(ctx, cidr, "192.168.0.10")
+		require.NoError(t, err)
+		_, err = ipam.AcquireSpecificIP(ctx, cidr, "192.168.0.20")
+		require.NoError(t, err)
+
+		ips, err = ipam.ListIPs(ctx, cidr)
+		require.NoError(t, err)
+		require.ElementsMatch(t, []string{"192.168.0.0", "192.168.0.10", "192.168.0.20", "192.168.0.255"}, ipStrings(ips))
+		for _, ip := range ips {
+			require.Equal(t, cidr, ip.ParentPrefix)
+		}
+
+		err = ipam.ReleaseIPFromPrefix(ctx, cidr, "192.168.0.10")
+		require.NoError(t, err)
+
+		ips, err = ipam.ListIPs(ctx, cidr)
+		require.NoError(t, err)
+		require.ElementsMatch(t, []string{"192.168.0.0", "192.168.0.20", "192.168.0.255"}, ipStrings(ips))
+
+		// IPv6, only the network address is blocked
+		const cidr6 = "2001:db8:85a3::/120"
+		_, err = ipam.NewPrefix(ctx, cidr6)
+		require.NoError(t, err)
+
+		ips, err = ipam.ListIPs(ctx, cidr6)
+		require.NoError(t, err)
+		require.ElementsMatch(t, []string{"2001:db8:85a3::"}, ipStrings(ips))
+		for _, ip := range ips {
+			require.Equal(t, cidr6, ip.ParentPrefix)
+		}
+
+		_, err = ipam.AcquireSpecificIP(ctx, cidr6, "2001:db8:85a3::1")
+		require.NoError(t, err)
+
+		ips, err = ipam.ListIPs(ctx, cidr6)
+		require.NoError(t, err)
+		require.ElementsMatch(t, []string{"2001:db8:85a3::", "2001:db8:85a3::1"}, ipStrings(ips))
+
+		// Unknown prefix
+		ips, err = ipam.ListIPs(ctx, "10.0.0.0/24")
+		require.ErrorIs(t, err, ErrNotFound)
+		require.Nil(t, ips)
+
+		// Invalid prefix
+		ips, err = ipam.ListIPs(ctx, "invalid")
+		require.Error(t, err)
+		require.Nil(t, ips)
+	})
+}
+
+func TestIpamer_ListIPsNamespaced(t *testing.T) {
+	ctx := t.Context()
+
+	testWithBackends(t, func(t *testing.T, ipam *ipamer) {
+		const cidr = "10.100.0.0/22"
+
+		_, err := ipam.NewPrefix(ctx, cidr)
+		require.NoError(t, err)
+		_, err = ipam.AcquireSpecificIP(ctx, cidr, "10.100.0.1")
+		require.NoError(t, err)
+
+		require.NoError(t, ipam.CreateNamespace(ctx, "p1"))
+		t.Cleanup(func() {
+			nsCtx := NewContextWithNamespace(ctx, "p1")
+			require.NoError(t, ipam.ReleaseIPFromPrefix(nsCtx, cidr, "10.100.0.2"))
+			_, err := ipam.DeletePrefix(nsCtx, cidr)
+			require.NoError(t, err)
+			require.NoError(t, ipam.DeleteNamespace(ctx, "p1"))
+			require.NoError(t, ipam.ReleaseIPFromPrefix(ctx, cidr, "10.100.0.1"))
+			_, err = ipam.DeletePrefix(ctx, cidr)
+			require.NoError(t, err)
+		})
+
+		nsCtx := NewContextWithNamespace(ctx, "p1")
+		_, err = ipam.NewPrefix(nsCtx, cidr)
+		require.NoError(t, err)
+		_, err = ipam.AcquireSpecificIP(nsCtx, cidr, "10.100.0.2")
+		require.NoError(t, err)
+
+		ips, err := ipam.ListIPs(nsCtx, cidr)
+		require.NoError(t, err)
+		require.Len(t, ips, 3)
+		for _, ip := range ips {
+			require.NotEqual(t, "10.100.0.1", ip.IP.String())
+			require.Equal(t, cidr, ip.ParentPrefix)
+		}
+
+		ips, err = ipam.ListIPs(ctx, cidr)
+		require.NoError(t, err)
+		require.Len(t, ips, 3)
+		for _, ip := range ips {
+			require.NotEqual(t, "10.100.0.2", ip.IP.String())
+			require.Equal(t, cidr, ip.ParentPrefix)
+		}
+	})
+}
+
 func TestIpamer_AcquireSpecificIP(t *testing.T) {
 	ctx := t.Context()
 	testWithBackends(t, func(t *testing.T, ipam *ipamer) {

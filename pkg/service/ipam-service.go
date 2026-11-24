@@ -225,6 +225,24 @@ func (i *IPAMService) ReleaseIP(ctx context.Context, req *v1.ReleaseIPRequest) (
 		},
 	}, nil
 }
+
+func (i *IPAMService) ListIPs(ctx context.Context, req *v1.ListIPsRequest) (*v1.ListIPsResponse, error) {
+	if req.GetNamespace() != "" {
+		ctx = goipam.NewContextWithNamespace(ctx, req.GetNamespace())
+	}
+	ips, err := i.ipamer.ListIPs(ctx, req.PrefixCidr)
+	if err != nil {
+		return nil, err
+	}
+	var ipStrings []string
+	for _, ip := range ips {
+		ipStrings = append(ipStrings, ip.IP.String())
+	}
+	return &v1.ListIPsResponse{
+		Ip: ipStrings,
+	}, nil
+}
+
 func (i *IPAMService) Dump(ctx context.Context, req *v1.DumpRequest) (*v1.DumpResponse, error) {
 	if req.GetNamespace() != "" {
 		ctx = goipam.NewContextWithNamespace(ctx, req.GetNamespace())

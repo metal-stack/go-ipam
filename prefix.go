@@ -412,6 +412,28 @@ func (i *ipamer) AcquireIP(ctx context.Context, prefixCidr string) (*IP, error) 
 	return i.AcquireSpecificIP(ctx, prefixCidr, "")
 }
 
+func (i *ipamer) ListIPs(ctx context.Context, prefixCidr string) ([]*IP, error) {
+	prefix, err := i.PrefixFrom(ctx, prefixCidr)
+	if err != nil {
+		return nil, err
+	}
+	var ips []*IP
+	for ip, ok := range prefix.ips {
+		if !ok {
+			continue
+		}
+		nip, err := netip.ParseAddr(ip)
+		if err != nil {
+			return nil, err
+		}
+		ips = append(ips, &IP{
+			IP:           nip,
+			ParentPrefix: prefixCidr,
+		})
+	}
+	return ips, nil
+}
+
 func (i *ipamer) ReleaseIP(ctx context.Context, ip *IP) (*Prefix, error) {
 	err := i.ReleaseIPFromPrefix(ctx, ip.ParentPrefix, ip.IP.String())
 	if err != nil {
