@@ -1580,6 +1580,110 @@ func (x *VersionResponse) GetBuildDate() string {
 	return ""
 }
 
+type ListIPsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PrefixCidr    string                 `protobuf:"bytes,1,opt,name=prefix_cidr,json=prefixCidr,proto3" json:"prefix_cidr,omitempty"`
+	Namespace     *string                `protobuf:"bytes,2,opt,name=namespace,proto3,oneof" json:"namespace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListIPsRequest) Reset() {
+	*x = ListIPsRequest{}
+	mi := &file_api_v1_ipam_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListIPsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListIPsRequest) ProtoMessage() {}
+
+func (x *ListIPsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_ipam_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListIPsRequest.ProtoReflect.Descriptor instead.
+func (*ListIPsRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *ListIPsRequest) GetPrefixCidr() string {
+	if x != nil {
+		return x.PrefixCidr
+	}
+	return ""
+}
+
+func (x *ListIPsRequest) GetNamespace() string {
+	if x != nil && x.Namespace != nil {
+		return *x.Namespace
+	}
+	return ""
+}
+
+type ListIPsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ip            []string               `protobuf:"bytes,1,rep,name=ip,proto3" json:"ip,omitempty"`
+	ParentPrefix  string                 `protobuf:"bytes,2,opt,name=parent_prefix,json=parentPrefix,proto3" json:"parent_prefix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListIPsResponse) Reset() {
+	*x = ListIPsResponse{}
+	mi := &file_api_v1_ipam_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListIPsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListIPsResponse) ProtoMessage() {}
+
+func (x *ListIPsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_ipam_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListIPsResponse.ProtoReflect.Descriptor instead.
+func (*ListIPsResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_ipam_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *ListIPsResponse) GetIp() []string {
+	if x != nil {
+		return x.Ip
+	}
+	return nil
+}
+
+func (x *ListIPsResponse) GetParentPrefix() string {
+	if x != nil {
+		return x.ParentPrefix
+	}
+	return ""
+}
+
 var File_api_v1_ipam_proto protoreflect.FileDescriptor
 
 const file_api_v1_ipam_proto_rawDesc = "" +
@@ -1699,7 +1803,16 @@ const file_api_v1_ipam_proto_rawDesc = "" +
 	"\brevision\x18\x02 \x01(\tR\brevision\x12\x19\n" +
 	"\bgit_sha1\x18\x03 \x01(\tR\agitSha1\x12\x1d\n" +
 	"\n" +
-	"build_date\x18\x04 \x01(\tR\tbuildDate2\xd1\b\n" +
+	"build_date\x18\x04 \x01(\tR\tbuildDate\"b\n" +
+	"\x0eListIPsRequest\x12\x1f\n" +
+	"\vprefix_cidr\x18\x01 \x01(\tR\n" +
+	"prefixCidr\x12!\n" +
+	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
+	"\n" +
+	"_namespace\"F\n" +
+	"\x0fListIPsResponse\x12\x0e\n" +
+	"\x02ip\x18\x01 \x03(\tR\x02ip\x12#\n" +
+	"\rparent_prefix\x18\x02 \x01(\tR\fparentPrefix2\x8d\t\n" +
 	"\vIpamService\x12I\n" +
 	"\fCreatePrefix\x12\x1b.api.v1.CreatePrefixRequest\x1a\x1c.api.v1.CreatePrefixResponse\x12I\n" +
 	"\fDeletePrefix\x12\x1b.api.v1.DeletePrefixRequest\x1a\x1c.api.v1.DeletePrefixResponse\x12@\n" +
@@ -1709,7 +1822,8 @@ const file_api_v1_ipam_proto_rawDesc = "" +
 	"\x12AcquireChildPrefix\x12!.api.v1.AcquireChildPrefixRequest\x1a\".api.v1.AcquireChildPrefixResponse\x12[\n" +
 	"\x12ReleaseChildPrefix\x12!.api.v1.ReleaseChildPrefixRequest\x1a\".api.v1.ReleaseChildPrefixResponse\x12@\n" +
 	"\tAcquireIP\x12\x18.api.v1.AcquireIPRequest\x1a\x19.api.v1.AcquireIPResponse\x12@\n" +
-	"\tReleaseIP\x12\x18.api.v1.ReleaseIPRequest\x1a\x19.api.v1.ReleaseIPResponse\x121\n" +
+	"\tReleaseIP\x12\x18.api.v1.ReleaseIPRequest\x1a\x19.api.v1.ReleaseIPResponse\x12:\n" +
+	"\aListIPs\x12\x16.api.v1.ListIPsRequest\x1a\x17.api.v1.ListIPsResponse\x121\n" +
 	"\x04Dump\x12\x13.api.v1.DumpRequest\x1a\x14.api.v1.DumpResponse\x121\n" +
 	"\x04Load\x12\x13.api.v1.LoadRequest\x1a\x14.api.v1.LoadResponse\x12R\n" +
 	"\x0fCreateNamespace\x12\x1e.api.v1.CreateNamespaceRequest\x1a\x1f.api.v1.CreateNamespaceResponse\x12O\n" +
@@ -1731,7 +1845,7 @@ func file_api_v1_ipam_proto_rawDescGZIP() []byte {
 	return file_api_v1_ipam_proto_rawDescData
 }
 
-var file_api_v1_ipam_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_api_v1_ipam_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_api_v1_ipam_proto_goTypes = []any{
 	(*Prefix)(nil),                     // 0: api.v1.Prefix
 	(*CreatePrefixResponse)(nil),       // 1: api.v1.CreatePrefixResponse
@@ -1765,6 +1879,8 @@ var file_api_v1_ipam_proto_goTypes = []any{
 	(*DeleteNamespaceResponse)(nil),    // 29: api.v1.DeleteNamespaceResponse
 	(*VersionRequest)(nil),             // 30: api.v1.VersionRequest
 	(*VersionResponse)(nil),            // 31: api.v1.VersionResponse
+	(*ListIPsRequest)(nil),             // 32: api.v1.ListIPsRequest
+	(*ListIPsResponse)(nil),            // 33: api.v1.ListIPsResponse
 }
 var file_api_v1_ipam_proto_depIdxs = []int32{
 	0,  // 0: api.v1.CreatePrefixResponse.prefix:type_name -> api.v1.Prefix
@@ -1784,29 +1900,31 @@ var file_api_v1_ipam_proto_depIdxs = []int32{
 	14, // 14: api.v1.IpamService.ReleaseChildPrefix:input_type -> api.v1.ReleaseChildPrefixRequest
 	18, // 15: api.v1.IpamService.AcquireIP:input_type -> api.v1.AcquireIPRequest
 	19, // 16: api.v1.IpamService.ReleaseIP:input_type -> api.v1.ReleaseIPRequest
-	20, // 17: api.v1.IpamService.Dump:input_type -> api.v1.DumpRequest
-	22, // 18: api.v1.IpamService.Load:input_type -> api.v1.LoadRequest
-	24, // 19: api.v1.IpamService.CreateNamespace:input_type -> api.v1.CreateNamespaceRequest
-	26, // 20: api.v1.IpamService.ListNamespaces:input_type -> api.v1.ListNamespacesRequest
-	28, // 21: api.v1.IpamService.DeleteNamespace:input_type -> api.v1.DeleteNamespaceRequest
-	30, // 22: api.v1.IpamService.Version:input_type -> api.v1.VersionRequest
-	1,  // 23: api.v1.IpamService.CreatePrefix:output_type -> api.v1.CreatePrefixResponse
-	2,  // 24: api.v1.IpamService.DeletePrefix:output_type -> api.v1.DeletePrefixResponse
-	3,  // 25: api.v1.IpamService.GetPrefix:output_type -> api.v1.GetPrefixResponse
-	10, // 26: api.v1.IpamService.ListPrefixes:output_type -> api.v1.ListPrefixesResponse
-	12, // 27: api.v1.IpamService.PrefixUsage:output_type -> api.v1.PrefixUsageResponse
-	4,  // 28: api.v1.IpamService.AcquireChildPrefix:output_type -> api.v1.AcquireChildPrefixResponse
-	5,  // 29: api.v1.IpamService.ReleaseChildPrefix:output_type -> api.v1.ReleaseChildPrefixResponse
-	16, // 30: api.v1.IpamService.AcquireIP:output_type -> api.v1.AcquireIPResponse
-	17, // 31: api.v1.IpamService.ReleaseIP:output_type -> api.v1.ReleaseIPResponse
-	21, // 32: api.v1.IpamService.Dump:output_type -> api.v1.DumpResponse
-	23, // 33: api.v1.IpamService.Load:output_type -> api.v1.LoadResponse
-	25, // 34: api.v1.IpamService.CreateNamespace:output_type -> api.v1.CreateNamespaceResponse
-	27, // 35: api.v1.IpamService.ListNamespaces:output_type -> api.v1.ListNamespacesResponse
-	29, // 36: api.v1.IpamService.DeleteNamespace:output_type -> api.v1.DeleteNamespaceResponse
-	31, // 37: api.v1.IpamService.Version:output_type -> api.v1.VersionResponse
-	23, // [23:38] is the sub-list for method output_type
-	8,  // [8:23] is the sub-list for method input_type
+	32, // 17: api.v1.IpamService.ListIPs:input_type -> api.v1.ListIPsRequest
+	20, // 18: api.v1.IpamService.Dump:input_type -> api.v1.DumpRequest
+	22, // 19: api.v1.IpamService.Load:input_type -> api.v1.LoadRequest
+	24, // 20: api.v1.IpamService.CreateNamespace:input_type -> api.v1.CreateNamespaceRequest
+	26, // 21: api.v1.IpamService.ListNamespaces:input_type -> api.v1.ListNamespacesRequest
+	28, // 22: api.v1.IpamService.DeleteNamespace:input_type -> api.v1.DeleteNamespaceRequest
+	30, // 23: api.v1.IpamService.Version:input_type -> api.v1.VersionRequest
+	1,  // 24: api.v1.IpamService.CreatePrefix:output_type -> api.v1.CreatePrefixResponse
+	2,  // 25: api.v1.IpamService.DeletePrefix:output_type -> api.v1.DeletePrefixResponse
+	3,  // 26: api.v1.IpamService.GetPrefix:output_type -> api.v1.GetPrefixResponse
+	10, // 27: api.v1.IpamService.ListPrefixes:output_type -> api.v1.ListPrefixesResponse
+	12, // 28: api.v1.IpamService.PrefixUsage:output_type -> api.v1.PrefixUsageResponse
+	4,  // 29: api.v1.IpamService.AcquireChildPrefix:output_type -> api.v1.AcquireChildPrefixResponse
+	5,  // 30: api.v1.IpamService.ReleaseChildPrefix:output_type -> api.v1.ReleaseChildPrefixResponse
+	16, // 31: api.v1.IpamService.AcquireIP:output_type -> api.v1.AcquireIPResponse
+	17, // 32: api.v1.IpamService.ReleaseIP:output_type -> api.v1.ReleaseIPResponse
+	33, // 33: api.v1.IpamService.ListIPs:output_type -> api.v1.ListIPsResponse
+	21, // 34: api.v1.IpamService.Dump:output_type -> api.v1.DumpResponse
+	23, // 35: api.v1.IpamService.Load:output_type -> api.v1.LoadResponse
+	25, // 36: api.v1.IpamService.CreateNamespace:output_type -> api.v1.CreateNamespaceResponse
+	27, // 37: api.v1.IpamService.ListNamespaces:output_type -> api.v1.ListNamespacesResponse
+	29, // 38: api.v1.IpamService.DeleteNamespace:output_type -> api.v1.DeleteNamespaceResponse
+	31, // 39: api.v1.IpamService.Version:output_type -> api.v1.VersionResponse
+	24, // [24:40] is the sub-list for method output_type
+	8,  // [8:24] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name
@@ -1829,13 +1947,14 @@ func file_api_v1_ipam_proto_init() {
 	file_api_v1_ipam_proto_msgTypes[19].OneofWrappers = []any{}
 	file_api_v1_ipam_proto_msgTypes[20].OneofWrappers = []any{}
 	file_api_v1_ipam_proto_msgTypes[22].OneofWrappers = []any{}
+	file_api_v1_ipam_proto_msgTypes[32].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_ipam_proto_rawDesc), len(file_api_v1_ipam_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   32,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -14,6 +14,7 @@ service IpamService {
   rpc ReleaseChildPrefix(ReleaseChildPrefixRequest) returns (ReleaseChildPrefixResponse);
   rpc AcquireIP(AcquireIPRequest) returns (AcquireIPResponse);
   rpc ReleaseIP(ReleaseIPRequest) returns (ReleaseIPResponse);
+  rpc ListIPs(ListIPsRequest) returns (ListIPsResponse);
   rpc Dump(DumpRequest) returns (DumpResponse);
   rpc Load(LoadRequest) returns (LoadResponse);
   rpc CreateNamespace(CreateNamespaceRequest) returns (CreateNamespaceResponse);
@@ -150,4 +151,14 @@ message VersionResponse {
   string revision = 2;
   string git_sha1 = 3;
   string build_date = 4;
+}
+
+message ListIPsRequest {
+  string prefix_cidr = 1;
+  optional string namespace = 2;
+}
+
+message ListIPsResponse {
+  repeated string ip = 1;
+  string parent_prefix = 2;
 }

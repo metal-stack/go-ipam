@@ -45,6 +45,8 @@ type Ipamer interface {
 	// If the IP is not found an NotFoundError is returned.
 	// This operation is scoped to the root namespace unless a different namespace is provided in the context.
 	ReleaseIP(ctx context.Context, ip *IP) (*Prefix, error)
+	// ListIPs lists all allocated IPs of the given prefix
+	ListIPs(ctx context.Context, prefixCidr string) ([]*IP, error)
 	// ReleaseIPFromPrefix will release the given IP for later usage.
 	// If the Prefix or the IP is not found an NotFoundError is returned.
 	// This operation is scoped to the root namespace unless a different namespace is provided in the context.

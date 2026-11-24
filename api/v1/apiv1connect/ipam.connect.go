@@ -56,6 +56,8 @@ const (
 	IpamServiceAcquireIPProcedure = "/api.v1.IpamService/AcquireIP"
 	// IpamServiceReleaseIPProcedure is the fully-qualified name of the IpamService's ReleaseIP RPC.
 	IpamServiceReleaseIPProcedure = "/api.v1.IpamService/ReleaseIP"
+	// IpamServiceListIPsProcedure is the fully-qualified name of the IpamService's ListIPs RPC.
+	IpamServiceListIPsProcedure = "/api.v1.IpamService/ListIPs"
 	// IpamServiceDumpProcedure is the fully-qualified name of the IpamService's Dump RPC.
 	IpamServiceDumpProcedure = "/api.v1.IpamService/Dump"
 	// IpamServiceLoadProcedure is the fully-qualified name of the IpamService's Load RPC.
@@ -84,6 +86,7 @@ type IpamServiceClient interface {
 	ReleaseChildPrefix(context.Context, *v1.ReleaseChildPrefixRequest) (*v1.ReleaseChildPrefixResponse, error)
 	AcquireIP(context.Context, *v1.AcquireIPRequest) (*v1.AcquireIPResponse, error)
 	ReleaseIP(context.Context, *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error)
+	ListIPs(context.Context, *v1.ListIPsRequest) (*v1.ListIPsResponse, error)
 	Dump(context.Context, *v1.DumpRequest) (*v1.DumpResponse, error)
 	Load(context.Context, *v1.LoadRequest) (*v1.LoadResponse, error)
 	CreateNamespace(context.Context, *v1.CreateNamespaceRequest) (*v1.CreateNamespaceResponse, error)
@@ -157,6 +160,12 @@ func NewIpamServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(ipamServiceMethods.ByName("ReleaseIP")),
 			connect.WithClientOptions(opts...),
 		),
+		listIPs: connect.NewClient[v1.ListIPsRequest, v1.ListIPsResponse](
+			httpClient,
+			baseURL+IpamServiceListIPsProcedure,
+			connect.WithSchema(ipamServiceMethods.ByName("ListIPs")),
+			connect.WithClientOptions(opts...),
+		),
 		dump: connect.NewClient[v1.DumpRequest, v1.DumpResponse](
 			httpClient,
 			baseURL+IpamServiceDumpProcedure,
@@ -207,6 +216,7 @@ type ipamServiceClient struct {
 	releaseChildPrefix *connect.Client[v1.ReleaseChildPrefixRequest, v1.ReleaseChildPrefixResponse]
 	acquireIP          *connect.Client[v1.AcquireIPRequest, v1.AcquireIPResponse]
 	releaseIP          *connect.Client[v1.ReleaseIPRequest, v1.ReleaseIPResponse]
+	listIPs            *connect.Client[v1.ListIPsRequest, v1.ListIPsResponse]
 	dump               *connect.Client[v1.DumpRequest, v1.DumpResponse]
 	load               *connect.Client[v1.LoadRequest, v1.LoadResponse]
 	createNamespace    *connect.Client[v1.CreateNamespaceRequest, v1.CreateNamespaceResponse]
@@ -296,6 +306,15 @@ func (c *ipamServiceClient) ReleaseIP(ctx context.Context, req *v1.ReleaseIPRequ
 	return nil, err
 }
 
+// ListIPs calls api.v1.IpamService.ListIPs.
+func (c *ipamServiceClient) ListIPs(ctx context.Context, req *v1.ListIPsRequest) (*v1.ListIPsResponse, error) {
+	response, err := c.listIPs.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
+}
+
 // Dump calls api.v1.IpamService.Dump.
 func (c *ipamServiceClient) Dump(ctx context.Context, req *v1.DumpRequest) (*v1.DumpResponse, error) {
 	response, err := c.dump.CallUnary(ctx, connect.NewRequest(req))
@@ -361,6 +380,7 @@ type IpamServiceHandler interface {
 	ReleaseChildPrefix(context.Context, *v1.ReleaseChildPrefixRequest) (*v1.ReleaseChildPrefixResponse, error)
 	AcquireIP(context.Context, *v1.AcquireIPRequest) (*v1.AcquireIPResponse, error)
 	ReleaseIP(context.Context, *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error)
+	ListIPs(context.Context, *v1.ListIPsRequest) (*v1.ListIPsResponse, error)
 	Dump(context.Context, *v1.DumpRequest) (*v1.DumpResponse, error)
 	Load(context.Context, *v1.LoadRequest) (*v1.LoadResponse, error)
 	CreateNamespace(context.Context, *v1.CreateNamespaceRequest) (*v1.CreateNamespaceResponse, error)
@@ -430,6 +450,12 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(ipamServiceMethods.ByName("ReleaseIP")),
 		connect.WithHandlerOptions(opts...),
 	)
+	ipamServiceListIPsHandler := connect.NewUnaryHandlerSimple(
+		IpamServiceListIPsProcedure,
+		svc.ListIPs,
+		connect.WithSchema(ipamServiceMethods.ByName("ListIPs")),
+		connect.WithHandlerOptions(opts...),
+	)
 	ipamServiceDumpHandler := connect.NewUnaryHandlerSimple(
 		IpamServiceDumpProcedure,
 		svc.Dump,
@@ -486,6 +512,8 @@ func NewIpamServiceHandler(svc IpamServiceHandler, opts ...connect.HandlerOption
 			ipamServiceAcquireIPHandler.ServeHTTP(w, r)
 		case IpamServiceReleaseIPProcedure:
 			ipamServiceReleaseIPHandler.ServeHTTP(w, r)
+		case IpamServiceListIPsProcedure:
+			ipamServiceListIPsHandler.ServeHTTP(w, r)
 		case IpamServiceDumpProcedure:
 			ipamServiceDumpHandler.ServeHTTP(w, r)
 		case IpamServiceLoadProcedure:
@@ -541,6 +569,10 @@ func (UnimplementedIpamServiceHandler) AcquireIP(context.Context, *v1.AcquireIPR
 
 func (UnimplementedIpamServiceHandler) ReleaseIP(context.Context, *v1.ReleaseIPRequest) (*v1.ReleaseIPResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.ReleaseIP is not implemented"))
+}
+
+func (UnimplementedIpamServiceHandler) ListIPs(context.Context, *v1.ListIPsRequest) (*v1.ListIPsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.v1.IpamService.ListIPs is not implemented"))
 }
 
 func (UnimplementedIpamServiceHandler) Dump(context.Context, *v1.DumpRequest) (*v1.DumpResponse, error) {
